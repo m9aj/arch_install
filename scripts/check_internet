@@ -1,0 +1,8 @@
+#!/bin/bash
+
+ping_test() {
+	ping -q -w 1 -c 1 1.1.1.1 &> /dev/null
+}
+
+ping_test || echo "No internet connection, exiting..." && exit 1
+
