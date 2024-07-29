@@ -5,3 +5,11 @@ iwctl station wlan0 connect Ansible
 Scripts/./check_internet || exit 1
 
 source Install.cfg
+
+read -p "Do you want $ArchPart reformatted?(y/n)" FOR
+if [ "$FOR" = "y" ]; then
+  echo "yaaa";
+else
+  echo "booo";
+fi
+
