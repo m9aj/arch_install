@@ -1,0 +1,28 @@
+#!/bin/bash
+
+Part=$1
+Label=$2
+Tmp=/mnt/tmp
+Subvols=(@ @home @log @pkg)
+
+# Check root Access
+./root_check || exit 1
+
+# Format Partition
+./btrfs_format $Part $Label >> /dev/null
+echo -e "Formatted partition...\n"
+
+# Create Subvolumes
+echo -e "Creating Subvolumes...\n"
+
+mkdir -p $Tmp
+mount $Part $Tmp
+
+for Vol in ${Subvols[@]}; do
+	btrfs subvolume create $Tmp/$Vol >> /dev/null
+done
+
+btrfs subvolume list $Tmp
+
+umount $Tmp
+rmdir $Tmp

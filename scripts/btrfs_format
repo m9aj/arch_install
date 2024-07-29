@@ -1,0 +1,9 @@
+#!/bin/bash
+
+Part=$1
+Label=$2
+
+./root_check || exit 1
+
+echo "Formatting BTRFS Partition..."
+mkfs.btrfs -f -L $Label $Part
