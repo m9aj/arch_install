@@ -1,11 +1,12 @@
 #!/bin/bash
 
-#Check Internet Connection
-iwctl station wlan0 connect Ansible
-scripts/./check_internet || exit 1
-
 source install.cfg
+
 pushd scripts
+
+#Check Internet Connection
+iwctl --passphrase $WifiPass station wlan0 connect $Wifi
+./check_internet || exit 1
 
 # Reformat vs Refresh based on user questions
 read -p "Do you want $ArchPart reformatted?(y/n)" F_ROOT

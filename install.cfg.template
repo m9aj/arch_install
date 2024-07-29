@@ -1,5 +1,5 @@
-Wifi=Ansible
-Password=90807060
+Wifi=
+WifiPass=
 
 EfiPart=/dev/nvme0n1p1
 
@@ -15,11 +15,9 @@ PersonalPart=/dev/nvme0n1p3
 
 MountPath=/mnt/ins
 
-HostName=Io
+HostName=
 
 #TimeZone=America/New_York
 TimeZone=US/Pacific
 #TimeZone=Asia/Kolkata
 
-BootTimeout=3
-BootArchLabel="Arch Linux"
