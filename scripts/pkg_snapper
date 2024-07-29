@@ -1,0 +1,31 @@
+#!/bin/bash
+
+copy_template=y
+
+paru -S snapper grub-btrfs inotify-tools btrfs-assistant --noconfirm --needed --skipreview --sudoloop
+sudo pacman -Rns cmake
+
+sudo systemctl enable snapper-timeline.timer 
+sudo systemctl enable snapper-cleanup.timer
+sudo systemctl enable grub-btrfsd
+
+# Copy templates if needed
+if [ $copy_template == "y" ]; then
+	mkdir -p $HOME/Arch/Config/Snapper_templates
+	cp /usr/share/snapper/config-templates/default $HOME/Arch/Config/Snapper_templates/root
+	cp /usr/share/snapper/config-templates/default $HOME/Arch/Config/Snapper_templates/home
+	cp /usr/share/snapper/config-templates/default $HOME/Arch/Config/Snapper_templates/personal
+	read -p "Pausing script to edit templates. Press any key to continue..."
+fi
+
+# Copy user templates to template directory
+sudo mkdir -p /etc/snapper/config-templates
+sudo cp $HOME/Arch/Config/Snapper_templates/* /etc/snapper/config-templates 
+
+# Create Snapper Configs
+sudo snapper -c root create-config -t root /
+sudo snapper -c home create-config -t home /home
+sudo snapper -c personal create-config -t personal /mnt/Personal
+
+echo "Done configuring snapper. Make further edits in btrfs-assistant."
+

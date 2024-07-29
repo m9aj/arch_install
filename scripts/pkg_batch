@@ -4,13 +4,13 @@
 paru -S oh-my-posh ttf-jetbrains-mono-nerd fzf zoxide
 
 ## Multimedia
-paru -S amberol eartag
+paru -S amberol eartag --skipreview --sudoloop
 
 # Webapps
-paru -S webapp-manager
+paru -S webapp-manager --skipreview --sudoloop
 
 # Citrix
-paru -S icaclient
+paru -S icaclient --skipreview --sudoloop
 mkdir -p $HOME/.ICAClient/cache
 cp /opt/Citrix/ICAClient/config/{All_Regions,Trusted_Region,Unknown_Region,canonicalization,regions}.ini $HOME/.ICAClient/
 
