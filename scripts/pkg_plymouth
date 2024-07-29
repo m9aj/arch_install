@@ -11,7 +11,7 @@ sudo sed -i 's/fsck/fsck\ plymouth/' /etc/mkinitcpio.conf
 sudo mkinitcpio -p linux
 
 #https://github.com/adi1090x/plymouth-themes
-paru -S plymouth-theme-abstract-ring-git plymouth-theme-circle-git plymouth-theme-circle-flow-git plymouth-theme-colorful-loop-git plymouth-theme-cuts-git plymouth-theme-cuts-alt-git plymouth-theme-liquid-git plymouth-theme-loader-2-git plymouth-theme-loader-alt-git  plymouth-theme-motion-git plymouth-theme-polaroid-git plymouth-theme-rings-2-git plymouth-theme-sphere-git plymouth-theme-spin-git plymouth-theme-splash-git plymouth-theme-square-git  --skipreview --sudoloop
+paru -S plymouth-theme-abstract-ring-git plymouth-theme-circle-git plymouth-theme-circle-flow-git plymouth-theme-colorful-loop-git plymouth-theme-cuts-git plymouth-theme-cuts-alt-git plymouth-theme-liquid-git plymouth-theme-loader-2-git plymouth-theme-loader-alt-git  plymouth-theme-motion-git plymouth-theme-polaroid-git plymouth-theme-rings-2-git plymouth-theme-sphere-git plymouth-theme-spin-git plymouth-theme-splash-git plymouth-theme-square-git 
 
 
 

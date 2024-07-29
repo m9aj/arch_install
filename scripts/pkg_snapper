@@ -1,8 +1,8 @@
 #!/bin/bash
 
-copy_template=y
+copy_template=n
 
-paru -S snapper grub-btrfs inotify-tools btrfs-assistant --noconfirm --needed --skipreview --sudoloop
+paru -S snapper grub-btrfs inotify-tools btrfs-assistant --noconfirm --needed
 sudo pacman -Rns cmake
 
 sudo systemctl enable snapper-timeline.timer 
