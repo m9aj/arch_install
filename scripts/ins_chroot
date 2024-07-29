@@ -1,0 +1,34 @@
+#!/bin/bash
+
+MountPath=$1
+HostName=$2
+TimeZone=$3
+
+# Set Hostname
+echo Setting Hostname...
+echo $HostName > $MountPath/etc/hostname
+
+# Set Timezone
+echo Setting Timezone...
+arch-chroot $MountPath ln -sf /usr/share/zoneinfo/$TimeZone /etc/localtime
+arch-chroot $MountPath hwclock --systohc --localtime
+
+# Set Locales
+echo Generating locales...
+sed -i 's/#\(en_US\.UTF-8\)/\1/' $MountPath/etc/locale.gen
+arch-chroot $MountPath locale-gen
+echo LANG=en_US.UTF-8 > $MountPath/etc/locale.conf
+
+# Configure root account
+echo Enter Root Password...
+arch-chroot $MountPath passwd
+arch-chroot $MountPath chsh -s /bin/zsh
+
+# Configure user account
+echo Adding Primary User 
+arch-chroot $MountPath useradd -g users -G wheel -m -s /bin/zsh -c 'Ajay Moganti' ajay
+echo Enter User Password...
+arch-chroot $MountPath passwd ajay
+
+echo "%wheel ALL=(ALL:ALL) ALL" | (EDITOR="tee -a" visudo -f $MountPath/etc/sudoers)
+

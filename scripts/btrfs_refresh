@@ -1,0 +1,36 @@
+#!/bin/bash
+
+Part=$1
+DelHome=$2
+DelPkg=$3
+Tmp=/mnt/tmp
+
+# Check root Access
+./root_check || exit 1
+
+mkdir -p $Tmp
+mount $Part $Tmp
+
+# Empty root and log subvolumes
+rm -rf $Tmp/@/* $Tmp/@log/*
+echo "Cleared @ and @log subvolumes"
+
+# Empty home if needed
+if [ $DelHome == "y" ]; then
+    rm -rf $Tmp/@home/*
+    echo "Cleared @home subvolume"
+fi
+
+# Empty pkg if needed
+if [ $DelPkg == "y" ]; then
+    rm -rf $Tmp/@pkg/*
+    echo "Cleared @pkg subvolume"
+fi
+
+# Delete Snapshot Subvolumes
+btrfs subvolume delete $Tmp/@/.snapshots
+btrfs subvolume delete $Tmp/@home/.snapshots
+echo "Snapshots Deleted"
+
+umount $Tmp
+rmdir $Tmp

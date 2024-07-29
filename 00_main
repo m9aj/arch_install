@@ -2,14 +2,35 @@
 
 #Check Internet Connection
 iwctl station wlan0 connect Ansible
-Scripts/./check_internet || exit 1
+scripts/./check_internet || exit 1
 
-source Install.cfg
+source install.cfg
 
-read -p "Do you want $ArchPart reformatted?(y/n)" FOR
-if [ "$FOR" = "y" ]; then
-  echo "yaaa";
+# Reformat vs Refresh based on user questions
+read -p "Do you want $ArchPart reformatted?(y/n)" F_ROOT
+if [ "$F_ROOT" = "y" ]; then
+	pushd scripts; ./btrfs_subvolume $ArchPart $ArchLabel; popd
 else
-  echo "booo";
+	read -p "Do you want Home formatted?(y/n)" F_HOME
+	read -p "Do you want Pkg formatted?(y/n)" F_PKG
+	pushd scripts; ./btrfs_refresh $ArchPart $F_HOME $F_PKG; popd
 fi
+
+# Mount all partitions
+scripts/./mount_tree $MountPath $ArchPart $EfiPart $MountOpsSsd $ArchLabel $SwapPart
+
+# Pacstrap
+scripts/./ins_pacstrap $MountPath
+
+# Fstab generate and add Personal mount
+scripts/./ins_fstab $MountPath $PersonalPart
+
+# Chrooting
+scripts/./ins_chroot $MountPath $HostName $TimeZone
+
+# Intalling gnome and drivers
+scripts/./ins_drivers_gnome $MountPath
+
+# Install Grub Bootloader
+scripts/./bl_grub $MountPath 
 

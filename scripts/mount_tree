@@ -1,0 +1,35 @@
+#!/bin/bash
+
+MountPath=$1
+RootPart=$2
+EfiPart=$3
+MountOpsSsd=$4
+RootLabel=$5
+SwapPart=$6
+
+# Check root Access
+./root_check || exit 1
+
+# Mount root and create necessary directories
+mkdir -p $MountPath
+mount -o subvol=@,$MountOpsSsd $RootPart $MountPath
+mkdir -p $MountPath/efi $MountPath/boot $MountPath/var/cache/pacman/pkg $MountPath/var/log $MountPath/home
+
+# EFI partition
+mount -o noatime $EfiPart $MountPath/efi
+rm -rf $MountPath/efi/EFI/$RootLabel
+mkdir -p $MountPath/efi/EFI/$RootLabel
+mount -o bind $MountPath/efi/EFI/$RootLabel $MountPath/boot
+
+# Mounting Subvolumes
+mount -o subvol=@log,$MountOpsSsd $RootPart $MountPath/var/log
+mount -o subvol=@pkg,$MountOpsSsd $RootPart $MountPath/var/cache/pacman/pkg
+mount -o subvol=@home,$MountOpsSsd $RootPart $MountPath/home
+
+# Initialize Swap
+mkswap $SwapPart
+swapon $SwapPart
+
+# List Mount Tree
+findmnt -nt btrfs,vfat
+read -p "Press Any Key to continue..."

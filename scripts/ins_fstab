@@ -1,0 +1,15 @@
+#!/bin/bash
+
+MountPath=$1
+PersonalPart=$2
+
+# Generate Fstab
+genfstab -U $MountPath >> $MountPath/etc/fstab
+
+# Add Personal mount to Fstab
+PART_UUID=$(blkid -o value -s UUID ${PersonalPart})
+
+echo >> $MountPath/etc/fstab
+echo "# $PersonalPart" >> $MountPath/etc/fstab
+echo "/dev/disk/by-uuid/$PART_UUID /mnt/Personal auto nosuid,nodev,nofail,x-gvfs-show,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2 0 0" >> $MountPath/etc/fstab
+

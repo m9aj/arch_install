@@ -1,0 +1,18 @@
+#!/bin/bash
+
+MountPath=$1
+
+# Install and update mirrorlist
+pacman -Sy
+pacman -S arch-install-scripts reflector --noconfirm --needed
+reflector --country 'United States' -l 20 -p http --sort rate --save /etc/pacman.d/mirrorlist
+
+# Pacstrap mount partition
+pacstrap $MountPath \
+base linux linux-firmware base-devel \
+amd-ucode efibootmgr dosfstools btrfs-progs ntfs-3g \
+pipewire pipewire-audio pipewire-alsa pipewire-pulse pipewire-jack wireplumber \
+man-db man-pages \
+zsh zsh-completions zsh-autosuggestions zsh-syntax-highlighting grml-zsh-config \
+networkmanager nano reflector pacman-contrib
+
