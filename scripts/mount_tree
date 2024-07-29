@@ -8,7 +8,7 @@ RootLabel=$5
 SwapPart=$6
 
 # Check root Access
-./root_check || exit 1
+#./root_check || exit 1
 
 # Mount root and create necessary directories
 mkdir -p $MountPath

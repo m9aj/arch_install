@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#ln -sf ~/Arch/Config/Shell/zshrc.local ~/.zshrc
+#ln -sf ~/Arch/Config/Shell/bashrc ~/.bashrc
+#ln -sf ~/Arch/Config/Shell/mimeapps.list ~/.config/mimeapps.list
+
+#ln -sf ~/Arch/Config/fonts ~/.local/share/
+#fc-cache
+
+sudo sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="--jobs=$(nproc)"/' /etc/makepkg.conf   

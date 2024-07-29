@@ -1,0 +1,9 @@
+#!/bin/bash
+
+Parent=/mnt/Personal/_Ajay
+Folders=(Arch Desktop Documents Downloads Music Pictures Templates Videos)
+
+for folder in ${Folders[@]}; do
+	rm -rf ~/$folder
+	ln -sf $Parent/$folder ~
+done

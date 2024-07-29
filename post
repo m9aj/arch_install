@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#Check Internet Connection
+scripts/./check_internet || exit 1
+
+pushd scripts
+
+#./con_home_shortcuts
+#./con_etc_settings
+#./pkg_pacman
+#./pkg_paru
+#./pkg_batch
+#/pkg_pia
+
+#./con_dconf
+#./con_pacman_hooks
+#./con_appdrawer
+popd

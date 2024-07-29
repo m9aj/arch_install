@@ -1,0 +1,55 @@
+#!/bin/bash
+
+## Gnome
+sudo pacman -S gnome-{clocks,weather,calculator,calendar,system-monitor,backgrounds,screenshot,firmware,logs} baobab evince tracker3-miners power-profiles-daemon gnome-browser-connector --noconfirm --needed # gnome-{font-viewer maps sound-recorder contacts} gvfs-google 
+
+## Appearance
+sudo pacman -S inter-font --noconfirm --needed 
+
+## Hardware
+sudo pacman -S pam-u2f fprintd --noconfirm --needed 
+
+## Office
+sudo pacman -S libreoffice-fresh homebank --noconfirm --needed 
+
+## Internet
+sudo pacman -S firefox filezilla firewalld --noconfirm --needed # qbittorrent epiphany transmission-gtk 
+rm -rf $HOME/.mozilla
+ln -sf $HOME/Arch/Config/Mozilla $HOME/.mozilla
+sudo systemctl enable --now firewalld.service
+
+## Development
+sudo pacman -S git gimp --noconfirm --needed # pitivi calibre picard meld inkscape
+#git config --global init.defaultBranch main
+#git config --global user.name "m9aj"
+#git config --global user.email "hajayd@gmail.com"
+#git config --global credential.helper store
+
+## System
+sudo pacman -S encfs p7zip unrar wl-clipboard --noconfirm --needed
+
+## Multimedia
+sudo pacman -S vlc eog simple-scan --noconfirm --needed # totem gst-libav 
+
+## MTP
+sudo pacman -S libmtp gvfs-mtp mtpfs android-tools --noconfirm --needed 
+
+## Music batching
+#sudo pacman -S fdkaac shntool cuetools --noconfirm
+
+## Image batching
+sudo pacman -S imagemagick --noconfirm --needed 
+
+## Backup
+sudo pacman -S stow --noconfirm --needed 
+
+rm ~/.zshrc ~/.bashrc ~/.gitconfig ~/.git-credentials ~/.config/mimeapps.list
+stow --dir ~/Arch/Config/Dotfiles --target ~ --dotfiles .
+
+# Secure Boot
+#sudo pacman -S efitools sbsigntools ccrypt --noconfirm
+
+##Partitioning
+# sudo pacman -S gptfdisk --noconfirm # gparted
+
+# dmidecode bios

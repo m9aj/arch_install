@@ -1,0 +1,33 @@
+#!/bin/bash
+
+sudo pacman -S networkmanager-openvpn --needed
+yay -S --mflags --skipinteg private-internet-access-vpn
+
+login() {
+	cat <<EOF
+p5841855
+Elika5^7
+EOF
+}
+
+login | sudo tee /etc/private-internet-access/login.conf
+sudo chmod 0600 /etc/private-internet-access/login.conf
+sudo chown root:root /etc/private-internet-access/login.conf
+
+pia() {
+	cat <<EOF
+[pia]
+openvpn_auto_login = True
+
+[configure]
+apps = nm
+hosts = US East
+port = 1198
+EOF
+}
+
+pia | sudo tee /etc/private-internet-access/pia.conf
+sudo pia -a
+sudo systemctl restart NetworkManager
+nm-connection-editor
+

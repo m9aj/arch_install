@@ -1,0 +1,32 @@
+#!/bin/bash
+
+mirrorlist() {
+	cat <<EOF
+[Trigger]
+Operation=Upgrade
+Type=Package
+Target=pacman-mirrorlist
+
+[Action]
+When=PostTransaction
+Exec=/usr/bin/reflector --country 'United States' -l 10 -p http --sort rate --save /etc/pacman.d/mirrorlist
+EOF
+}
+
+systemd_boot() {
+	cat <<EOF
+[Trigger]
+Operation=Upgrade
+Type=Package
+Target=systemd
+
+[Action]
+Description=Updating systemd-boot
+When=PostTransaction
+Exec=/usr/bin/bootctl --path=/esp update
+EOF
+}
+
+sudo mkdir -p /etc/pacman.d/hooks
+mirrorlist | sudo tee /etc/pacman.d/hooks/mirrorlist.hook
+#systemd_boot | sudo tee /etc/pacman.d/hooks/systemd-boot.hook

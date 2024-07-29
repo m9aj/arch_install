@@ -10,3 +10,4 @@ networkmanager networkmanager-openvpn --noconfirm --needed #gedit
 
 arch-chroot $MountPath systemctl enable gdm
 arch-chroot $MountPath systemctl enable NetworkManager
+arch-chroot $MountPath systemctl enable bluetooth
