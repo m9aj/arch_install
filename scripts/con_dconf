@@ -31,6 +31,8 @@ gsettings set org.gnome.desktop.privacy recent-files-max-age 7
 gsettings set org.gnome.desktop.privacy remove-old-temp-files true
 gsettings set org.gnome.desktop.privacy remove-old-trash-files true
 
+gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,close'
+gsettings set org.gnome.mutter dynamic-workspaces false
 
 # Document Viewer
 gsettings set org.gnome.Evince.Default continuous false
