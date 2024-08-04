@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 ## Gnome
 sudo pacman -S gnome-{clocks,weather,calculator,calendar,system-monitor,backgrounds,screenshot,firmware,logs} baobab evince tracker3-miners power-profiles-daemon gnome-browser-connector --noconfirm --needed # gnome-{font-viewer maps sound-recorder contacts} gvfs-google 
@@ -19,11 +19,9 @@ ln -sf $HOME/Arch/Config/Mozilla $HOME/.mozilla
 sudo systemctl enable --now firewalld.service
 
 ## Development
-sudo pacman -S git gimp --noconfirm --needed # pitivi calibre picard meld inkscape
-#git config --global init.defaultBranch main
-#git config --global user.name "m9aj"
-#git config --global user.email "hajayd@gmail.com"
-#git config --global credential.helper store
+sudo pacman -S git gimp tailscale --noconfirm --needed # pitivi calibre picard meld inkscape
+sudo systemctl enable tailscaled
+sudo tailscale up
 
 ## System
 sudo pacman -S encfs p7zip unrar wl-clipboard --noconfirm --needed
@@ -43,7 +41,7 @@ sudo pacman -S imagemagick --noconfirm --needed
 ## Backup
 sudo pacman -S stow --noconfirm --needed 
 
-rm ~/.zshrc ~/.bashrc ~/.gitconfig ~/.git-credentials ~/.config/mimeapps.list
+rm ~/.zshrc ~/.bashrc ~/.gitconfig ~/.git-credentials ~/.config/mimeapps.list ~/.config/dconf/user
 stow --dir ~/Arch/Config/Dotfiles --target ~ --dotfiles .
 
 # Secure Boot

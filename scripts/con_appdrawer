@@ -1,0 +1,32 @@
+#!/bin/bash
+
+function HideApps {
+list=(avahi-discover.desktop bssh.desktop bvnc.desktop org.gnome.Evince.desktop org.gnome.FileRoller.desktop qv4l2.desktop qvidcap.desktop citrix-conncenter.desktop citrix-configmgr.desktop citrix-workspace.desktop org.gnome.eog.desktop)
+
+rm -f ~/.local/share/applications/*
+
+for name in ${list[@]}; do
+	cp /usr/share/applications/$name ~/.local/share/applications
+	if [ $? == 0 ]; then
+		echo NoDisplay=true >> ~/.local/share/applications/$name
+	fi
+done
+}
+
+function Folders {
+gsettings set org.gnome.desktop.app-folders folder-children "['System', 'Office', 'Utilities']"
+
+gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/System/ name "System"
+gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/Office/ name "Office"
+gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/Utilities/ name "Utilities"
+
+gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/System/ apps "['ca.desrt.dconf-editor.desktop', 'org.gnome.Settings.desktop', 'org.gnome.tweaks.desktop',  'org.gnome.Extensions.desktop', 'org.gnome.Firmware.desktop', 'firewall-config.desktop']"
+
+gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/Office/ apps "['libreoffice-startcenter.desktop', 'libreoffice-base.desktop', 'libreoffice-calc.desktop', 'libreoffice-impress.desktop', 'libreoffice-writer.desktop', 'libreoffice-draw.desktop', 'libreoffice-math.desktop', 'conncentre.desktop']"
+
+gsettings set org.gnome.desktop.app-folders.folder:/org/gnome/desktop/app-folders/folders/Utilities/ apps "['org.gnome.DiskUtility.desktop', 'org.gnome.baobab.desktop', 'org.gnome.SystemMonitor.desktop', 'org.gnome.Screenshot.desktop', 'simple-scan.desktop', 'org.gnome.Logs.desktop', 'btrfs-assistant.desktop']"
+
+}
+
+HideApps
+Folders

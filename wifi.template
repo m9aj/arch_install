@@ -1,0 +1,4 @@
+#!/bin/bash
+
+iwctl --passphrase "passphrase" station wlan0 connect "wifi_name"
+#iwctl --passphrase "passphrase" station wlan0 connect "wifi_name"

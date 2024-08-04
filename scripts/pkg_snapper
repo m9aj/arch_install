@@ -1,6 +1,8 @@
 #!/bin/bash
 
 copy_template=n
+config_home=$HOME/Arch/config/snapper_templates
+config_orig=/usr/share/snapper/config-templates/default
 
 paru -S snapper grub-btrfs inotify-tools btrfs-assistant --noconfirm --needed
 sudo pacman -Rns cmake
@@ -11,16 +13,16 @@ sudo systemctl enable grub-btrfsd
 
 # Copy templates if needed
 if [ $copy_template == "y" ]; then
-	mkdir -p $HOME/Arch/Config/Snapper_templates
-	cp /usr/share/snapper/config-templates/default $HOME/Arch/Config/Snapper_templates/root
-	cp /usr/share/snapper/config-templates/default $HOME/Arch/Config/Snapper_templates/home
-	cp /usr/share/snapper/config-templates/default $HOME/Arch/Config/Snapper_templates/personal
+	mkdir -p $config_home
+	cp $config_orig $config_home/root
+	cp $config_orig $config_home/home
+	cp $config_orig $config_home/personal
 	read -p "Pausing script to edit templates. Press any key to continue..."
 fi
 
 # Copy user templates to template directory
 sudo mkdir -p /etc/snapper/config-templates
-sudo cp $HOME/Arch/Config/Snapper_templates/* /etc/snapper/config-templates 
+sudo cp $config_home/* /etc/snapper/config-templates 
 
 # Create Snapper Configs
 sudo snapper -c root create-config -t root /
