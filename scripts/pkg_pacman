@@ -15,7 +15,7 @@ sudo pacman -S libreoffice-fresh homebank --noconfirm --needed
 ## Internet
 sudo pacman -S firefox filezilla firewalld --noconfirm --needed # qbittorrent epiphany transmission-gtk 
 rm -rf $HOME/.mozilla
-ln -sf $HOME/Arch/Config/Mozilla $HOME/.mozilla
+ln -sf $HOME/Arch/config/mozilla $HOME/.mozilla
 sudo systemctl enable --now firewalld.service
 
 ## Development
@@ -27,13 +27,16 @@ sudo tailscale up
 sudo pacman -S encfs p7zip unrar wl-clipboard --noconfirm --needed
 
 ## Multimedia
-sudo pacman -S vlc eog simple-scan --noconfirm --needed # totem gst-libav 
+sudo pacman -S vlc loupe simple-scan --noconfirm --needed # totem gst-libav eog
 
 ## MTP
 sudo pacman -S libmtp gvfs-mtp mtpfs android-tools --noconfirm --needed 
 
 ## Music batching
 #sudo pacman -S fdkaac shntool cuetools --noconfirm
+
+## Eyecandy
+sudo pacman -S starship ttf-jetbrains-mono-nerd fzf zoxide --noconfirm --needed # grml-zsh-config 
 
 ## Image batching
 sudo pacman -S imagemagick --noconfirm --needed 

@@ -13,6 +13,7 @@ base linux linux-firmware base-devel \
 amd-ucode efibootmgr dosfstools btrfs-progs ntfs-3g \
 pipewire pipewire-audio pipewire-alsa pipewire-pulse pipewire-jack wireplumber \
 man-db man-pages \
-zsh zsh-completions zsh-autosuggestions zsh-syntax-highlighting grml-zsh-config \
+zsh zsh-completions zsh-autosuggestions zsh-syntax-highlighting \
 networkmanager nano reflector pacman-contrib
+
 

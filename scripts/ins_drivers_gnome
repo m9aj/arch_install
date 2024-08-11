@@ -5,7 +5,7 @@ MountPath=$1
 arch-chroot $MountPath pacman -S \
 mesa libva-mesa-driver mesa-vdpau \
 gnome-shell xdg-user-dirs-gtk gnome-keyring gnome-shell-extensions gdm \
-gnome-terminal nautilus gnome-text-editor file-roller gnome-disk-utility gnome-control-center gnome-tweaks dconf-editor \
+gnome-console nautilus gnome-text-editor file-roller gnome-disk-utility gnome-control-center gnome-tweaks dconf-editor \
 networkmanager networkmanager-openvpn --noconfirm --needed #gedit
 
 arch-chroot $MountPath systemctl enable gdm
