@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Eyecandy
-#paru -S starship ttf-jetbrains-mono-nerd fzf zoxide #oh-my-posh 
-
 ## Multimedia
 paru -S amberol eartag
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo pacman -S networkmanager-openvpn --needed
-yay -S --mflags --skipinteg private-internet-access-vpn
+paru -S --mflags --skipinteg private-internet-access-vpn
 
 login() {
 	cat <<EOF
@@ -21,7 +21,7 @@ openvpn_auto_login = True
 
 [configure]
 apps = nm
-hosts = US East
+hosts = US California
 port = 1198
 EOF
 }
