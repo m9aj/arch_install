@@ -1,0 +1,195 @@
+# config/pkg_profiles.yaml
+# Static package/service/module lookup tables used by core/resolver.py
+
+init_packages:
+  mkinitcpio: [mkinitcpio]
+  dracut: [dracut]
+  booster: [booster]
+
+bootloader:
+  systemd-boot:
+    services:
+      - systemd-boot-update
+
+
+core_profiles:
+  base_core:
+    - base
+    - linux
+    - linux-firmware
+    - base-devel
+    #- sudo-rs
+    - efibootmgr
+    - dosfstools
+    - btrfs-progs
+    - ntfs-3g
+    - util-linux
+    - age
+  audio:
+    - pipewire
+    - pipewire-audio
+    - pipewire-alsa
+    - pipewire-pulse
+    - pipewire-jack
+    - wireplumber
+  shell:
+    - zsh
+    - zsh-completions
+    - zsh-autosuggestions
+    - zsh-syntax-highlighting
+  others:
+    - man-db
+    - man-pages
+    - networkmanager
+    - nano
+    - pacman-contrib
+
+post_profiles:
+  base_drivers:
+    packages:
+      - mesa
+    services:
+      - NetworkManager
+      - fstrim.timer
+    
+  gnome:
+    packages:
+      - gnome-shell
+      - xdg-user-dirs-gtk
+      - gnome-keyring
+      - gnome-shell-extensions
+      - gdm
+      - gnome-console
+      - nautilus
+      - gnome-text-editor
+      - file-roller
+      - gnome-disk-utility
+      - gnome-control-center
+      - gnome-tweaks
+      - dconf-editor
+      - gnome-clocks
+      - gnome-weather
+      - gnome-calculator
+      - gnome-calendar
+      #- gnome-system-monitor
+      - resources
+      - gnome-backgrounds
+      - gnome-screenshot
+      - gnome-firmware
+      - gnome-logs
+      - baobab
+      - papers
+      - power-profiles-daemon
+      - showtime
+      - gnome-browser-connector
+    services:
+      - gdm
+      - sshd
+
+  kde:
+    packages:
+      - plasma-meta
+      - sddm
+      - kde-system-meta
+    services:
+      - sddm
+
+  hardware:
+    packages:
+      - pam-u2f
+
+  fonts:
+    packages:
+      - ttf-dejavu
+      - ttf-liberation
+      - ttf-roboto
+      - ttf-roboto-mono
+      - noto-fonts
+      - noto-fonts-emoji
+      - noto-fonts-cjk
+
+  shell:
+    packages:
+      - python-yaml
+      - starship
+      - ttf-jetbrains-mono-nerd
+      - fzf
+      - zoxide
+
+  office:
+    packages:
+      - libreoffice-fresh
+
+  internet:
+    packages:
+      #- filezilla
+      - firefox
+      #- epiphany
+
+  development:
+    packages:
+      - git
+      - gimp
+      - code
+      #- lapce
+
+  system:
+    packages:
+      - 7zip
+      - unrar
+      - wl-clipboard
+
+  multimedia:
+    packages:
+      - loupe
+      - decibels
+      - simple-scan
+      - imagemagick
+
+  codecs:
+    packages:
+      - gst-libav
+      - gst-plugins-base
+      - gst-plugins-good
+      - gst-plugins-bad
+      - gst-plugins-ugly
+      - gst-plugin-va
+      - gst-plugins-base-libs # gst-discoverer
+      
+  backup:
+    packages:
+      - stow
+
+  security:
+    packages:
+      - firewalld
+      - firewall-config
+    services:
+      - firewalld
+
+  android:
+    packages:
+      - libmtp
+      - gvfs-mtp
+      - mtpfs
+      - android-tools
+
+  music_batching:
+    packages:
+      - fdkaac
+      - shntool
+      - cuetools
+
+  secure_boot:
+    packages:
+      - sbctl
+
+  partitioning:
+    packages:
+      - gptfdisk
+      - gparted
+
+  bios:
+    packages:
+      - dmidecode
+

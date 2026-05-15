@@ -1,0 +1,9 @@
+# config/wifi.yaml
+# WiFi credentials — not encrypted, loaded before age is available.
+# Copy to wifi.yaml and fill in. Git-ignored.
+
+network:
+  wifi:
+    ssid:
+    password:
+    interface:    # leave blank to auto-detect (wlan0, wlan1, etc.)

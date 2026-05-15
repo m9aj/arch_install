@@ -1,0 +1,9 @@
+# config/server_dconf.yaml
+# Server-specific GNOME gsettings (merged on top of base_dconf.yaml).
+
+org.gnome.desktop.session:
+  idle-delay: 0
+
+org.gnome.settings-daemon.plugins.power:
+  power-button-action: '''interactive'''
+  sleep-inactive-ac-type: '''nothing'''

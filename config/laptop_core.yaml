@@ -1,0 +1,31 @@
+# config/laptop_core.yaml
+# Laptop (hostname: Io) — disk, mounts, system, and boot.
+
+disk:
+  disk_by_id: nvme-addlink_M.2_PCIE_G3x4_NVMe_C1D307020D0900995114
+  boot_part: -part1
+  root_part: -part3
+
+root:
+  mode: reuse
+  subvolumes:
+    - name: "@pkg"
+      reuse: yes
+    - name: "@home"
+      reuse: no
+
+additional_mounts:
+  - name: personal
+    disk_by_id: nvme-addlink_M.2_PCIE_G3x4_NVMe_C1D307020D0900995114
+    type: ssd
+    part: -part2
+    mountpoint: /mnt/Personal
+
+system:
+  hostname: Io
+
+boot:
+  bootloader: systemd-boot
+  init: dracut
+  uki: false
+  boot_mount: /boot

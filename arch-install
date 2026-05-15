@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+
+usage() {
+    cat <<EOF
+Usage:
+  arch-install [profile]                  Phase 1 — pre-reboot (run from live ISO as root)
+  arch-install post [profile]             Phase 2 — post-install (run after reboot)
+  arch-install feature <name> [profile]   Install and configure a single feature
+  arch-install clean                      Remove profile markers and empty logs
+  arch-install reset <step>               Mark a completed step as pending so it reruns on next execution
+  arch-install reset all                  Mark all steps as pending (keeps logs, markers, and state history)
+  arch-install help                       Show this message
+
+Profiles:
+    desktop | laptop | server    Named profile from config/
+    /path/to/config.yaml         Custom config path
+
+    On first run the profile is saved as a marker file and auto-detected
+    on subsequent runs without an argument.
+
+    Note: after reboot, open "Arch Post-Install" from the app drawer, or run:
+          ./arch-install post
+EOF
+}
+
+case "${1:-}" in
+    help|--help|-h)
+        usage
+        ;;
+    clean)
+        echo "[INFO] Cleaning up marker files and logs..."
+        # Identify profile markers by looking at config/*.yaml stems
+        for f in "$DIR"/config/*.yaml; do
+            stem=$(basename "$f" .yaml)
+            if [ "$stem" != "base" ] && [ "$stem" != "package_profiles" ] && [ -f "$DIR/$stem" ]; then
+                rm "$DIR/$stem"
+                echo "  Removed marker: $stem"
+            fi
+        done
+        if [ -d "$DIR/logs" ]; then
+            # Empty logs but keep the directory
+            find "$DIR/logs" -mindepth 1 -delete
+            echo "  Emptied logs/ directory"
+        fi
+        echo "[SUCCESS] Cleanup complete."
+        ;;
+    reset)
+        step="${2:-}"
+        if [ -z "$step" ]; then
+            echo "Usage: arch-install reset <step|all>"
+            exit 1
+        elif [ "$step" = "all" ]; then
+            echo "[INFO] Resetting all steps..."
+            python3 -c "import sys; sys.path.insert(0, '$DIR'); from core.state import reset_all; reset_all()"
+            echo "[SUCCESS] All steps reset."
+        else
+            echo "[INFO] Resetting step: $step"
+            python3 -c "import sys; sys.path.insert(0, '$DIR'); from core.state import reset; reset('$step')"
+            echo "[SUCCESS] Step '$step' will rerun on next execution."
+        fi
+        ;;
+    feature)
+        shift
+        exec python3 "$DIR/postreboot/run_feature.py" "$@"
+        ;;
+    post)
+        shift
+        # Take ownership of any profile marker files and the entire logs directory
+        for f in "$DIR"/config/*.yaml; do
+            stem=$(basename "$f" .yaml)
+            if [[ "$stem" != "base" && "$stem" != "package_profiles" && -f "$DIR/$stem" ]]; then
+                sudo chown 1000:1000 "$DIR/$stem"
+            fi
+        done
+        if [ -d "$DIR/logs" ]; then
+            sudo chown -R 1000:1000 "$DIR/logs"
+        fi
+        exec python3 "$DIR/postreboot/main.py" "$@"
+        ;;
+    *)
+        if [ "$EUID" -ne 0 ]; then
+            echo "[ERROR] Phase 1 must be run as root."
+            exit 1
+        fi
+        exec python3 "$DIR/prereboot/main.py" "$@"
+        ;;
+esac

@@ -1,0 +1,22 @@
+# Secrets (plaintext only — encrypted .age files are safe to commit)
+config/secrets.yaml
+
+# Logs and runtime state
+logs/
+
+# Profile marker files
+laptop
+desktop
+server
+workstation
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Editor
+.idea/
+.vscode/
+*.swp

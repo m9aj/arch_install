@@ -1,0 +1,68 @@
+# config/base_core.yaml
+# Shared defaults — disk, system, and boot. All profiles build on this.
+
+disk:
+  disk_by_id:                             # udev ID from /dev/disk/by-id/ (without the path prefix)
+  boot_part:                              # partition suffix for EFI, e.g. -part1
+  root_part:                              # partition suffix for root, e.g. -part3
+  mount_ops_ssd: noatime,compress=zstd:3,ssd,space_cache=v2
+  mount_ops_oth: nosuid,nodev,nofail,x-gvfs-show  # applied to additional_mounts
+  mount_ops_hdd: noatime,autodefrag
+
+root:
+  mode: reuse                             # format | reuse
+  subvolumes:
+    - name: "@"
+      mount: /
+      reuse: no                           # no = delete and recreate on install
+    - name: "@var"
+      mount: /var/log
+      reuse: no
+    - name: "@pkg"
+      mount: /var/cache/pacman/pkg
+      reuse: yes                          # yes = keep across reinstalls
+    - name: "@home"
+      mount: /home
+      reuse: yes
+    - name: "@tailscale"
+      mount: /var/lib/tailscale
+      reuse: yes
+    - name: "@ssh"
+      mount: /etc/ssh
+      reuse: yes
+
+system:
+  hostname:
+  timezone: America/Los_Angeles           # America/New_York | Asia/Kolkata | etc.
+  root_password:                          # Defined in config/secrets.yaml[.age]
+  username: ajay
+  fullname: 'Ajay Moganti'
+  user_password:                          # Defined in config/secrets.yaml[.age]
+  autologin: false                        # GDM auto-login (no password on boot)
+
+# Extra disks to mount during install (in addition to root)
+# Define per-machine — lists are concatenated, so an entry here would appear on every profile.
+additional_mounts: []
+
+bind_mounts: []                           # list of {source, target} bind mounts
+
+hardware:
+  cpu: auto                               # amd | intel | auto (detected via lscpu)
+  gpu: auto                               # amd | nvidia | auto (detected via lspci)
+
+boot:
+  bootloader: systemd-boot               # systemd-boot | none (UEFI direct, requires uki: true)
+  init: mkinitcpio                        # mkinitcpio | dracut | booster
+  uki: false                             # true = build a UKI .efi instead of separate kernel + initramfs
+  boot_mount: /boot                      # EFI mountpoint /boot vs /boot/efi; use /boot/efi when uki: true
+  kernel_params:
+    - quiet
+    - rw
+  systemd-boot:
+    timeout: 3
+    console-mode: auto
+    editor: yes
+
+arch:
+  label: Arch                             # btrfs filesystem label
+  de: gnome                              # gnome | kde

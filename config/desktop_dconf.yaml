@@ -1,0 +1,6 @@
+# config/desktop_dconf.yaml
+# Desktop-specific GNOME gsettings (merged on top of base_dconf.yaml).
+
+org.gnome.SimpleScan:
+  jpeg-quality: 90
+  save-format: "'image/jpeg'"

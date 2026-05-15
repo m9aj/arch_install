@@ -1,0 +1,9 @@
+# config/wifi.yaml
+# WiFi credentials — not encrypted, loaded before age is available.
+# Git-ignored. Copy from wifi.yaml.template and fill in.
+
+network:
+  wifi:
+    ssid: Core
+    password: TrafficStopper687
+    interface:    # leave blank to auto-detect

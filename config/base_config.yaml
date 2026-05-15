@@ -1,0 +1,126 @@
+# config/base_config.yaml
+# Shared post-install configuration defaults.
+
+network:
+  hosts: {}
+
+postconfig:
+  user_dirs:
+    enabled: true
+    parent: /mnt/Personal/_Ajay
+    folders:
+      - Arch
+      - Desktop
+      - Documents
+      - Downloads
+      - Music
+      - Pictures
+      - Templates
+      - Videos
+
+  dotfiles:
+    enabled: true
+    path: /home/ajay/Arch/config/dotfiles
+
+  bluetooth:
+    enabled: false
+    source: /home/ajay/Arch/config/bluetooth
+
+  gnome:
+    gsettings:
+      enabled: false
+
+    lockscreen_scaling:
+      enabled: false
+
+    keybindings:
+      enabled: false
+      bindings: []                       # Defined in config/secrets.yaml[.age]
+
+    color_profiles:
+      enabled: false
+      profiles:
+        - name: framework_2.8k
+          file: /home/ajay/Arch/config/fw13_28k.icm
+
+    theme:
+      icons:
+        enabled: false
+        source: assets/icons.zip    # relative to PROJECT_ROOT
+        name: Qodir
+      cursor:
+        enabled: true
+        source: assets/cursors.zip
+        name: Smooth-Cursor
+      wallpapers:
+        enabled: false
+        repo: https://github.com/simple-sunrise/Light-and-Dark-Wallpapers-for-Gnome
+
+    extensions:
+      enabled: true
+      ids:
+        - 307   # Dash to Dock
+        - 3193  # Blur my Shell
+        #- 3960  # Transparent Top Bar
+        - 2236  # Night Theme Switcher
+        #- 5489  # Search Light
+        #- 517   # Caffeine
+        #- 6856  # Chronos Time Tracker
+        - 7502  # Auto Accent Colour
+        #- 6583  # Auto Power Profile
+        - 5895  # App Hider
+        - 7535  # Accent Directories
+
+    appdrawer:
+      enabled: true
+      hide_apps:
+        - avahi-discover
+        - bssh
+        - bvnc
+        - lstopo
+        - org.gnome.FileRoller
+        - qv4l2
+        - qvidcap
+        - citrix-conncenter
+        - citrix-configmgr
+        - citrix-workspace
+
+      folders:
+        System:
+          - org.gnome.Settings
+          - org.gnome.tweaks
+          - org.gnome.Extensions
+          - ca.desrt.dconf-editor
+          - org.gnome.Firmware
+          - firewall-config
+        Office:
+          - libreoffice-writer
+          - libreoffice-calc
+          - libreoffice-impress
+          - libreoffice-startcenter
+          - libreoffice-base
+          - libreoffice-draw
+          - libreoffice-math
+          - conncentre
+        Utilities:
+          - org.gnome.DiskUtility
+          - org.gnome.baobab
+          - net.nokyan.Resources.desktop
+          #- org.gnome.SystemMonitor
+          - com.github.tenderowl.frog
+          - filezilla
+          - org.gnome.Screenshot
+          - simple-scan
+          - org.gnome.Logs
+          - btrfs-assistant
+          - com.github.wwmm.easyeffects
+
+      dock:
+        - org.gnome.Nautilus
+        - firefox
+        - org.gnome.TextEditor
+        - org.gnome.Console
+
+      # List of pages, each being a list of app IDs or folder names.
+      # Define layout per profile — omitting here prevents unwanted list concatenation on merge.
+      layout: []

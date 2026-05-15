@@ -1,0 +1,43 @@
+# config/server_features.yaml
+# Server — enabled features and post-install configuration.
+
+features:
+    pacoloco:
+      server:
+        enabled: true
+
+    local_aur_repo:
+      server:
+        enabled: true
+
+    reflector:
+      enabled: true
+
+    firewall:
+      enabled: true
+
+    zram:
+      enabled: false
+
+    plymouth:
+      enabled: false
+
+    tailscale:
+      enabled: true
+      config:
+        auto_up: true
+
+    pia:
+      enabled: false
+
+    snapper:
+      enabled: false
+
+    ssh:
+      enabled: true
+
+    claude_code:
+      enabled: false
+
+    secure_boot:
+      enabled: false

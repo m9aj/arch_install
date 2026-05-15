@@ -1,0 +1,55 @@
+# config/base_dconf.yaml
+# GNOME gsettings shared across all profiles.
+# Values use gsettings syntax: strings need single quotes, e.g. "'value'"
+
+ca.desrt.dconf-editor.Settings:
+  show-warning: "false"
+  restore-view: "false"
+
+org.gnome.Console:
+  custom-font: "'JetBrainsMono Nerd Font 13'"
+
+org.gnome.TextEditor:
+  restore-session: "false"
+
+org.gnome.desktop.datetime:
+  automatic-timezone: "true"
+
+org.gnome.desktop.interface:
+  clock-format: "'12h'"
+  clock-show-date: "true"
+  font-antialiasing: "'rgba'"
+  font-hinting: "'full'"
+  monospace-font-name: '''Roboto Mono 13'''
+
+org.gnome.desktop.media-handling:
+  autorun-never: "true"
+
+org.gnome.desktop.privacy:
+  old-files-age: 3
+  recent-files-max-age: 7
+  remove-old-temp-files: "true"
+  remove-old-trash-files: "true"
+
+org.gnome.desktop.wm.preferences:
+  button-layout: "'appmenu:minimize,close'"
+
+org.gnome.mutter:
+  dynamic-workspaces: "false"
+
+org.gnome.Papers.Default:
+  continuous: "false"
+  dual-page: "true"
+  sizing-mode: "'fit-page'"
+
+org.gnome.system.location:
+  enabled: "true"
+
+org.gnome.tweaks:
+  show-extensions-notice: "false"
+
+org.gtk.gtk4.Settings.FileChooser:
+  sort-directories-first: "false"
+
+org.gtk.Settings.FileChooser:
+  clock-format: "'12h'"

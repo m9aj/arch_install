@@ -1,0 +1,18 @@
+# config/desktop_packages.yaml
+# Desktop — package profiles and machine-specific packages.
+
+pkgprofile:
+  post:
+    - hardware
+    - office
+    - development
+    - multimedia
+    - codecs
+
+machine_specific:
+  pacman:
+    - gemini-cli
+    - tesseract-data-eng
+  aur:
+    - frog-ocr-no-telemetry
+    - icaclient

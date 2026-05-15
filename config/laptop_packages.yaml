@@ -1,0 +1,22 @@
+# config/laptop_packages.yaml
+# Laptop — package profiles and machine-specific packages.
+
+pkgprofile:
+  post:
+    - hardware
+    - office
+    - development
+    - multimedia
+    - codecs
+
+machine_specific:
+  pacman:
+    - fprintd
+    - gemini-cli
+    - tesseract-data-eng
+    - tangram
+  aur:
+    - frog-ocr-no-telemetry
+    - icaclient
+  services:
+    - bluetooth

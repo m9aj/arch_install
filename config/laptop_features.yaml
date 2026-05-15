@@ -1,0 +1,43 @@
+# config/laptop_features.yaml
+# Laptop — enabled features and post-install configuration.
+
+features:
+    pacoloco:
+      client:
+        enabled: true
+
+    local_aur_repo:
+      client:
+        enabled: true
+
+    reflector:
+      enabled: true
+
+    firewall:
+      enabled: true
+
+    zram:
+      enabled: true
+
+    plymouth:
+      enabled: true
+
+    tailscale:
+      enabled: true
+      config:
+        auto_up: true
+
+    pia:
+      enabled: false
+
+    snapper:
+      enabled: false
+
+    ssh:
+      enabled: true
+
+    claude_code:
+      enabled: true
+
+    secure_boot:
+      enabled: false

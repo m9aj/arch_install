@@ -1,0 +1,9 @@
+# config/base_ssh.yaml
+# Shared SSH server config — authorized_keys apply to all machines.
+# This file is committed. Private keys live in {profile}_ssh.yaml[.age] (git-ignored).
+
+server:
+  disable_password_auth: true
+  authorized_keys:
+    - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJCXxypeHVtTUjZn1zBAixZ1G2zRleT5pomkLuuhLluh ajay@Io"
+    - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEAfyVksEYqfi2NpAkHm8B5tKre9AsEu1J6o3HSvjfS3 ajay@Titan"

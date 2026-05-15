@@ -1,0 +1,63 @@
+# config/laptop_config.yaml
+# Laptop — post-install configuration overrides.
+
+network:
+  hosts:
+    media.local:   192.168.0.50
+    desktop.local: 192.168.0.68
+
+postconfig:
+
+  user_dirs:
+    enabled: true
+
+  dotfiles:
+    enabled: true
+
+  bluetooth:
+    enabled: true
+
+  gnome:
+    gsettings:
+      enabled: true
+
+    lockscreen_scaling:
+      enabled: true
+
+    color_profiles:
+      enabled: true
+
+    theme:
+      icons:
+        enabled: false
+      cursor:
+        enabled: true
+      wallpapers:
+        enabled: false
+
+    extensions:
+      enabled: true
+      ids:
+        #- 5489  # Search Light
+        - 517   # Caffeine
+        - 6856  # Chronos Time Tracker
+        - 6583  # Auto Power Profile
+
+    appdrawer:
+      enabled: true
+      layout:
+        - # page 1
+          - org.gnome.Decibels
+          - org.gnome.Calculator
+          - org.gnome.Calendar
+          - org.gnome.clocks
+          - org.gnome.SimpleScan
+          - org.gnome.Papers
+          - gimp
+          - org.gnome.Loupe
+          - Office
+          - System
+          - Utilities
+          - org.gnome.Showtime
+          - org.gnome.Weather
+

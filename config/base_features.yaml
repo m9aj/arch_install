@@ -1,0 +1,93 @@
+# config/base_features.yaml
+# Shared defaults — features and post-install configuration.
+# Features are applied after first boot (Phase 2).
+# Packages and services are declared in the respective features/<name>.py file.
+
+features:
+    pacoloco:
+      server:
+        enabled: false
+        config:
+          port: 9129
+          cache_dir: /var/cache/pacoloco
+      client:
+        enabled: false
+        config:
+          url: http://media.local:9129    # e.g. http://media.local:9129
+
+    local_aur_repo:
+      server:
+        enabled: false
+        config:
+          name: local-aur-repo            # repo name used in pacman.conf
+          path: /srv/local-aur-repo       # directory served by nginx
+          port: 8080
+          extra_packages: []              # AUR packages to build beyond what machine profiles declare
+      client:
+        enabled: false
+        config:
+          url: http://aur.local:8080/local-aur-repo        # aur.local resolves via /etc/hosts → tailscale_ip
+          tailscale_ip: 100.100.1.1                        # pinned in /etc/hosts as aur.local
+
+    reflector:
+      enabled: true
+      config:
+        save: /etc/pacman.d/mirrorlist
+        protocol: https
+        country: United States
+        latest: 10
+        sort: rate
+        age: 24
+
+    firewall:
+      enabled: true
+
+    zram:
+      enabled: true
+      config:
+        size: "min(ram / 2, 4096)"
+        compression: zstd
+        vm:
+          swappiness: 180
+          watermark_boost_factor: 0
+          watermark_scale_factor: 125
+          page_cluster: 0
+
+    plymouth:
+      enabled: true
+      config:
+        theme: spinner
+
+    tailscale:
+      enabled: true
+      config:
+        auto_up: false
+
+    pia:
+      enabled: false
+      config:
+        username:                         # Defined in config/secrets.yaml[.age]
+        password:                         # Defined in config/secrets.yaml[.age]
+        openvpn_auto_login: true
+        apps: nm
+        hosts: US California
+        port: 1198
+
+    snapper:
+      enabled: false
+      config:
+        target: /mnt/Personal           # subvolume to snapshot
+        name: Personal                  # snapper config name
+        timeline_limit_hourly: 5
+        timeline_limit_daily: 7
+
+    ssh:
+      enabled: false
+
+    claude_code:
+      enabled: false
+
+    # secure_boot MUST remain last — it signs the initramfs produced by plymouth
+    # and any other feature that modifies /boot. Do not reorder above plymouth.
+    secure_boot:
+      enabled: false

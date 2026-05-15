@@ -1,0 +1,11 @@
+# config/server_packages.yaml
+# Server — package profiles and machine-specific packages.
+
+pkgprofile:
+  post: []
+
+machine_specific:
+  pacman:
+    - filezilla
+  aur:
+    - libation

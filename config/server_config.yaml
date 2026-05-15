@@ -1,0 +1,60 @@
+# config/server_config.yaml
+# Server — post-install configuration overrides.
+
+network:
+  hosts:
+    desktop.local: 192.168.0.68
+    laptop.local:  192.168.0.75
+
+postconfig:
+
+  user_dirs:
+    enabled: true
+
+  dotfiles:
+    enabled: true
+
+  bluetooth:
+    enabled: false
+
+  gnome:
+    gsettings:
+      enabled: true
+
+    lockscreen_scaling:
+      enabled: false
+
+    keybindings:
+      enabled: false
+
+    color_profiles:
+      enabled: false
+
+    theme:
+      icons:
+        enabled: false
+      cursor:
+        enabled: true
+      wallpapers:
+        enabled: false
+
+    extensions:
+      enabled: true
+      ids: []
+
+    appdrawer:
+      enabled: true
+      dock:
+        - filezilla 
+      layout:
+        - # page 1
+          - org.gnome.Calculator
+          - org.gnome.Calendar
+          - org.gnome.clocks
+          - org.gnome.Papers
+          - Libation
+          - System
+          - Utilities
+          - org.gnome.Showtime
+          - org.gnome.Weather
+          

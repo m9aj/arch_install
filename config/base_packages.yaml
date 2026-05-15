@@ -1,0 +1,33 @@
+# config/base_packages.yaml
+# Shared defaults — package profiles and machine-specific settings.
+
+# Keys map to entries in config/package_profiles.yaml
+pkgprofile:
+  core:                                   # installed via pacstrap (live ISO phase)
+    - base_core
+    - audio
+    - shell
+    - others
+  post:                                   # installed via pacman after chroot
+    - base_drivers
+    #- hardware
+    - fonts
+    - shell
+    #- office
+    - internet
+    #- development
+    - system
+    #- multimedia
+    #- codecs
+    - security
+    - backup
+    #- android
+    #- music_batching
+    #- partitioning
+    #- bios
+
+machine_specific:
+  pacman: []                              # extra pacman packages not in any profile
+  aur_helper: pikaur                      # pikaur
+  aur: []
+  services: []

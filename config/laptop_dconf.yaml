@@ -1,0 +1,10 @@
+# config/laptop_dconf.yaml
+# Laptop-specific GNOME gsettings (merged on top of base_dconf.yaml).
+
+org.gnome.desktop.peripherals.touchpad:
+  tap-to-click: "true"
+  speed: 0.75
+
+org.gnome.SimpleScan:
+  jpeg-quality: 90
+  save-format: "'image/jpeg'"
