@@ -20,7 +20,7 @@ postconfig:
 
   dotfiles:
     enabled: true
-    path: /home/ajay/Arch/config/dotfiles
+    source_dir: /home/ajay/Arch/config/dotfiles
 
   bluetooth:
     enabled: false
