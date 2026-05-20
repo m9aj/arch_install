@@ -109,7 +109,7 @@ def create_user(config):
     user = config["system"]["username"]
     fullname = config["system"].get("fullname", user)
     chroot(f"id -u {user} >/dev/null 2>&1 || useradd -m -G wheel -s /bin/zsh -c '{fullname}' {user}")
-    chroot("echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers")
+    chroot("grep -qF '%wheel ALL=(ALL:ALL) ALL' /etc/sudoers || echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers")
 
 def set_passwords(config):
     root_pw = config["system"].get("root_password")
@@ -167,13 +167,14 @@ def makepkg_block():
     return r"""
 # makepkg (parallel builds)
 if grep -q "^#MAKEFLAGS=" /etc/makepkg.conf; then
-  sed -i "s/^#MAKEFLAGS=.*/MAKEFLAGS=\"--jobs=$(nproc)\"/" /etc/makepkg.conf
+  sed -i "s/^#MAKEFLAGS=.*/MAKEFLAGS=\"-j\$(nproc)\"/" /etc/makepkg.conf
 elif grep -q "^MAKEFLAGS=" /etc/makepkg.conf; then
-  sed -i "s/^MAKEFLAGS=.*/MAKEFLAGS=\"--jobs=$(nproc)\"/" /etc/makepkg.conf
+  sed -i "s/^MAKEFLAGS=.*/MAKEFLAGS=\"-j\$(nproc)\"/" /etc/makepkg.conf
 else
-  echo "MAKEFLAGS=\"--jobs=$(nproc)\"" >> /etc/makepkg.conf
+  echo "MAKEFLAGS=\"-j\$(nproc)\"" >> /etc/makepkg.conf
 fi
 """
+
 
 def pacman_block():
     return r"""

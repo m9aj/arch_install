@@ -87,6 +87,9 @@ features:
     claude_code:
       enabled: false
 
+    antigravity:
+      enabled: false
+
     # secure_boot MUST remain last — it signs the initramfs produced by plymouth
     # and any other feature that modifies /boot. Do not reorder above plymouth.
     secure_boot:

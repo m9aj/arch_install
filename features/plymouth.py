@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.helper_basic import run
+from core.helper_basic import run, apply_kernel_parameter
 from core.logger import logger
 
 PACMAN_PACKAGES = ["plymouth"]
@@ -18,17 +18,9 @@ def configure(config, feature):
     theme = cfg.get("theme", "spinner")
     init = config.get("boot", {}).get("init", "mkinitcpio")
 
-    # Persistent Kernel Parameters in bootloader (systemd-boot)
-    boot_mount = config.get("boot", {}).get("boot_mount", "/boot")
-    boot_entry = f"{boot_mount}/loader/entries/arch.conf"
-    if os.path.exists(boot_entry):
-        logger.info(f"[plymouth] Updating {boot_entry} with kernel parameters")
-        for param in KERNEL_PARAMS:
-            check_cmd = f"sudo grep -q '{param}' {boot_entry}"
-            if run(f"{check_cmd}", check=False).returncode != 0:
-                run(f"sudo sed -i '/^options/ s/$/ {param}/' {boot_entry}")
-    else:
-        logger.warning(f"[plymouth] Could not find {boot_entry} to apply kernel parameters")
+    # Persistent Kernel Parameters in bootloader
+    for param in KERNEL_PARAMS:
+        apply_kernel_parameter(config, param)
 
     if init == "mkinitcpio":
         # Inject hooks

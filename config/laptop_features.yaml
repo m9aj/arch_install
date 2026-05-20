@@ -39,5 +39,8 @@ features:
     claude_code:
       enabled: true
 
+    antigravity:
+      enabled: true
+
     secure_boot:
       enabled: false

@@ -6,7 +6,7 @@ import os
 import shlex
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.helper_basic import run
+from core.helper_basic import run, apply_kernel_parameter
 from core.logger import logger
 
 PACMAN_PACKAGES = ["zram-generator"]
@@ -20,18 +20,9 @@ def configure(config, feature):
     # Disable zswap for current session
     run("echo 0 | sudo tee /sys/module/zswap/parameters/enabled")
 
-    # Persistent Kernel Parameters in bootloader (systemd-boot)
-    boot_mount = config.get("boot", {}).get("boot_mount", "/boot")
-    boot_entry = f"{boot_mount}/loader/entries/arch.conf"
-    if os.path.exists(boot_entry):
-        logger.info(f"[zram] Updating {boot_entry} with kernel parameters")
-        for param in KERNEL_PARAMS:
-            check_cmd = f"grep -q '{param}' {boot_entry}"
-            if run(f"{check_cmd}", check=False).returncode != 0:
-                # Append it to the end of the options line
-                run(f"sudo sed -i '/^options/ s/$/ {param}/' {boot_entry}")
-    else:
-        logger.warning(f"[zram] Could not find {boot_entry} to apply kernel parameters")
+    # Persistent Kernel Parameters in bootloader
+    for param in KERNEL_PARAMS:
+        apply_kernel_parameter(config, param)
 
     cfg = feature.get("config", {})
     size = cfg.get("size", "min(ram / 2, 4096)")

@@ -19,6 +19,8 @@ def install_bootloader(config):
 
     if bootloader == "systemd-boot":
         install_systemd_boot(config)
+    elif bootloader == "refind":
+        install_refind(config)
     elif bootloader == "none":
         register_uki_efi(config)
     else:
@@ -209,3 +211,45 @@ def register_uki_efi(config):
 
     run(f"efibootmgr --create --disk /dev/{disk_name} --part {part_num} "
         f"--label {shlex.quote(title)} --loader '/EFI/Linux/{efi}'")
+
+
+# ------------------------
+# rEFInd
+# ------------------------
+
+def install_refind(config):
+    boot = config.get("boot", {})
+    uki = boot.get("uki", False)
+
+    # Run refind-install in the chroot environment.
+    logger.info("Installing rEFInd via refind-install inside chroot")
+    chroot("refind-install")
+
+    if uki:
+        logger.info("rEFInd: UKI mode enabled. Kernels will be auto-scanned from EFI/Linux.")
+    else:
+        generate_refind_linux_conf(config)
+
+
+def generate_refind_linux_conf(config):
+    root_part  = get_root_partition(config)
+    boot       = config.get("boot", {})
+    boot_mount = boot.get("boot_mount", "/boot")
+    
+    system = resolve_system(config)
+    params = list(system.get("kernel_params", []))
+    if "rootflags=subvol=@" not in " ".join(params):
+        params.append("rootflags=subvol=@")
+    param_str = " ".join(params)
+
+    uuid = run(f"blkid -s UUID -o value {root_part}").stdout.strip()
+    
+    conf_path = f"/mnt{boot_mount}/refind_linux.conf"
+    logger.info(f"Writing rEFInd kernel configuration to {conf_path}")
+    
+    run(f"""cat > {conf_path} <<_EOF_
+"Boot with standard options"  "root=UUID={uuid} rw {param_str}"
+"Boot to single-user mode"    "root=UUID={uuid} rw {param_str} single"
+"Boot with minimal options"   "root=UUID={uuid} rw"
+_EOF_""")
+

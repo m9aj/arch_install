@@ -25,7 +25,7 @@ system:
   hostname: Titan
 
 boot:
-  bootloader: systemd-boot
+  bootloader: refind
   init: mkinitcpio
-  uki: false
-  boot_mount: /boot
+  uki: true
+  boot_mount: /boot/efi

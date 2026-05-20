@@ -133,5 +133,7 @@ def clean_efi(config):
     run(f"rm -rf {mountpoint}/EFI/BOOT")
     run(f"rm -rf {mountpoint}/EFI/Linux")
     run(f"rm -rf {mountpoint}/EFI/systemd")
+    run(f"rm -rf {mountpoint}/EFI/refind")
+    run(f"rm -f {mountpoint}/refind_linux.conf")
 
 

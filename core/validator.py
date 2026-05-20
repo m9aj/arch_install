@@ -15,7 +15,7 @@ def validate(config):
     require(config, "system.timezone")
 
     # Boot
-    enum(config, "boot.bootloader", ["systemd-boot", "none"])
+    enum(config, "boot.bootloader", ["systemd-boot", "refind", "none"])
     enum(config, "boot.init",       ["mkinitcpio", "dracut", "booster"])
 
     uki        = bool(_get(config, "boot.uki"))
