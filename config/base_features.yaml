@@ -4,17 +4,6 @@
 # Packages and services are declared in the respective features/<name>.py file.
 
 features:
-    pacoloco:
-      server:
-        enabled: false
-        config:
-          port: 9129
-          cache_dir: /var/cache/pacoloco
-      client:
-        enabled: false
-        config:
-          url: http://media.local:9129    # e.g. http://media.local:9129
-
     local_aur_repo:
       server:
         enabled: false

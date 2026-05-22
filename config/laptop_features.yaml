@@ -2,10 +2,6 @@
 # Laptop — enabled features and post-install configuration.
 
 features:
-    pacoloco:
-      client:
-        enabled: true
-
     local_aur_repo:
       client:
         enabled: true

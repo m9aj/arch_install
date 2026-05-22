@@ -2,10 +2,6 @@
 # Server — enabled features and post-install configuration.
 
 features:
-    pacoloco:
-      server:
-        enabled: true
-
     local_aur_repo:
       server:
         enabled: true

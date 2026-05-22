@@ -17,7 +17,7 @@ from postreboot import (
     aur, home_shortcuts, features, dotfiles,
     config_steps, gnome_config, themes
 )
-from features import local_aur_repo, pacoloco
+from features import local_aur_repo
 
 STEPS = [
     ("home_shortcuts",        home_shortcuts.setup_user_dirs),
@@ -25,7 +25,6 @@ STEPS = [
     ("bluetooth",             dotfiles.setup_bluetooth),
     ("network_hosts",          network.apply_static_hosts),
     ("local_aur_repo_client", local_aur_repo.configure_client),
-    ("pacoloco_client",       pacoloco.configure_client),
     ("aur_helper",            aur.install_aur_helper),
     ("features",        features.run_enabled_features),
     ("aur_packages",    aur.install_aur_packages),

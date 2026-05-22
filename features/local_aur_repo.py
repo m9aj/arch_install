@@ -6,8 +6,8 @@
 # building and updating packages asynchronously after install.
 #
 # Client role (configure_client): adds [local-aur-repo] to pacman.conf and installs
-# a NetworkManager dispatcher that keeps /etc/hosts and the pacoloco mirrorlist in
-# sync as you move between home LAN and Tailscale.
+# a NetworkManager dispatcher that keeps /etc/hosts in sync as you move between
+# home LAN and Tailscale.
 #
 # Called as an early STEP in postreboot/main.py (before aur_packages).
 

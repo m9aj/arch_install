@@ -13,9 +13,6 @@ root:
       reuse: yes
     - name: "@home"
       reuse: no
-    - name: "@pacoloco"
-      mount: /var/cache/pacoloco
-      reuse: yes
     - name: "@local_aur_repo"
       mount: /srv/local-aur-repo
       reuse: yes
