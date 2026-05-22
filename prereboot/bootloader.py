@@ -197,6 +197,26 @@ def register_uki_efi(config):
     disk_name     = run(f"lsblk -no PKNAME {boot_dev_path}").stdout.strip()
     part_num      = run(f"cat /sys/class/block/{part_name}/partition").stdout.strip()
 
+    # Check if an entry with the same partition UUID and loader path already exists
+    try:
+        partuuid = run(f"blkid -s PARTUUID -o value {boot_dev_path}").stdout.strip().lower()
+        if partuuid:
+            efiboot_out = run("efibootmgr -v", check=False).stdout.lower()
+            normalized_loader = f"\\efi\\linux\\{efi.lower()}".replace("\\\\", "\\")
+            
+            exists = False
+            for line in efiboot_out.splitlines():
+                # Normalize line backslashes to handle variation in efibootmgr representation
+                normalized_line = line.replace("\\\\", "\\")
+                if partuuid in normalized_line and normalized_loader in normalized_line:
+                    logger.info(f"EFI boot entry already exists for {efi} on partition {partuuid}. Skipping creation.")
+                    exists = True
+                    break
+            if exists:
+                return
+    except Exception as e:
+        logger.warning(f"Failed to check existing EFI boot entries: {e}. Proceeding with creation.")
+
     run(f"efibootmgr --create --disk /dev/{disk_name} --part {part_num} "
         f"--label {shlex.quote(title)} --loader '\\EFI\\Linux\\{efi}'")
 
