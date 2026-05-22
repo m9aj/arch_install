@@ -45,19 +45,6 @@ def connect_wifi(config):
     return check_internet()
 
 
-def apply_static_hosts(config):
-    hosts = config.get("network", {}).get("hosts", {})
-    if not hosts:
-        return False
-    for hostname, ip in hosts.items():
-        check = run(f"grep -q '[[:space:]]{hostname}' /etc/hosts", check=False)
-        if check.returncode == 0:
-            run(f"sudo sed -i '/[[:space:]]{hostname}$/s/^.*/{ip}  {hostname}/' /etc/hosts")
-        else:
-            run(f"echo '{ip}  {hostname}' | sudo tee -a /etc/hosts > /dev/null")
-        logger.info(f"[network] /etc/hosts: {ip}  {hostname}")
-    return True
-
 
 def ensure_internet(config, try_wifi=False):
     """Check internet. In live ISO (try_wifi=True), attempt WiFi if not connected."""

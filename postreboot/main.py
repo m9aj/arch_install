@@ -23,7 +23,7 @@ STEPS = [
     ("home_shortcuts",        home_shortcuts.setup_user_dirs),
     ("dotfiles",              dotfiles.setup_dotfiles),
     ("bluetooth",             dotfiles.setup_bluetooth),
-    ("network_hosts",          network.apply_static_hosts),
+    ("network_hosts",          config_steps.apply_static_hosts),
     ("local_aur_repo_client", local_aur_repo.configure_client),
     ("aur_helper",            aur.install_aur_helper),
     ("features",        features.run_enabled_features),

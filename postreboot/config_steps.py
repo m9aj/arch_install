@@ -25,3 +25,15 @@ def configure_citrix(config):
     run(f"cp {src}/{{All_Regions,Trusted_Region,Unknown_Region,canonicalization,regions}}.ini {ica_dir}/")
 
 
+def apply_static_hosts(config):
+    hosts = config.get("network", {}).get("hosts", {})
+    if not hosts:
+        return False
+    for hostname, ip in hosts.items():
+        check = run(f"grep -q '[[:space:]]{hostname}' /etc/hosts", check=False)
+        if check.returncode == 0:
+            run(f"sudo sed -i '/[[:space:]]{hostname}$/s/^.*/{ip}  {hostname}/' /etc/hosts")
+        else:
+            run(f"echo '{ip}  {hostname}' | sudo tee -a /etc/hosts > /dev/null")
+        logger.info(f"[network] /etc/hosts: {ip}  {hostname}")
+    return True
