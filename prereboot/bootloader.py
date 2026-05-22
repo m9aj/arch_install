@@ -3,7 +3,7 @@
 import os
 import shlex
 from core.helper_basic import run, chroot
-from core.helper_disk import get_root_partition, get_partition
+from core.helper_disk import get_root_partition
 from core.resolver import resolve_system
 from core.logger import logger
 
@@ -113,20 +113,8 @@ def install_systemd_boot(config):
     boot       = config.get("boot", {})
     uki        = boot.get("uki", False)
     boot_mount = boot.get("boot_mount", "/boot")
-    disk       = config["disk"]
-    boot_dev   = get_partition(disk["disk_by_id"], disk["boot_part"])
+    chroot(f"bootctl --esp-path={boot_mount} install")
 
-    run(f"mkdir -p /mnt{boot_mount}/EFI/systemd /mnt{boot_mount}/EFI/BOOT")
-    run(f"cp /mnt/usr/lib/systemd/boot/efi/systemd-bootx64.efi /mnt{boot_mount}/EFI/systemd/")
-    run(f"cp /mnt/usr/lib/systemd/boot/efi/systemd-bootx64.efi /mnt{boot_mount}/EFI/BOOT/bootx64.efi")
-
-    boot_dev_path = run(f"readlink -f {boot_dev}").stdout.strip()
-    part_name     = os.path.basename(boot_dev_path)
-    disk_name     = run(f"lsblk -no PKNAME {boot_dev_path}").stdout.strip()
-    part_num      = run(f"cat /sys/class/block/{part_name}/partition").stdout.strip()
-
-    run(f"efibootmgr --create --disk /dev/{disk_name} --part {part_num} "
-        f"--label 'Linux Boot Manager' --loader '\\EFI\\systemd\\systemd-bootx64.efi'")
 
     configure_systemd_boot(config)
 
