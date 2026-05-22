@@ -43,6 +43,7 @@ Standalone modules for post-installation system features. Each module typically 
 - `secure_boot.py`: Tools for signing kernels and managing keys.
 - `snapper.py`: Btrfs snapshot management.
 - `tailscale.py`: Tailscale VPN integration.
+- `webapps.py`: FirefoxPWA installation and desktop launchers synchronization.
 - `zram.py`: Zram-generator configuration.
 
 ## Phase 1: Pre-reboot (`prereboot/`)

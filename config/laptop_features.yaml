@@ -38,5 +38,8 @@ features:
     antigravity:
       enabled: true
 
+    webapps:
+      enabled: true
+
     secure_boot:
       enabled: false

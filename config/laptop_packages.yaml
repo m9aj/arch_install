@@ -13,7 +13,6 @@ machine_specific:
   pacman:
     - fprintd
     - tesseract-data-eng
-    - tangram
   aur:
     - frog-ocr-no-telemetry
     - icaclient
