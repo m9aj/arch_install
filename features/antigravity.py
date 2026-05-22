@@ -14,8 +14,6 @@ PACMAN_PACKAGES = ["curl"]
 
 def configure(config, feature):
     logger.info("[antigravity] Installing Antigravity CLI")
-    cfg = feature.get("config", {})
-    skip_path = cfg.get("skip_path", True)
 
     import tempfile
     import shutil
@@ -26,14 +24,13 @@ def configure(config, feature):
         # Download the official installer script
         run(f"curl -fsSL https://antigravity.google/cli/install.sh -o {script_path}")
 
-        if skip_path:
-            logger.info("[antigravity] Patching installer script to skip shell profile PATH modification")
-            with open(script_path, "r") as f:
-                content = f.read()
-            # Replace the installer's native agy install calls with --skip-path
-            content = content.replace('"$BINARY_PATH" install', '"$BINARY_PATH" install --skip-path')
-            with open(script_path, "w") as f:
-                f.write(content)
+        logger.info("[antigravity] Patching installer script to skip shell profile PATH modification")
+        with open(script_path, "r") as f:
+            content = f.read()
+        # Replace the installer's native agy install calls with --skip-path
+        content = content.replace('"$BINARY_PATH" install', '"$BINARY_PATH" install --skip-path')
+        with open(script_path, "w") as f:
+            f.write(content)
 
         # Run the installer script
         run(f"bash {script_path}")
