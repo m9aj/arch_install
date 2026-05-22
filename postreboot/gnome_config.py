@@ -251,13 +251,14 @@ def apply_app_picker_layout(config):
 
     logger.info("Applying GNOME app picker layout")
 
+    folders = cfg.get("folders", {})
     # GNOME expects: [{'app1': <{'position': <0>}>}, {'folder1': <{'position': <1>}>}]
     pages_str = []
     for page in layout:
         items = []
         for i, item in enumerate(page):
-            # If it doesn't look like a desktop file, it's likely a folder name
-            name = normalize_desktop_name(item) if "." in item else item
+            # If the item is in the configured folder keys, treat it as a folder; otherwise normalize to a .desktop filename
+            name = item if item in folders else normalize_desktop_name(item)
             items.append(f"'{name}': <{{'position': <{i}>}}>")
         pages_str.append("{" + ", ".join(items) + "}")
 
