@@ -4,14 +4,7 @@ import os
 import subprocess
 import threading
 import shlex
-from core.logger import logger
-
-_stderr_log_path = None
-
-def set_stderr_log(path):
-    global _stderr_log_path
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    _stderr_log_path = path
+from core.logger import logger, get_stderr_log_path
 
 
 # ------------------------
@@ -73,10 +66,12 @@ def run(cmd, check=True, env=None, log_cmd=True):
     return_code = process.wait()
 
     if full_stderr:
-        if _stderr_log_path:
-            with open(_stderr_log_path, "a") as f:
+        stderr_log = get_stderr_log_path()
+        if stderr_log:
+            with open(stderr_log, "a") as f:
                 f.write(f"\n[CMD] {cmd}\n")
                 f.write("\n".join(full_stderr) + "\n")
+
         else:
             for line in full_stderr:
                 logger.warning(f"[STDERR] {line}")

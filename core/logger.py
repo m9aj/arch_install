@@ -21,3 +21,17 @@ def setup(log_path):
 
     logger.addHandler(file_handler)
     logger.info(f"Logging to {log_path}")
+
+
+_stderr_log_path = None
+
+
+def set_stderr_log(path):
+    global _stderr_log_path
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    _stderr_log_path = path
+
+
+def get_stderr_log_path():
+    return _stderr_log_path
+

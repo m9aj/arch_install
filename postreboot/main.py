@@ -7,10 +7,12 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.helper_core import get_config_path, load_profile_config, LOGS_DIR
-from core.helper_basic import set_stderr_log
+from core.helper_basic import run
 from core.validator import validate
 from core.state import is_done, mark_done, mark_skipped, mark_failed
-from core.logger import logger, setup as setup_logger
+from core.logger import logger, setup as setup_logger, set_stderr_log
+
+
 from core import helper_network as network
 
 from postreboot import (
