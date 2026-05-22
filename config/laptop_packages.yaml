@@ -12,7 +12,6 @@ pkgprofile:
 machine_specific:
   pacman:
     - fprintd
-    - gemini-cli
     - tesseract-data-eng
     - tangram
   aur:

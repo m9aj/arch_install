@@ -11,7 +11,6 @@ pkgprofile:
 
 machine_specific:
   pacman:
-    - gemini-cli
     - tesseract-data-eng
   aur:
     - frog-ocr-no-telemetry
