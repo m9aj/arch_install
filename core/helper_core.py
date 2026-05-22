@@ -100,6 +100,14 @@ def load_yaml(filename):
     with open(path) as f:
         return yaml.safe_load(f)
 
+def load_wifi_bootstrap():
+    """Load wifi.yaml directly — no age decryption needed."""
+    path = os.path.join(CONFIG_DIR, "wifi.yaml")
+    if not os.path.exists(path):
+        return {}
+    with open(path) as f:
+        return yaml.safe_load(f) or {}
+
 def merge_dicts(base, override):
     result = base.copy()
 
