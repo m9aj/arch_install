@@ -16,7 +16,7 @@ from core.logger import logger, setup as setup_logger, set_stderr_log
 from core import helper_network as network
 
 from postreboot import (
-    aur, home_shortcuts, features, dotfiles,
+    aur, home_shortcuts, feature_orchestrator, dotfiles,
     config_steps, gnome_config, themes
 )
 from features import local_aur_repo
@@ -28,7 +28,8 @@ STEPS = [
     ("network_hosts",          config_steps.apply_static_hosts),
     ("local_aur_repo_client", local_aur_repo.configure_client),
     ("aur_helper",            aur.install_aur_helper),
-    ("features",        features.run_enabled_features),
+    ("features",        feature_orchestrator.run_enabled_features),
+
     ("aur_packages",    aur.install_aur_packages),
     ("gsettings",       gnome_config.apply_gsettings),
     ("lockscreen_config", gnome_config.apply_lockscreen_config),

@@ -64,8 +64,9 @@ case "${1:-}" in
         ;;
     feature)
         shift
-        exec python3 "$DIR/postreboot/run_feature.py" "$@"
+        exec python3 "$DIR/postreboot/feature_manual_install.py" "$@"
         ;;
+
     post)
         shift
         # Take ownership of any profile marker files and the entire logs directory

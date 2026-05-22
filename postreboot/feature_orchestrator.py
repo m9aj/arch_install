@@ -1,4 +1,4 @@
-# postreboot/features.py
+# postreboot/feature_orchestrator.py
 # Dynamic feature runner — iterates enabled features in config and executes
 # their respective scripts in the features/ directory.
 

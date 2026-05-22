@@ -1,4 +1,4 @@
-# postreboot/run_feature.py
+# postreboot/feature_manual_install.py
 # Standalone feature runner — installs and configures a single named feature.
 # Usage: ./arch-install feature <name> [profile]
 

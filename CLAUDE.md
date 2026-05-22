@@ -60,7 +60,7 @@ Progress is stored in `logs/state.json`. Each step calls `state.is_done(name)` b
 
 ### Feature Modules (`features/`)
 
-Each feature (`firewall`, `zram`, `tailscale`, etc.) is a standalone module. Features are gated by an `enabled: true` flag in the YAML config. `postreboot/features.py` iterates and dispatches them.
+Each feature (`firewall`, `zram`, `tailscale`, etc.) is a standalone module. Features are gated by an `enabled: true` flag in the YAML config. `postreboot/feature_orchestrator.py` iterates and dispatches them.
 
 ### GNOME Configuration
 

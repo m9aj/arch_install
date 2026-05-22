@@ -69,4 +69,6 @@ Executed after rebooting into the new system.
 - `aur.py`: Installation of the AUR helper and requested AUR packages.
 - `config_steps.py`: Miscellaneous system configuration (network optimisations, Citrix, etc.).
 - `home_shortcuts.py`: Sets up standard XDG user directories and custom mount points.
-- `run_feature.py`: Standalone runner to install and configure a single named feature (`./arch-install feature <name>`).
+- `feature_orchestrator.py`: Dynamic runner that iterates over and runs all enabled features.
+- `feature_manual_install.py`: Standalone runner to install and configure a single named feature (`./arch-install feature <name>`).
+
