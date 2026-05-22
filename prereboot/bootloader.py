@@ -210,7 +210,8 @@ def register_uki_efi(config):
     part_num      = run(f"cat /sys/class/block/{part_name}/partition").stdout.strip()
 
     run(f"efibootmgr --create --disk /dev/{disk_name} --part {part_num} "
-        f"--label {shlex.quote(title)} --loader '/EFI/Linux/{efi}'")
+        f"--label {shlex.quote(title)} --loader '\\EFI\\Linux\\{efi}'")
+
 
 
 # ------------------------
@@ -244,12 +245,34 @@ def generate_refind_linux_conf(config):
 
     uuid = run(f"blkid -s UUID -o value {root_part}").stdout.strip()
     
+    cpu = config.get("hardware", {}).get("cpu", "auto")
+    if cpu == "auto":
+        from core.resolver import detect_cpu
+        cpu = detect_cpu()
+
+    ucode_img = None
+    if cpu == "intel":
+        ucode_img = "intel-ucode.img"
+    elif cpu == "amd":
+        ucode_img = "amd-ucode.img"
+
+    if ucode_img:
+        initrd_img = initramfs_filename(config)
+        opts = f"initrd=/{ucode_img} initrd=/{initrd_img} root=UUID={uuid} rw {param_str}"
+        single_opts = f"initrd=/{ucode_img} initrd=/{initrd_img} root=UUID={uuid} rw {param_str} single"
+        minimal_opts = f"initrd=/{ucode_img} initrd=/{initrd_img} root=UUID={uuid} rw"
+    else:
+        opts = f"root=UUID={uuid} rw {param_str}"
+        single_opts = f"root=UUID={uuid} rw {param_str} single"
+        minimal_opts = f"root=UUID={uuid} rw"
+
     conf_path = f"/mnt{boot_mount}/refind_linux.conf"
     logger.info(f"Writing rEFInd kernel configuration to {conf_path}")
     
     run(f"""cat > {conf_path} <<_EOF_
-"Boot with standard options"  "root=UUID={uuid} rw {param_str}"
-"Boot to single-user mode"    "root=UUID={uuid} rw {param_str} single"
-"Boot with minimal options"   "root=UUID={uuid} rw"
+"Boot with standard options"  "{opts}"
+"Boot to single-user mode"    "{single_opts}"
+"Boot with minimal options"   "{minimal_opts}"
 _EOF_""")
+
 
