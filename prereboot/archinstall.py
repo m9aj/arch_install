@@ -108,8 +108,11 @@ def configure_locales():
 def create_user(config):
     user = config["system"]["username"]
     fullname = config["system"].get("fullname", user)
-    chroot(f"id -u {user} >/dev/null 2>&1 || useradd -m -G wheel -s /bin/zsh -c '{fullname}' {user}")
-    chroot("grep -qF '%wheel ALL=(ALL:ALL) ALL' /etc/sudoers || echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers")
+    chroot(f"id -u {user} >/dev/null 2>&1 || useradd -m -s /bin/zsh -c '{fullname}' {user}")
+    chroot(f"usermod -aG wheel {user}")
+    # Uncomment the standard %wheel rule if commented out, otherwise append it
+    chroot("sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers")
+    chroot("grep -q '^%wheel ALL=(ALL:ALL) ALL' /etc/sudoers || echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers")
 
 def set_passwords(config):
     root_pw = config["system"].get("root_password")
