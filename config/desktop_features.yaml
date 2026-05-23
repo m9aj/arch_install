@@ -41,6 +41,3 @@ features:
     webapps:
       enabled: true
 
-    secure_boot:
-      enabled: false
-

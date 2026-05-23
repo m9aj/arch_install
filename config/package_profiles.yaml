@@ -183,10 +183,6 @@ post_profiles:
       - shntool
       - cuetools
 
-  secure_boot:
-    packages:
-      - sbctl
-
   partitioning:
     packages:
       - gptfdisk

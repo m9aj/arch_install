@@ -37,6 +37,3 @@ features:
 
     antigravity:
       enabled: false
-
-    secure_boot:
-      enabled: false

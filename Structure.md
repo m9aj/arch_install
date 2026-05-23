@@ -40,7 +40,6 @@ Standalone modules for post-installation system features. Each module typically 
 - `pia.py`: Private Internet Access VPN setup.
 - `plymouth.py`: Boot splash screen configuration.
 - `reflector.py`: Pacman mirrorlist optimisation.
-- `secure_boot.py`: Tools for signing kernels and managing keys.
 - `snapper.py`: Btrfs snapshot management.
 - `tailscale.py`: Tailscale VPN integration.
 - `webapps.py`: FirefoxPWA installation and desktop launchers synchronization.
