@@ -51,6 +51,9 @@ def configure(config, feature):
             "AUTOCONNECT": autoconnect,
             "PIA_CONNECT": "false",
             "PIA_PF": "false",
+            "DIP_TOKEN": "no",
+            "DISABLE_IPV6": "yes",
+            "PIA_DNS": "true",
         }
 
         # Run the setup script with environment variables, avoiding CLI leakage
