@@ -291,6 +291,24 @@ def install_refind(config):
     else:
         logger.warning(f"Could not find Arch icon at {src_icon} to copy for boot entries")
 
+    # Set up automatic updates for rEFInd via a pacman hook
+    hooks_dir = "/mnt/etc/pacman.d/hooks"
+    hook_path = f"{hooks_dir}/refind.hook"
+    logger.info(f"Creating pacman hook for automatic rEFInd updates at {hook_path}")
+    run(f"mkdir -p {hooks_dir}")
+    hook_content = """[Trigger]
+Operation = Upgrade
+Type = Package
+Target = refind
+
+[Action]
+Description = Updating rEFInd on ESP...
+When = PostTransaction
+Exec = /usr/bin/refind-install
+"""
+    with open(hook_path, "w") as f:
+        f.write(hook_content)
+
 
 def generate_refind_linux_conf(config):
     root_part  = get_root_partition(config)
