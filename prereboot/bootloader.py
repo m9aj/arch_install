@@ -264,10 +264,14 @@ def install_refind(config):
         theme_installed = False
         if not os.path.exists(theme_path):
             try:
+                import shutil
+                if not shutil.which("git"):
+                    logger.info("git is not installed on the live ISO. Attempting to install it...")
+                    run("pacman -Sy --noconfirm git")
                 run(f"git clone https://github.com/Wi-Fight-IT/rEFInd-digital-void {theme_path}")
                 theme_installed = True
             except Exception as e:
-                logger.warning(f"Failed to clone rEFInd theme: {e}. Skipping theme configuration.")
+                logger.warning(f"Failed to install git or clone rEFInd theme: {e}. Skipping theme configuration.")
         else:
             logger.info("Theme already cloned, skipping clone")
             theme_installed = True
