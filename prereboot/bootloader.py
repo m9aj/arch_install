@@ -261,13 +261,19 @@ def install_refind(config):
         theme_path = f"{theme_dir}/rEFInd-digital-void"
         logger.info("Installing rEFInd theme: rEFInd-digital-void")
         run(f"mkdir -p {theme_dir}")
+        theme_installed = False
         if not os.path.exists(theme_path):
-            run(f"git clone https://github.com/Wi-Fight-IT/rEFInd-digital-void {theme_path}")
+            try:
+                run(f"git clone https://github.com/Wi-Fight-IT/rEFInd-digital-void {theme_path}")
+                theme_installed = True
+            except Exception as e:
+                logger.warning(f"Failed to clone rEFInd theme: {e}. Skipping theme configuration.")
         else:
             logger.info("Theme already cloned, skipping clone")
+            theme_installed = True
 
         # Append theme include if not already present
-        if "include themes/rEFInd-digital-void/theme.conf" not in content:
+        if theme_installed and "include themes/rEFInd-digital-void/theme.conf" not in content:
             content += "\ninclude themes/rEFInd-digital-void/theme.conf\n"
 
         with open(refind_conf_path, "w") as f:
