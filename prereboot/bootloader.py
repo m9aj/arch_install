@@ -283,9 +283,42 @@ def install_refind(config):
         with open(refind_conf_path, "w") as f:
             f.write(content)
 
+        # Update the theme config file to set background to background.blue.png
+        if theme_installed:
+            theme_conf_path = f"{theme_path}/theme.conf"
+            if os.path.exists(theme_conf_path):
+                logger.info(f"Setting blue background in {theme_conf_path}")
+                with open(theme_conf_path, "r") as f:
+                    theme_conf_content = f.read()
+
+                # Replace banner line
+                import re
+                if re.search(r"^\s*banner\s+", theme_conf_content, re.MULTILINE):
+                    theme_conf_content = re.sub(
+                        r"^\s*banner\s+.*$",
+                        "banner themes/rEFInd-digital-void/background.blue.png",
+                        theme_conf_content,
+                        flags=re.MULTILINE
+                    )
+                else:
+                    theme_conf_content += "\nbanner themes/rEFInd-digital-void/background.blue.png\n"
+
+                with open(theme_conf_path, "w") as f:
+                    f.write(theme_conf_content)
+
     # Set Arch Linux logo for boot entries (copy os_arch.png)
-    src_icon = "/mnt/usr/share/refind/icons/os_arch.png"
-    if os.path.exists(src_icon):
+    src_icon = None
+    theme_icon = f"/mnt{boot_mount}/EFI/refind/themes/rEFInd-digital-void/icons/os_arch.png"
+    fallback_icon = "/mnt/usr/share/refind/icons/os_arch.png"
+
+    if os.path.exists(theme_icon):
+        src_icon = theme_icon
+        logger.info(f"Using theme Arch icon: {src_icon}")
+    elif os.path.exists(fallback_icon):
+        src_icon = fallback_icon
+        logger.info(f"Using fallback system Arch icon: {src_icon}")
+
+    if src_icon:
         import glob
         # For standard kernels in /boot (represented as /mnt/boot/)
         for kernel in glob.glob("/mnt/boot/vmlinuz-*"):
@@ -299,7 +332,7 @@ def install_refind(config):
             run(f"cp {src_icon} {base_name}.png")
             run(f"cp {src_icon} {uki_file}.png")
     else:
-        logger.warning(f"Could not find Arch icon at {src_icon} to copy for boot entries")
+        logger.warning("Could not find any Arch icon to copy for boot entries")
 
     # Set up automatic updates for rEFInd via a pacman hook
     hooks_dir = "/mnt/etc/pacman.d/hooks"
