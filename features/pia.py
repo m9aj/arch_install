@@ -54,7 +54,7 @@ def configure(config, feature):
         }
 
         # Run the setup script with environment variables, avoiding CLI leakage
-        cmd = f"sudo -E {temp_dir}/run_setup.sh"
+        cmd = f"cd {shlex.quote(temp_dir)} && sudo -E ./run_setup.sh 2>&1"
         logger.info(f"[pia] Running setup script to configure WireGuard (region: {preferred_region or 'auto'})")
         run(cmd, env=setup_env, log_cmd=False)
 
