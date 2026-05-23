@@ -229,6 +229,7 @@ def register_uki_efi(config):
 def install_refind(config):
     boot = config.get("boot", {})
     uki = boot.get("uki", False)
+    boot_mount = boot.get("boot_mount", "/boot")
 
     # Run refind-install in the chroot environment.
     logger.info("Installing rEFInd via refind-install inside chroot")
@@ -238,6 +239,57 @@ def install_refind(config):
         logger.info("rEFInd: UKI mode enabled. Kernels will be auto-scanned from EFI/Linux.")
     else:
         generate_refind_linux_conf(config)
+
+    # Further configuration of rEFInd
+    refind_conf_path = f"/mnt{boot_mount}/EFI/refind/refind.conf"
+    if os.path.exists(refind_conf_path):
+        logger.info(f"Configuring rEFInd resolution in {refind_conf_path}")
+        with open(refind_conf_path, "r") as f:
+            content = f.read()
+
+        # Set resolution to max
+        import re
+        if re.search(r"^\s*resolution\s+", content, re.MULTILINE):
+            content = re.sub(r"^\s*resolution\s+.*$", "resolution max", content, flags=re.MULTILINE)
+        elif re.search(r"^\s*#\s*resolution\s+", content, re.MULTILINE):
+            content = re.sub(r"^\s*#\s*resolution\s+.*$", "resolution max", content, flags=re.MULTILINE)
+        else:
+            content += "\nresolution max\n"
+
+        # Install digital-void theme
+        theme_dir = f"/mnt{boot_mount}/EFI/refind/themes"
+        theme_path = f"{theme_dir}/rEFInd-digital-void"
+        logger.info("Installing rEFInd theme: rEFInd-digital-void")
+        run(f"mkdir -p {theme_dir}")
+        if not os.path.exists(theme_path):
+            run(f"git clone https://github.com/Wi-Fight-IT/rEFInd-digital-void {theme_path}")
+        else:
+            logger.info("Theme already cloned, skipping clone")
+
+        # Append theme include if not already present
+        if "include themes/rEFInd-digital-void/theme.conf" not in content:
+            content += "\ninclude themes/rEFInd-digital-void/theme.conf\n"
+
+        with open(refind_conf_path, "w") as f:
+            f.write(content)
+
+    # Set Arch Linux logo for boot entries (copy os_arch.png)
+    src_icon = "/mnt/usr/share/refind/icons/os_arch.png"
+    if os.path.exists(src_icon):
+        import glob
+        # For standard kernels in /boot (represented as /mnt/boot/)
+        for kernel in glob.glob("/mnt/boot/vmlinuz-*"):
+            logger.info(f"Copying Arch icon for standard kernel {kernel} to {kernel}.png")
+            run(f"cp {src_icon} {kernel}.png")
+        # For UKIs in EFI/Linux
+        for uki_file in glob.glob(f"/mnt{boot_mount}/EFI/Linux/*.efi"):
+            # Set icon for both .png and .efi.png filenames for robustness
+            base_name, _ = os.path.splitext(uki_file)
+            logger.info(f"Copying Arch icon for UKI entry to {base_name}.png")
+            run(f"cp {src_icon} {base_name}.png")
+            run(f"cp {src_icon} {uki_file}.png")
+    else:
+        logger.warning(f"Could not find Arch icon at {src_icon} to copy for boot entries")
 
 
 def generate_refind_linux_conf(config):

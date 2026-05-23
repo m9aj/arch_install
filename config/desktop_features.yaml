@@ -33,7 +33,7 @@ features:
       enabled: true
 
     claude_code:
-      enabled: true
+      enabled: false
 
     antigravity:
       enabled: true
@@ -44,5 +44,3 @@ features:
     secure_boot:
       enabled: false
 
-    gaming:
-      enabled: true

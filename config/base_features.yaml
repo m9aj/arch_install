@@ -86,3 +86,4 @@ features:
     # and any other feature that modifies /boot. Do not reorder above plymouth.
     secure_boot:
       enabled: false
+

@@ -32,12 +32,14 @@ case "${1:-}" in
         ;;
     clean)
         echo "[INFO] Cleaning up marker files and logs..."
-        # Identify profile markers by looking at config/*.yaml stems
-        for f in "$DIR"/config/*.yaml; do
-            stem=$(basename "$f" .yaml)
-            if [ "$stem" != "base" ] && [ "$stem" != "package_profiles" ] && [ -f "$DIR/$stem" ]; then
-                rm "$DIR/$stem"
-                echo "  Removed marker: $stem"
+        # Identify profile markers by looking at config/*_core.yaml files
+        for f in "$DIR"/config/*_core.yaml; do
+            if [ -f "$f" ]; then
+                stem=$(basename "$f" _core.yaml)
+                if [ "$stem" != "base" ] && [ -f "$DIR/$stem" ]; then
+                    rm "$DIR/$stem"
+                    echo "  Removed marker: $stem"
+                fi
             fi
         done
         if [ -d "$DIR/logs" ]; then
@@ -70,10 +72,12 @@ case "${1:-}" in
     post)
         shift
         # Take ownership of any profile marker files and the entire logs directory
-        for f in "$DIR"/config/*.yaml; do
-            stem=$(basename "$f" .yaml)
-            if [[ "$stem" != "base" && "$stem" != "package_profiles" && -f "$DIR/$stem" ]]; then
-                sudo chown 1000:1000 "$DIR/$stem"
+        for f in "$DIR"/config/*_core.yaml; do
+            if [ -f "$f" ]; then
+                stem=$(basename "$f" _core.yaml)
+                if [[ "$stem" != "base" && -f "$DIR/$stem" ]]; then
+                    sudo chown 1000:1000 "$DIR/$stem"
+                fi
             fi
         done
         if [ -d "$DIR/logs" ]; then
