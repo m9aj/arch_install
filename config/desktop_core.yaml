@@ -27,5 +27,3 @@ system:
 boot:
   bootloader: refind
   init: mkinitcpio
-  uki: true
-  boot_mount: /boot/efi

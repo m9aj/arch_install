@@ -51,10 +51,8 @@ hardware:
   gpu: auto                               # amd | nvidia | auto (detected via lspci)
 
 boot:
-  bootloader: systemd-boot               # systemd-boot | none (UEFI direct, requires uki: true)
+  bootloader: systemd-boot               # systemd-boot | none (UEFI direct)
   init: mkinitcpio                        # mkinitcpio | dracut | booster
-  uki: false                             # true = build a UKI .efi instead of separate kernel + initramfs
-  boot_mount: /boot                      # EFI mountpoint /boot vs /boot/efi; use /boot/efi when uki: true
   kernel_params:
     - quiet
     - rw

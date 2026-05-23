@@ -56,5 +56,3 @@ system:
 boot:
   bootloader: none
   init: dracut
-  uki: true
-  boot_mount: /boot/efi

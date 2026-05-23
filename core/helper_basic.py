@@ -97,49 +97,34 @@ __CHROOT_EOF__
 
 def apply_kernel_parameter(config, param):
     """
-    Applies a kernel parameter persistently.
-    If systemd-boot (non-UKI) is used, updates /boot/loader/entries/arch.conf.
-    If UKI is used, updates /etc/kernel/cmdline and regenerates the UKI.
+    Applies a kernel parameter persistently by updating /etc/kernel/cmdline and regenerating the UKI.
     """
     boot = config.get("boot", {})
-    boot_mount = boot.get("boot_mount", "/boot")
-    uki = boot.get("uki", False)
     init = boot.get("init", "mkinitcpio")
     kernel = boot.get("kernel", "linux")
+    boot_mount = "/efi"
 
-    if uki:
-        # UKI Mode: Update /etc/kernel/cmdline and regenerate UKI
-        cmdline_path = "/etc/kernel/cmdline"
-        
-        # 1. Update /etc/kernel/cmdline
-        if os.path.exists(cmdline_path):
-            with open(cmdline_path, "r") as f:
-                content = f.read().strip()
-        else:
-            content = ""
-
-        if param not in content.split():
-            logger.info(f"Adding '{param}' to {cmdline_path}")
-            new_content = f"{content} {param}".strip()
-            # Write to /etc/kernel/cmdline using sudo tee to keep it safe and support root-only paths
-            run(f"echo {shlex.quote(new_content)} | sudo tee {cmdline_path} > /dev/null")
-            
-            # 2. Regenerate UKI
-            logger.info("Regenerating UKI after kernel parameter update")
-            if init == "mkinitcpio":
-                run("sudo mkinitcpio -P")
-            elif init == "dracut":
-                efi_name = f"arch-{kernel}.efi"
-                run(f"sudo mkdir -p {boot_mount}/EFI/Linux")
-                run(f"sudo dracut --uefi --force --hostonly {boot_mount}/EFI/Linux/{efi_name}")
+    cmdline_path = "/etc/kernel/cmdline"
+    
+    # 1. Update /etc/kernel/cmdline
+    if os.path.exists(cmdline_path):
+        with open(cmdline_path, "r") as f:
+            content = f.read().strip()
     else:
-        # Non-UKI / systemd-boot Mode
-        boot_entry = f"{boot_mount}/loader/entries/arch.conf"
-        if os.path.exists(boot_entry):
-            logger.info(f"Updating {boot_entry} with kernel parameter: {param}")
-            check_cmd = f"grep -q '{param}' {boot_entry}"
-            if run(f"{check_cmd}", check=False).returncode != 0:
-                run(f"sudo sed -i '/^options/ s/$/ {param}/' {boot_entry}")
-        else:
-            logger.warning(f"Could not find {boot_entry} to apply kernel parameter '{param}'")
+        content = ""
+
+    if param not in content.split():
+        logger.info(f"Adding '{param}' to {cmdline_path}")
+        new_content = f"{content} {param}".strip()
+        # Write to /etc/kernel/cmdline using sudo tee to keep it safe and support root-only paths
+        run(f"echo {shlex.quote(new_content)} | sudo tee {cmdline_path} > /dev/null")
+        
+        # 2. Regenerate UKI
+        logger.info("Regenerating UKI after kernel parameter update")
+        if init == "mkinitcpio":
+            run("sudo mkinitcpio -P")
+        elif init == "dracut":
+            efi_name = f"arch-{kernel}.efi"
+            run(f"sudo mkdir -p {boot_mount}/EFI/Linux")
+            run(f"sudo dracut --uefi --force --hostonly --kernel-cmdline \"$(cat /etc/kernel/cmdline)\" {boot_mount}/EFI/Linux/{efi_name}")
 

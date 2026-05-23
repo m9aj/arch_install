@@ -108,7 +108,7 @@ def mount_subvolumes(config):
 def mount_efi(config):
     disk = config["disk"]
     device = get_partition(disk["disk_by_id"], disk["boot_part"])
-    mount_path = config.get('boot', {}).get('boot_mount', '/boot')
+    mount_path = "/efi"
     mountpoint = f"/mnt{mount_path}"
 
     logger.info(f"Mounting EFI: {device} → {mountpoint}")
@@ -117,7 +117,7 @@ def mount_efi(config):
 
 def clean_efi(config):
     disk = config["disk"]
-    mount_path = config.get('boot', {}).get('boot_mount', '/boot')
+    mount_path = "/efi"
     mountpoint = f"/mnt{mount_path}"
 
     # We always clean old kernels/initramfs and bootloader files from /boot 

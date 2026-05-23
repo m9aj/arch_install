@@ -27,5 +27,3 @@ system:
 boot:
   bootloader: refind
   init: dracut
-  uki: true
-  boot_mount: /boot/efi

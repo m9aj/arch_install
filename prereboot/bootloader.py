@@ -11,9 +11,8 @@ from core.logger import logger
 def install_bootloader(config):
     bootloader = config.get("boot", {}).get("bootloader", "systemd-boot")
     init       = config.get("boot", {}).get("init", "mkinitcpio")
-    uki        = config.get("boot", {}).get("uki", False)
 
-    logger.info(f"Installing bootloader: {bootloader}  (init: {init}, uki: {uki})")
+    logger.info(f"Installing bootloader: {bootloader}  (init: {init}, UKI: True)")
 
     generate_initramfs(config)
 
@@ -35,28 +34,18 @@ def generate_initramfs(config):
     boot   = config.get("boot", {})
     init   = boot.get("init", "mkinitcpio")
     kernel = boot.get("kernel", "linux")
-    uki    = boot.get("uki", False)
+    boot_mount = "/efi"
 
-    if uki:
-        _write_kernel_cmdline(config)
-        if init == "mkinitcpio":
-            _patch_mkinitcpio_preset_for_uki(config)
-            chroot("mkinitcpio -P")
-        elif init == "dracut":
-            efi        = uki_filename(config)
-            boot_mount = boot.get("boot_mount", "/boot")
-            run(f"mkdir -p /mnt{boot_mount}/EFI/Linux")
-            chroot(f"dracut --uefi --force --hostonly {boot_mount}/EFI/Linux/{efi}")
-        return
-
+    _write_kernel_cmdline(config)
     if init == "mkinitcpio":
+        _patch_mkinitcpio_preset_for_uki(config)
         chroot("mkinitcpio -P")
     elif init == "dracut":
-        chroot(f"dracut --force --hostonly /boot/initramfs-{kernel}.img")
-    elif init == "booster":
-        chroot(f"booster build --force /boot/booster-{kernel}.img")
+        efi        = uki_filename(config)
+        run(f"mkdir -p /mnt{boot_mount}/EFI/Linux")
+        chroot(f"dracut --uefi --force --hostonly --kernel-cmdline \"$(cat /etc/kernel/cmdline)\" {boot_mount}/EFI/Linux/{efi}")
     else:
-        raise ValueError(f"Unsupported init system: {init!r}")
+        raise ValueError(f"Unsupported init system for UKI: {init!r}")
 
 
 def _write_kernel_cmdline(config):
@@ -75,7 +64,7 @@ def _write_kernel_cmdline(config):
 def _patch_mkinitcpio_preset_for_uki(config):
     boot       = config.get("boot", {})
     kernel     = boot.get("kernel", "linux")
-    boot_mount = boot.get("boot_mount", "/boot")
+    boot_mount = "/efi"
     main_uki   = uki_filename(config)
 
     run(f"mkdir -p /mnt{boot_mount}/EFI/Linux /mnt/etc/mkinitcpio.d")
@@ -96,37 +85,21 @@ def uki_filename(config):
     return f"arch-{kernel}.efi"
 
 
-def initramfs_filename(config):
-    boot   = config.get("boot", {})
-    init   = boot.get("init", "mkinitcpio")
-    kernel = boot.get("kernel", "linux")
-    if init == "booster":
-        return f"booster-{kernel}.img"
-    return f"initramfs-{kernel}.img"
-
-
 # ------------------------
 # systemd-boot
 # ------------------------
 
 def install_systemd_boot(config):
-    boot       = config.get("boot", {})
-    uki        = boot.get("uki", False)
-    boot_mount = boot.get("boot_mount", "/boot")
+    boot_mount = "/efi"
     chroot(f"bootctl --esp-path={boot_mount} install")
 
-
     configure_systemd_boot(config)
-
-    if uki:
-        logger.info("UKI mode: skipping entry file — systemd-boot auto-discovers EFI/Linux/*.efi")
-    else:
-        generate_systemd_boot_entry(config)
+    logger.info("UKI mode: skipping entry file — systemd-boot auto-discovers EFI/Linux/*.efi")
 
 
 def configure_systemd_boot(config):
     boot         = config.get("boot", {})
-    boot_mount   = boot.get("boot_mount", "/boot")
+    boot_mount   = "/efi"
     sd_cfg       = boot.get("systemd-boot", {})
     timeout      = sd_cfg.get("timeout", 3)
     console_mode = sd_cfg.get("console-mode", "auto")
@@ -139,44 +112,6 @@ default arch
 timeout {timeout}
 console-mode {console_mode}
 editor {editor}
-_EOF_""")
-
-
-def generate_systemd_boot_entry(config):
-    root_part  = get_root_partition(config)
-    boot       = config.get("boot", {})
-    kernel     = boot.get("kernel", "linux")
-    boot_mount = boot.get("boot_mount", "/boot")
-    label      = config.get("arch", {}).get("label", "Arch")
-    de         = config.get("arch", {}).get("de", "")
-    title      = f"{label} {de.capitalize()}".strip()
-    initrd_img = initramfs_filename(config)
-
-    system = resolve_system(config)
-    params = list(system.get("kernel_params", []))
-    if "rootflags=subvol=@" not in " ".join(params):
-        params.append("rootflags=subvol=@")
-    param_str = " ".join(params)
-
-    cpu = config.get("hardware", {}).get("cpu", "auto")
-    if cpu == "auto":
-        from core.resolver import detect_cpu
-        cpu = detect_cpu()
-
-    ucode_line = ""
-    if cpu == "intel":
-        ucode_line = "initrd  /intel-ucode.img"
-    elif cpu == "amd":
-        ucode_line = "initrd  /amd-ucode.img"
-
-    uuid = run(f"blkid -s UUID -o value {root_part}").stdout.strip()
-    run(f"mkdir -p /mnt{boot_mount}/loader/entries")
-    run(f"""cat > /mnt{boot_mount}/loader/entries/arch.conf <<_EOF_
-title   {title}
-linux   /vmlinuz-{kernel}
-{ucode_line}
-initrd  /{initrd_img}
-options root=UUID={uuid} {param_str}
 _EOF_""")
 
 
@@ -227,18 +162,13 @@ def register_uki_efi(config):
 # ------------------------
 
 def install_refind(config):
-    boot = config.get("boot", {})
-    uki = boot.get("uki", False)
-    boot_mount = boot.get("boot_mount", "/boot")
+    boot_mount = "/efi"
 
     # Run refind-install in the chroot environment.
     logger.info("Installing rEFInd via refind-install inside chroot")
     chroot("refind-install")
 
-    if uki:
-        logger.info("rEFInd: UKI mode enabled. Kernels will be auto-scanned from EFI/Linux.")
-    else:
-        generate_refind_linux_conf(config)
+    logger.info("rEFInd: UKI mode enabled. Kernels will be auto-scanned from EFI/Linux.")
 
     # Further configuration of rEFInd
     refind_conf_path = f"/mnt{boot_mount}/EFI/refind/refind.conf"
@@ -320,10 +250,6 @@ def install_refind(config):
 
     if src_icon:
         import glob
-        # For standard kernels in /boot (represented as /mnt/boot/)
-        for kernel in glob.glob("/mnt/boot/vmlinuz-*"):
-            logger.info(f"Copying Arch icon for standard kernel {kernel} to {kernel}.png")
-            run(f"cp {src_icon} {kernel}.png")
         # For UKIs in EFI/Linux
         for uki_file in glob.glob(f"/mnt{boot_mount}/EFI/Linux/*.efi"):
             # Set icon for both .png and .efi.png filenames for robustness
@@ -351,49 +277,5 @@ Exec = /usr/bin/refind-install
 """
     with open(hook_path, "w") as f:
         f.write(hook_content)
-
-
-def generate_refind_linux_conf(config):
-    root_part  = get_root_partition(config)
-    boot       = config.get("boot", {})
-    boot_mount = boot.get("boot_mount", "/boot")
-    
-    system = resolve_system(config)
-    params = list(system.get("kernel_params", []))
-    if "rootflags=subvol=@" not in " ".join(params):
-        params.append("rootflags=subvol=@")
-    param_str = " ".join(params)
-
-    uuid = run(f"blkid -s UUID -o value {root_part}").stdout.strip()
-    
-    cpu = config.get("hardware", {}).get("cpu", "auto")
-    if cpu == "auto":
-        from core.resolver import detect_cpu
-        cpu = detect_cpu()
-
-    ucode_img = None
-    if cpu == "intel":
-        ucode_img = "intel-ucode.img"
-    elif cpu == "amd":
-        ucode_img = "amd-ucode.img"
-
-    if ucode_img:
-        initrd_img = initramfs_filename(config)
-        opts = f"initrd=/{ucode_img} initrd=/{initrd_img} root=UUID={uuid} rw {param_str}"
-        single_opts = f"initrd=/{ucode_img} initrd=/{initrd_img} root=UUID={uuid} rw {param_str} single"
-        minimal_opts = f"initrd=/{ucode_img} initrd=/{initrd_img} root=UUID={uuid} rw"
-    else:
-        opts = f"root=UUID={uuid} rw {param_str}"
-        single_opts = f"root=UUID={uuid} rw {param_str} single"
-        minimal_opts = f"root=UUID={uuid} rw"
-
-    conf_path = f"/mnt{boot_mount}/refind_linux.conf"
-    logger.info(f"Writing rEFInd kernel configuration to {conf_path}")
-    
-    run(f"""cat > {conf_path} <<_EOF_
-"Boot with standard options"  "{opts}"
-"Boot to single-user mode"    "{single_opts}"
-"Boot with minimal options"   "{minimal_opts}"
-_EOF_""")
 
 
