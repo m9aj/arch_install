@@ -14,15 +14,15 @@ The Arch Install project is organized into modular phases and core libraries to 
 
 ## Configuration (`config/`)
 
-- `base.yaml`: Shared defaults and the primary configuration for the system.
-- `desktop.yaml`, `laptop.yaml`, `server.yaml`: Machine-specific profiles that extend `base.yaml`.
+- `base_{core,packages,features,config}.yaml`: Shared defaults split across core settings, package lists, enabled features, and GNOME/theme settings.
+- `{profile}_{core,packages,features,config}.yaml`: Machine-specific overrides that merge on top of the corresponding base files.
 - `package_profiles.yaml`: Maps high-level groups (e.g., `gnome`, `internet`) to actual package names and systemd services.
-- `secrets.yaml`: (Ignored by git) Contains sensitive data like passwords and WiFi credentials.
-- `dconf/`: Per-profile GNOME gsettings mappings applied during Phase 2. Files use the same inheritance model as the main config (`base.yaml`, `laptop.yaml`, etc.).
+- `secrets.yaml`: (Ignored by git) Contains sensitive data like passwords and VPN credentials (can be stored encrypted as `secrets.yaml.age`).
+- `dconf/`: Per-profile GNOME gsettings mappings applied during Phase 2. Files use the same inheritance model as the main config (`base_dconf.yaml`, `laptop_dconf.yaml`, etc.).
 
 ## Core Library (`core/`)
 
-- `helper_basic.py`: Low-level shell execution (`run`, `chroot`) and user interaction.
+- `helper_basic.py`: Low-level shell execution (`run`, `chroot`), kernel parameter application, and user interaction.
 - `helper_core.py`: Configuration loading, profile merging, and path resolution.
 - `helper_disk.py`: Disk and partition identification helpers.
 - `helper_gnome.py`: Shared GNOME helpers (session detection, desktop name normalisation).
@@ -35,8 +35,12 @@ The Arch Install project is organized into modular phases and core libraries to 
 ## Features (`features/`)
 
 Standalone modules for post-installation system features. Each module typically defines its own packages, services, and configuration logic.
+- `ananicy.py`: Auto NICe daemon (`ananicy-cpp`) for application responsiveness.
+- `antigravity.py`: Custom environment tweaks.
+- `btrfs_maintenance.py`: Automated Btrfs scrub, balance, trim, and defrag scheduling.
+- `claude_code.py`: Setup environment configurations for Claude Code.
 - `firewall.py`: Firewalld setup.
-- `local_repo.py`: Pacman local repository for pre-built packages.
+- `local_aur_repo.py`: Pacman local repository for building and hosting custom AUR packages.
 - `pia.py`: Private Internet Access VPN setup.
 - `plymouth.py`: Boot splash screen configuration.
 - `reflector.py`: Pacman mirrorlist optimisation.
@@ -51,7 +55,7 @@ Executed from the Arch Live ISO.
 - `main.py`: Orchestrates the pre-install steps.
 - `disk.py`: Partitioning, formatting, and mounting logic for Btrfs.
 - `archinstall.py`: System configuration (hostname, locale, users, autologin, tweaks).
-- `bootloader.py`: Installation and configuration of systemd-boot.
+- `bootloader.py`: Installation and configuration of systemd-boot and rEFInd (incorporates Nvidia Early KMS setup).
 - `system.py`: Package installation and service enablement via chroot.
 
 ## Scripts (`scripts/`)

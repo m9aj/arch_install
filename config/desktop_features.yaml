@@ -41,3 +41,9 @@ features:
     webapps:
       enabled: true
 
+    btrfs_maintenance:
+      enabled: true
+
+    ananicy:
+      enabled: true
+

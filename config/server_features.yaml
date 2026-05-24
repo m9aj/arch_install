@@ -37,3 +37,9 @@ features:
 
     antigravity:
       enabled: false
+
+    btrfs_maintenance:
+      enabled: true
+
+    ananicy:
+      enabled: true      
