@@ -62,7 +62,24 @@ def main():
     validate(config)
 
     logger.info("Checking for internet connection...")
-    network.ensure_internet(config)
+    while True:
+        try:
+            network.ensure_internet(config)
+            break
+        except RuntimeError as e:
+            logger.warning(f"Internet check failed: {e}")
+            print("\n[WARNING] No internet connection detected.")
+            print("This phase requires an active internet connection to download packages and apply settings.")
+            print("Please connect to the internet.")
+            try:
+                response = input("Press Enter to retry, or type 'q' to quit: ").strip().lower()
+                if response == 'q':
+                    logger.info("User chose to exit because of no internet connection.")
+                    sys.exit(1)
+            except (KeyboardInterrupt, EOFError):
+                print()
+                logger.info("Exiting on user interrupt.")
+                sys.exit(1)
 
     for name, func in STEPS:
         if not is_done(name):

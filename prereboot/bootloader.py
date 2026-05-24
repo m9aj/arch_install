@@ -4,7 +4,7 @@ import os
 import shlex
 from core.helper_basic import run, chroot
 from core.helper_disk import get_root_partition
-from core.resolver import resolve_system
+from core.resolver import resolve_system, detect_gpu
 from core.logger import logger
 
 
@@ -37,6 +37,7 @@ def generate_initramfs(config):
     boot_mount = "/efi"
 
     _write_kernel_cmdline(config)
+    _setup_nvidia_kms(config)
     if init == "mkinitcpio":
         _patch_mkinitcpio_preset_for_uki(config)
         chroot("mkinitcpio -P")
@@ -277,5 +278,60 @@ Exec = /usr/bin/refind-install
 """
     with open(hook_path, "w") as f:
         f.write(hook_content)
+
+
+def _setup_nvidia_kms(config):
+    gpu_cfg = config.get("hardware", {}).get("gpu", "auto")
+    gpu = detect_gpu() if gpu_cfg == "auto" else gpu_cfg
+    if gpu != "nvidia":
+        return
+
+    init = config.get("boot", {}).get("init", "mkinitcpio")
+    logger.info("Setting up Nvidia Early KMS...")
+    if init == "mkinitcpio":
+        _enable_nvidia_kms_mkinitcpio()
+    elif init == "dracut":
+        _enable_nvidia_kms_dracut()
+
+
+def _enable_nvidia_kms_mkinitcpio():
+    path = "/mnt/etc/mkinitcpio.conf"
+    if not os.path.exists(path):
+        logger.warning(f"{path} not found. Skipping Nvidia early KMS setup.")
+        return
+
+    with open(path, "r") as f:
+        content = f.read()
+
+    import re
+    # Match MODULES=(...) and capture the contents inside parentheses.
+    # Note: re.DOTALL in case it is multi-line.
+    match = re.search(r'^MODULES=\((.*?)\)', content, re.MULTILINE | re.DOTALL)
+    if match:
+        existing = match.group(1).strip()
+        existing_mods = existing.split()
+        nvidia_mods = ["nvidia", "nvidia_modeset", "nvidia_uvm", "nvidia_drm"]
+        missing = [m for m in nvidia_mods if m not in existing_mods]
+        if missing:
+            new_mods = " ".join(existing_mods + missing)
+            span = match.span(1)
+            content = content[:span[0]] + new_mods + content[span[1]:]
+            with open(path, "w") as f:
+                f.write(content)
+            logger.info(f"Added Nvidia modules to MODULES in {path}")
+    else:
+        logger.warning(f"Could not parse MODULES array in {path}")
+
+
+def _enable_nvidia_kms_dracut():
+    dir_path = "/mnt/etc/dracut.conf.d"
+    os.makedirs(dir_path, exist_ok=True)
+    file_path = os.path.join(dir_path, "nvidia.conf")
+    
+    content = 'force_drivers+=" nvidia nvidia_modeset nvidia_uvm nvidia_drm "\n'
+    with open(file_path, "w") as f:
+        f.write(content)
+    logger.info(f"Created {file_path} for Nvidia early KMS")
+
 
 

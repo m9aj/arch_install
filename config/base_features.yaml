@@ -57,10 +57,7 @@ features:
       config:
         username:                         # Defined in config/secrets.yaml[.age]
         password:                         # Defined in config/secrets.yaml[.age]
-        openvpn_auto_login: true
-        apps: nm
         hosts: US California
-        port: 1198
 
     snapper:
       enabled: false
