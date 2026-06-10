@@ -45,6 +45,26 @@ def generate_initramfs(config):
         efi        = uki_filename(config)
         run(f"mkdir -p /mnt{boot_mount}/EFI/Linux")
         chroot(f"dracut --uefi --force --hostonly --kernel-cmdline \"$(cat /etc/kernel/cmdline)\" {boot_mount}/EFI/Linux/{efi}")
+
+        # Create pacman hook to automatically update UKI when the kernel, ucode, or systemd updates
+        hooks_dir = "/mnt/etc/pacman.d/hooks"
+        run(f"mkdir -p {hooks_dir}")
+        hook_content = f"""[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Target = usr/lib/modules/*/vmlinuz
+Target = boot/*-ucode.img
+Target = usr/lib/systemd/boot/efi/linuxx64.elf.stub
+
+[Action]
+Description = Updating Unified Kernel Images (UKIs) on ESP...
+When = PostTransaction
+Exec = /usr/bin/bash -c 'for pkgbase in /usr/lib/modules/*/pkgbase; do [ -f "$pkgbase" ] || continue; kver=$(basename $(dirname $pkgbase)); pkgname=$(cat "$pkgbase"); /usr/bin/dracut --uefi --force --hostonly --kernel-cmdline "$(cat /etc/kernel/cmdline)" {boot_mount}/EFI/Linux/arch-${{pkgname}}.efi --kver "$kver"; done'
+"""
+        with open(f"{hooks_dir}/90-dracut-uki.hook", "w") as f:
+            f.write(hook_content)
     else:
         raise ValueError(f"Unsupported init system for UKI: {init!r}")
 
@@ -210,6 +230,16 @@ def install_refind(config):
         # Append theme include if not already present
         if theme_installed and "include themes/rEFInd-digital-void/theme.conf" not in content:
             content += "\ninclude themes/rEFInd-digital-void/theme.conf\n"
+
+        # Exclude raw kernel from scanning to prevent duplicate UKI entries
+        if "dont_scan_files +,vmlinuz-linux" not in content:
+            if "#dont_scan_files shim.efi,MokManager.efi" in content:
+                content = content.replace(
+                    "#dont_scan_files shim.efi,MokManager.efi",
+                    "#dont_scan_files shim.efi,MokManager.efi\ndont_scan_files +,vmlinuz-linux"
+                )
+            else:
+                content += "\ndont_scan_files +,vmlinuz-linux\n"
 
         with open(refind_conf_path, "w") as f:
             f.write(content)

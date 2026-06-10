@@ -31,6 +31,9 @@ features:
     firewall:
       enabled: true
 
+    gsconnect:
+      enabled: false
+
     zram:
       enabled: true
       config:

@@ -12,6 +12,9 @@ features:
     firewall:
       enabled: true
 
+    gsconnect:
+      enabled: true
+
     zram:
       enabled: true
 
