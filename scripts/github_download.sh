@@ -48,6 +48,24 @@ fi
 
 chmod +x "$DEST/arch-install"
 
+# Change ownership of the downloaded folder to ajay:users
+# (Works in the Arch install environment too where user 'ajay' does not exist yet)
+TARGET_USER="1000"
+if id "ajay" &>/dev/null; then
+    TARGET_USER="ajay"
+fi
+
+TARGET_GROUP=""
+if getent group users &>/dev/null; then
+    TARGET_GROUP="users"
+fi
+
+if [ -n "$TARGET_GROUP" ]; then
+    chown -R "$TARGET_USER:$TARGET_GROUP" "$DEST" 2>/dev/null || sudo chown -R "$TARGET_USER:$TARGET_GROUP" "$DEST" 2>/dev/null || true
+else
+    chown -R "$TARGET_USER" "$DEST" 2>/dev/null || sudo chown -R "$TARGET_USER" "$DEST" 2>/dev/null || true
+fi
+
 echo ""
 echo "Ready. To start Phase 1:"
 echo "  cd $DEST && ./arch-install <profile>"
