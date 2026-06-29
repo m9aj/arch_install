@@ -3,9 +3,11 @@
 
 network:
   hosts:
-    media.local:   192.168.0.50
+    media.local:   192.168.0.150
     media.remote:  100.100.1.1
-    desktop.local: 192.168.0.68
+    kvm.local: 192.168.0.155
+    kvm.remote: 100.100.1.1
+    desktop.local: 192.168.0.165 
 
 postconfig:
 

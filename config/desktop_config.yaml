@@ -3,8 +3,10 @@
 
 network:
   hosts:
-    media.local:  192.168.0.50
-    laptop.local: 192.168.0.75
+    media.local:   192.168.0.150
+    kvm.local: 192.168.0.155
+    laptop.local: 192.168.0.160 
+
 
 postconfig:
   user_dirs:

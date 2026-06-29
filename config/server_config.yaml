@@ -1,11 +1,6 @@
 # config/server_config.yaml
 # Server — post-install configuration overrides.
 
-network:
-  hosts:
-    desktop.local: 192.168.0.68
-    laptop.local:  192.168.0.75
-
 postconfig:
 
   user_dirs:

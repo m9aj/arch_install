@@ -133,6 +133,5 @@ python3 scripts/encrypt_secrets.py
 
 ## Maintenance
 
--   **TODO**: Check the `TODO` file for pending tasks and known issues.
 -   **Logs**: Check `logs/` for detailed execution logs and `state.json` for progress tracking.
 -   **Debug**: `logs/merged_config.yaml` shows the fully merged config after each run (secrets redacted).
