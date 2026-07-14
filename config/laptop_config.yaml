@@ -8,6 +8,8 @@ network:
     kvm.local: 192.168.0.155
     kvm.remote: 100.100.1.1
     desktop.local: 192.168.0.165 
+    router.local: 192.168.0.1
+    modem.local: 192.168.1.254
 
 postconfig:
 
