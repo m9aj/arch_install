@@ -23,13 +23,24 @@ LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
 # ------------------------
 
 def _discover_profiles():
-    """Return all profile names derived from *_core.yaml files in config/."""
-    suffix = "_core.yaml"
-    return sorted(
-        f[:-len(suffix)]
-        for f in os.listdir(CONFIG_DIR)
-        if f.endswith(suffix) and not f.startswith("base")
-    )
+    """Return all profile names in config/."""
+    ignore_files = {
+        "base.yaml", "package_profiles.yaml", "wifi.yaml",
+        "secrets.yaml", "secrets.yaml.template", "wifi.yaml.template",
+        "base_dconf.yaml", "base_ssh.yaml"
+    }
+    profiles = set()
+    for f in os.listdir(CONFIG_DIR):
+        if not f.endswith(".yaml") or f in ignore_files or f.endswith("_dconf.yaml") or f.endswith("_ssh.yaml"):
+            continue
+        if f.endswith("_core.yaml"):
+            profiles.add(f[:-len("_core.yaml")])
+        elif f.endswith("_packages.yaml") or f.endswith("_features.yaml") or f.endswith("_config.yaml"):
+            continue
+        else:
+            profiles.add(f[:-len(".yaml")])
+    profiles.discard("base")
+    return sorted(list(profiles))
 
 def detect_profile():
     """Check for a marker file in the project root named after a known profile."""
@@ -180,31 +191,48 @@ def load_profile_config(profile):
     """
     Load and merge all config files for a profile.
 
-    Merge order: base_core → base_packages → base_features → base_config
-              → {profile}_core → {profile}_packages → {profile}_features → {profile}_config
-              → wifi.yaml          (unencrypted)
-              → secrets.yaml[.age] (encrypted or plain)
+    Merge precedence:
+      1. Base config: config/base.yaml (or legacy base_*.yaml split files)
+      2. Profile config: config/{profile}.yaml (or legacy {profile}_*.yaml split files)
+      3. Plain wifi.yaml
+      4. Secrets (secrets.yaml or secrets.yaml.age)
     """
     config = {}
-    for suffix in ["_core", "_packages", "_features", "_config"]:
-        base_path = os.path.join(CONFIG_DIR, f"base{suffix}.yaml")
-        if os.path.exists(base_path):
-            with open(base_path) as f:
-                config = merge_dicts(config, yaml.safe_load(f) or {})
 
-    for suffix in ["_core", "_packages", "_features", "_config"]:
-        path = os.path.join(CONFIG_DIR, f"{profile}{suffix}.yaml")
-        if os.path.exists(path):
-            with open(path) as f:
-                override = yaml.safe_load(f) or {}
-            config = merge_dicts(config, override)
+    # 1. Base configuration
+    base_consolidated = os.path.join(CONFIG_DIR, "base.yaml")
+    if os.path.exists(base_consolidated):
+        with open(base_consolidated) as f:
+            config = yaml.safe_load(f) or {}
+    else:
+        for suffix in ["_core", "_packages", "_features", "_config"]:
+            base_path = os.path.join(CONFIG_DIR, f"base{suffix}.yaml")
+            if os.path.exists(base_path):
+                with open(base_path) as f:
+                    config = merge_dicts(config, yaml.safe_load(f) or {})
 
+    # 2. Profile overrides
+    profile_consolidated = os.path.join(CONFIG_DIR, f"{profile}.yaml")
+    if os.path.exists(profile_consolidated):
+        with open(profile_consolidated) as f:
+            override = yaml.safe_load(f) or {}
+        config = merge_dicts(config, override)
+    else:
+        for suffix in ["_core", "_packages", "_features", "_config"]:
+            path = os.path.join(CONFIG_DIR, f"{profile}{suffix}.yaml")
+            if os.path.exists(path):
+                with open(path) as f:
+                    override = yaml.safe_load(f) or {}
+                config = merge_dicts(config, override)
+
+    # 3. Wifi config
     wifi_path = os.path.join(CONFIG_DIR, "wifi.yaml")
     if os.path.exists(wifi_path):
         with open(wifi_path) as f:
             wifi = yaml.safe_load(f) or {}
         config = merge_dicts(config, wifi)
 
+    # 4. Secrets
     age_path = os.path.join(CONFIG_DIR, "secrets.yaml.age")
     plain_path = os.path.join(CONFIG_DIR, "secrets.yaml")
     if os.path.exists(age_path):

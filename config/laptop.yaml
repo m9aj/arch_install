@@ -1,0 +1,156 @@
+# config/laptop.yaml
+# Laptop (hostname: Io) — machine profile configuration.
+
+disk:
+  disk_by_id: nvme-addlink_M.2_PCIE_G3x4_NVMe_C1D307020D0900995114
+  boot_part: -part1
+  root_part: -part3
+
+root:
+  mode: reuse
+  subvolumes:
+    - name: "@pkg"
+      reuse: yes
+    - name: "@home"
+      reuse: no
+
+additional_mounts:
+  - name: personal
+    disk_by_id: nvme-addlink_M.2_PCIE_G3x4_NVMe_C1D307020D0900995114
+    type: ssd
+    part: -part2
+    mountpoint: /mnt/Personal
+
+system:
+  hostname: Io
+
+boot:
+  bootloader: refind
+  init: dracut
+
+pkgprofile:
+  post:
+    - hardware
+    - office
+    - development
+    - multimedia
+    - codecs
+
+machine_specific:
+  pacman:
+    - fprintd
+    - tesseract-data-eng
+  aur:
+    - frog-ocr-no-telemetry
+    - icaclient
+  services:
+    - bluetooth
+
+features:
+  local_aur_repo:
+    client:
+      enabled: true
+
+  reflector:
+    enabled: true
+
+  firewall:
+    enabled: true
+
+  zram:
+    enabled: true
+
+  plymouth:
+    enabled: true
+
+  tailscale:
+    enabled: true
+    config:
+      auto_up: true
+
+  pia:
+    enabled: true
+
+  snapper:
+    enabled: true
+
+  ssh:
+    enabled: true
+
+  claude_code:
+    enabled: false
+
+  antigravity:
+    enabled: true
+
+  webapps:
+    enabled: true
+
+  btrfs_maintenance:
+    enabled: true
+
+  ananicy:
+    enabled: true
+
+network:
+  hosts:
+    media.local: 192.168.0.150
+    media.remote: 100.100.1.1
+    kvm.local: 192.168.0.155
+    kvm.remote: 100.100.1.1
+    desktop.local: 192.168.0.165
+    router.local: 192.168.0.1
+    modem.local: 192.168.1.254
+
+postconfig:
+  user_dirs:
+    enabled: true
+
+  dotfiles:
+    enabled: true
+
+  bluetooth:
+    enabled: true
+
+  gnome:
+    gsettings:
+      enabled: true
+
+    lockscreen_scaling:
+      enabled: true
+
+    color_profiles:
+      enabled: true
+
+    theme:
+      icons:
+        enabled: false
+      cursor:
+        enabled: true
+      wallpapers:
+        enabled: false
+
+    extensions:
+      enabled: true
+      ids:
+        - 517   # Caffeine
+        - 6856  # Chronos Time Tracker
+        - 6583  # Auto Power Profile
+
+    appdrawer:
+      enabled: true
+      layout:
+        - # page 1
+          - org.gnome.Decibels
+          - org.gnome.Calculator
+          - org.gnome.Calendar
+          - org.gnome.clocks
+          - org.gnome.SimpleScan
+          - org.gnome.Papers
+          - gimp
+          - org.gnome.Loupe
+          - Office
+          - System
+          - Utilities
+          - org.gnome.Showtime
+          - org.gnome.Weather

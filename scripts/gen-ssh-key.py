@@ -28,10 +28,14 @@ def _load_yaml(path):
 
 def _client_enabled(profile):
     """Return True if this profile has ssh client enabled."""
-    features_path = os.path.join(CONFIG_DIR, f"{profile}_features.yaml")
-    if not os.path.exists(features_path):
-        return False
-    data = _load_yaml(features_path)
+    profile_path = os.path.join(CONFIG_DIR, f"{profile}.yaml")
+    if os.path.exists(profile_path):
+        data = _load_yaml(profile_path)
+    else:
+        features_path = os.path.join(CONFIG_DIR, f"{profile}_features.yaml")
+        if not os.path.exists(features_path):
+            return False
+        data = _load_yaml(features_path)
     return data.get("features", {}).get("ssh", {}).get("config", {}).get("client", {}).get("enabled", False)
 
 
@@ -47,10 +51,19 @@ def _resolve_profiles():
 
 
 def _get_comment(profile):
-    base_core = _load_yaml(os.path.join(CONFIG_DIR, "base_core.yaml"))
-    username = base_core.get("system", {}).get("username", "ajay")
-    profile_core = _load_yaml(os.path.join(CONFIG_DIR, f"{profile}_core.yaml"))
-    hostname = profile_core.get("system", {}).get("hostname", profile)
+    base_path = os.path.join(CONFIG_DIR, "base.yaml")
+    if os.path.exists(base_path):
+        base_data = _load_yaml(base_path)
+    else:
+        base_data = _load_yaml(os.path.join(CONFIG_DIR, "base_core.yaml"))
+    username = base_data.get("system", {}).get("username", "ajay")
+
+    profile_path = os.path.join(CONFIG_DIR, f"{profile}.yaml")
+    if os.path.exists(profile_path):
+        profile_data = _load_yaml(profile_path)
+    else:
+        profile_data = _load_yaml(os.path.join(CONFIG_DIR, f"{profile}_core.yaml"))
+    hostname = profile_data.get("system", {}).get("hostname", profile)
     return f"{username}@{hostname}"
 
 

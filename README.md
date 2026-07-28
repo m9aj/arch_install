@@ -48,21 +48,15 @@ This phase handles:
 
 ## Configuration Structure
 
-Each machine profile is split across focused files that are deep-merged in order. No `extends:` key — the loader always starts from the base splits and merges profile overrides on top.
+Each machine profile builds on top of `base.yaml`. The loader deep-merges profile overrides on top of the base defaults.
 
 ```
 config/
-  base_core.yaml           # shared disk layout, system defaults, boot
-  base_packages.yaml       # shared package profiles
-  base_features.yaml       # all features defined, disabled by default
-  base_config.yaml         # shared post-install config (GNOME, dotfiles, themes)
+  base.yaml                # shared base defaults (disk, system, boot, packages, features, postconfig)
   base_dconf.yaml          # shared GNOME gsettings
   base_ssh.yaml            # authorized_keys for all machines (committed, no private keys)
 
-  {profile}_core.yaml      # disk device, hostname, boot overrides
-  {profile}_packages.yaml  # pkgprofile, machine_specific packages
-  {profile}_features.yaml  # feature enable/disable overrides
-  {profile}_config.yaml    # postconfig overrides (GNOME, dotfiles, themes)
+  {profile}.yaml           # profile overrides (laptop.yaml, desktop.yaml, server.yaml)
   {profile}_dconf.yaml     # GNOME gsettings overrides
 
   {profile}_ssh.yaml[.age] # SSH client keypair (git-ignored, age-encrypted)
@@ -72,7 +66,11 @@ config/
 
 Profiles: `laptop` (hostname: Io), `desktop` (hostname: Titan), `server` (hostname: Media).
 
-Key sections in `base_core.yaml`:
+Key sections in `base.yaml`:
+-   `disk`, `root`, `boot`, `system`: Storage partitioning, init/bootloader, accounts.
+-   `pkgprofile`, `machine_specific`: System & AUR package lists.
+-   `features`: Standalone modules (tailscale, zram, firewall, btrfs_maintenance, etc.).
+-   `postconfig`: GNOME configuration, dotfiles, themes, user directories.
 -   `system`: User account details, timezone.
 -   `disk`: Partitioning mode and Btrfs subvolumes.
 

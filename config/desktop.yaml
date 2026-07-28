@@ -1,0 +1,149 @@
+# config/desktop.yaml
+# Desktop (hostname: Titan) — machine profile configuration.
+
+disk:
+  disk_by_id: nvme-Sabrent_Rocket_4.0_1TB_03F1079B0E4400624890
+  boot_part: -part1
+  root_part: -part3
+
+root:
+  mode: reuse
+  subvolumes:
+    - name: "@pkg"
+      reuse: yes
+    - name: "@home"
+      reuse: no
+
+additional_mounts:
+  - name: personal
+    disk_by_id: nvme-Sabrent_Rocket_4.0_1TB_03F1079B0E4400624890
+    type: ssd
+    part: -part2
+    mountpoint: /mnt/Personal
+
+system:
+  hostname: Titan
+
+boot:
+  bootloader: refind
+  init: mkinitcpio
+
+pkgprofile:
+  post:
+    - hardware
+    - office
+    - development
+    - multimedia
+    - codecs
+
+machine_specific:
+  pacman:
+    - tesseract-data-eng
+  aur:
+    - frog-ocr-no-telemetry
+    - icaclient
+
+features:
+  local_aur_repo:
+    client:
+      enabled: true
+
+  reflector:
+    enabled: true
+
+  firewall:
+    enabled: true
+
+  zram:
+    enabled: true
+
+  plymouth:
+    enabled: true
+
+  tailscale:
+    enabled: true
+    config:
+      auto_up: true
+
+  pia:
+    enabled: false
+
+  snapper:
+    enabled: false
+
+  ssh:
+    enabled: true
+
+  claude_code:
+    enabled: false
+
+  antigravity:
+    enabled: true
+
+  webapps:
+    enabled: true
+
+  btrfs_maintenance:
+    enabled: true
+
+  ananicy:
+    enabled: true
+
+network:
+  hosts:
+    media.local: 192.168.0.150
+    kvm.local: 192.168.0.155
+    laptop.local: 192.168.0.160
+
+postconfig:
+  user_dirs:
+    enabled: true
+
+  dotfiles:
+    enabled: true
+
+  bluetooth:
+    enabled: false
+
+  gnome:
+    gsettings:
+      enabled: true
+
+    lockscreen_scaling:
+      enabled: true
+
+    color_profiles:
+      enabled: false
+
+    theme:
+      icons:
+        enabled: false
+      cursor:
+        enabled: true
+      wallpapers:
+        enabled: true
+
+    extensions:
+      enabled: true
+      ids:
+        - 517   # Caffeine
+        - 6856  # Chronos Time Tracker
+        - 6583  # Auto Power Profile
+
+    appdrawer:
+      enabled: true
+      layout:
+        - # page 1
+          - org.gnome.Decibels
+          - org.gnome.Calculator
+          - org.gnome.Calendar
+          - org.gnome.clocks
+          - org.gnome.SimpleScan
+          - org.gnome.Papers
+          - gimp
+          - org.gnome.Loupe
+          - Office
+          - System
+          - Utilities
+          - org.gnome.Showtime
+          - org.gnome.Weather

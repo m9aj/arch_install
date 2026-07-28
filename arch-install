@@ -32,10 +32,21 @@ case "${1:-}" in
         ;;
     clean)
         echo "[INFO] Cleaning up marker files and logs..."
-        # Identify profile markers by looking at config/*_core.yaml files
-        for f in "$DIR"/config/*_core.yaml; do
+        # Identify profile markers by looking at config/*.yaml files
+        for f in "$DIR"/config/*.yaml; do
             if [ -f "$f" ]; then
-                stem=$(basename "$f" _core.yaml)
+                filename=$(basename "$f")
+                case "$filename" in
+                    base.yaml|package_profiles.yaml|wifi.yaml|secrets.yaml|*_dconf.yaml|*_ssh.yaml|*_packages.yaml|*_features.yaml|*_config.yaml)
+                        continue
+                        ;;
+                    *_core.yaml)
+                        stem="${filename%_core.yaml}"
+                        ;;
+                    *.yaml)
+                        stem="${filename%.yaml}"
+                        ;;
+                esac
                 if [ "$stem" != "base" ] && [ -f "$DIR/$stem" ]; then
                     rm "$DIR/$stem"
                     echo "  Removed marker: $stem"
@@ -72,9 +83,20 @@ case "${1:-}" in
     post)
         shift
         # Take ownership of any profile marker files and the entire logs directory
-        for f in "$DIR"/config/*_core.yaml; do
+        for f in "$DIR"/config/*.yaml; do
             if [ -f "$f" ]; then
-                stem=$(basename "$f" _core.yaml)
+                filename=$(basename "$f")
+                case "$filename" in
+                    base.yaml|package_profiles.yaml|wifi.yaml|secrets.yaml|*_dconf.yaml|*_ssh.yaml|*_packages.yaml|*_features.yaml|*_config.yaml)
+                        continue
+                        ;;
+                    *_core.yaml)
+                        stem="${filename%_core.yaml}"
+                        ;;
+                    *.yaml)
+                        stem="${filename%.yaml}"
+                        ;;
+                esac
                 if [[ "$stem" != "base" && -f "$DIR/$stem" ]]; then
                     sudo chown 1000:1000 "$DIR/$stem"
                 fi

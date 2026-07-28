@@ -24,11 +24,11 @@ The Arch Install project is organized into modular phases and core libraries to 
 
 ### Configuration (`config/`)
 
-- `base_{core,packages,features,config}.yaml`: Shared defaults split across core settings, package lists, enabled features, and GNOME/theme settings.
-- `{profile}_{core,packages,features,config}.yaml`: Machine-specific overrides that merge on top of the corresponding base files.
+- `base.yaml`: Consolidated shared defaults across core settings, package lists, enabled features, and GNOME/theme settings.
+- `{profile}.yaml`: Consolidated machine-specific overrides (e.g., `desktop.yaml`, `laptop.yaml`, `server.yaml`) that merge on top of `base.yaml`.
 - `package_profiles.yaml`: Maps high-level groups (e.g., `gnome`, `internet`) to actual package names and systemd services.
 - `secrets.yaml`: (Ignored by git) Contains sensitive data like passwords and VPN credentials (can be stored encrypted as `secrets.yaml.age`).
-- `dconf/`: Per-profile GNOME gsettings mappings applied during Phase 2. Files use the same inheritance model as the main config (`base_dconf.yaml`, `laptop_dconf.yaml`, etc.).
+- `base_dconf.yaml` / `{profile}_dconf.yaml`: Per-profile GNOME gsettings mappings applied during Phase 2.
 
 ### Core Library (`core/`)
 

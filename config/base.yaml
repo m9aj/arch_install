@@ -1,0 +1,315 @@
+# config/base.yaml
+# Base configuration — default settings across core system, packages, features, and post-install.
+# All profile configurations (desktop, laptop, server) build on and override options defined here.
+
+# ==========================================
+# 1. CORE SYSTEM & DISK SETTINGS
+# ==========================================
+
+disk:
+  disk_by_id:                             # udev ID from /dev/disk/by-id/ (without the path prefix)
+  boot_part:                              # partition suffix for EFI, e.g. -part1
+  root_part:                              # partition suffix for root, e.g. -part3
+  mount_ops_ssd: noatime,compress=zstd:3,ssd,space_cache=v2
+  mount_ops_oth: nosuid,nodev,nofail,x-gvfs-show  # applied to additional_mounts
+  mount_ops_hdd: noatime,autodefrag
+
+root:
+  mode: reuse                             # format | reuse
+  subvolumes:
+    - name: "@"
+      mount: /
+      reuse: no                           # no = delete and recreate on install
+    - name: "@var"
+      mount: /var/log
+      reuse: no
+    - name: "@pkg"
+      mount: /var/cache/pacman/pkg
+      reuse: yes                          # yes = keep across reinstalls
+    - name: "@home"
+      mount: /home
+      reuse: yes
+    - name: "@tailscale"
+      mount: /var/lib/tailscale
+      reuse: yes
+    - name: "@ssh"
+      mount: /etc/ssh
+      reuse: yes
+
+system:
+  hostname:
+  timezone: America/Los_Angeles           # America/New_York | Asia/Kolkata | etc.
+  root_password:                          # Defined in config/secrets.yaml[.age]
+  username: ajay
+  fullname: 'Ajay Moganti'
+  user_password:                          # Defined in config/secrets.yaml[.age]
+  autologin: false                        # GDM auto-login (no password on boot)
+
+additional_mounts: []                     # Extra storage partitions to mount
+
+bind_mounts: []                           # Custom directories to bind-mount during installation
+
+hardware:
+  cpu: auto                               # amd | intel | auto (detected via lscpu)
+  gpu: auto                               # amd | nvidia | auto (detected via lspci)
+
+boot:
+  bootloader: systemd-boot                # systemd-boot | refind | none
+  init: mkinitcpio                        # mkinitcpio | dracut | booster
+  kernel_params:
+    - quiet
+    - rw
+  systemd-boot:
+    timeout: 3
+    console-mode: auto
+    editor: yes
+
+arch:
+  label: Arch                             # Btrfs filesystem label
+  de: gnome                               # gnome | kde
+
+# ==========================================
+# 2. PACKAGE SELECTION & PROFILES
+# ==========================================
+
+# Keys map to entries in config/package_profiles.yaml
+pkgprofile:
+  core:                                   # Installed via pacstrap (live ISO phase)
+    - base_core
+    - audio
+    - shell
+    - others
+  post:                                   # Installed via pacman after chroot
+    - base_drivers
+    #- hardware
+    - fonts
+    - shell
+    #- office
+    - internet
+    #- development
+    - system
+    #- multimedia
+    #- codecs
+    - security
+    - backup
+    #- android
+    #- music_batching
+    #- partitioning
+    #- bios
+
+machine_specific:
+  pacman: []                              # Extra pacman packages not in any profile
+  aur_helper: pikaur                      # pikaur
+  aur: []
+  services: []
+
+# ==========================================
+# 3. FEATURES & MODULES
+# ==========================================
+
+features:
+  local_aur_repo:
+    server:
+      enabled: false
+      config:
+        name: local-aur-repo              # Repo name used in pacman.conf
+        path: /srv/local-aur-repo         # Directory served by nginx
+        port: 8080
+        extra_packages: []                # AUR packages to build beyond machine profiles
+    client:
+      enabled: false
+      config:
+        url: http://aur.local:8080/local-aur-repo
+        tailscale_ip: 100.100.1.1          # Pinned in /etc/hosts as aur.local
+
+  reflector:
+    enabled: true
+    config:
+      save: /etc/pacman.d/mirrorlist
+      protocol: https
+      country: United States
+      latest: 10
+      sort: rate
+      age: 24
+
+  firewall:
+    enabled: true
+
+  zram:
+    enabled: true
+    config:
+      size: "min(ram / 2, 4096)"
+      compression: zstd
+      vm:
+        swappiness: 180
+        watermark_boost_factor: 0
+        watermark_scale_factor: 125
+        page_cluster: 0
+
+  plymouth:
+    enabled: true
+    config:
+      theme: spinner
+
+  tailscale:
+    enabled: true
+    config:
+      auto_up: false
+
+  pia:
+    enabled: false
+    config:
+      username:                           # Defined in config/secrets.yaml[.age]
+      password:                           # Defined in config/secrets.yaml[.age]
+      hosts: US California
+
+  snapper:
+    enabled: false
+    config:
+      target: /mnt/Personal             # Subvolume to snapshot
+      name: Personal                    # Snapper config name
+      timeline_limit_hourly: 5
+      timeline_limit_daily: 7
+
+  ssh:
+    enabled: false
+
+  claude_code:
+    enabled: false
+
+  antigravity:
+    enabled: false
+
+  webapps:
+    enabled: false
+
+  btrfs_maintenance:
+    enabled: true
+    config:
+      scrub_period: monthly
+      balance_period: monthly
+      defrag_period: none
+      trim_period: none
+
+  ananicy:
+    enabled: true
+
+# ==========================================
+# 4. POST-INSTALLATION CONFIGURATION
+# ==========================================
+
+network:
+  hosts: {}
+
+postconfig:
+  user_dirs:
+    enabled: true
+    parent: /mnt/Personal/_Ajay
+    folders:
+      - Arch
+      - Desktop
+      - Documents
+      - Downloads
+      - Music
+      - Pictures
+      - Templates
+      - Videos
+
+  dotfiles:
+    enabled: true
+    source_dir: /home/ajay/Arch/config/dotfiles
+
+  bluetooth:
+    enabled: false
+    source: /home/ajay/Arch/config/bluetooth
+
+  gnome:
+    gsettings:
+      enabled: false
+
+    lockscreen_scaling:
+      enabled: false
+
+    keybindings:
+      enabled: false
+      bindings: []                         # Defined in config/secrets.yaml[.age]
+
+    color_profiles:
+      enabled: false
+      profiles:
+        - name: framework_2.8k
+          file: /home/ajay/Arch/config/fw13_28k.icm
+
+    theme:
+      icons:
+        enabled: false
+        source: assets/icons.zip          # Relative to PROJECT_ROOT
+        name: Qodir
+      cursor:
+        enabled: true
+        source: assets/cursors.zip
+        name: Smooth-Cursor
+      wallpapers:
+        enabled: false
+        repo: https://github.com/simple-sunrise/Light-and-Dark-Wallpapers-for-Gnome
+
+    extensions:
+      enabled: true
+      ids:
+        - 307   # Dash to Dock
+        - 3193  # Blur my Shell
+        - 2236  # Night Theme Switcher
+        - 7502  # Auto Accent Colour
+        - 5895  # App Hider
+        - 7535  # Accent Directories
+
+    appdrawer:
+      enabled: true
+      hide_apps:
+        - avahi-discover
+        - bssh
+        - bvnc
+        - lstopo
+        - org.gnome.FileRoller
+        - qv4l2
+        - qvidcap
+        - citrix-conncenter
+        - citrix-configmgr
+        - citrix-workspace
+
+      folders:
+        System:
+          - org.gnome.Settings
+          - org.gnome.tweaks
+          - org.gnome.Extensions
+          - ca.desrt.dconf-editor
+          - org.gnome.Firmware
+          - firewall-config
+        Office:
+          - libreoffice-writer
+          - libreoffice-calc
+          - libreoffice-impress
+          - libreoffice-startcenter
+          - libreoffice-base
+          - libreoffice-draw
+          - libreoffice-math
+          - conncentre
+        Utilities:
+          - org.gnome.DiskUtility
+          - org.gnome.baobab
+          - net.nokyan.Resources.desktop
+          - com.github.tenderowl.frog
+          - filezilla
+          - org.gnome.Screenshot
+          - simple-scan
+          - org.gnome.Logs
+          - btrfs-assistant
+          - com.github.wwmm.easyeffects
+
+      dock:
+        - org.gnome.Nautilus
+        - firefox
+        - org.gnome.TextEditor
+        - org.gnome.Console
+
+      layout: []
