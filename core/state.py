@@ -6,7 +6,7 @@
 import os
 import json
 
-from core.helper_core import LOGS_DIR
+from core.config import LOGS_DIR
 
 STATE_FILE = os.path.join(LOGS_DIR, "state.json")
 
