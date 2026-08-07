@@ -435,20 +435,20 @@ def configure(config, feature):
 
 def _discover_aur_packages(config):
     import yaml
-    from core.helper_core import CONFIG_DIR, detect_profile
+    from core.config import PROFILES_DIR, detect_profile
 
     current = detect_profile() or ""
     skip = {"base", "package_profiles", current}
     packages = []
 
-    for filename in sorted(os.listdir(CONFIG_DIR)):
+    for filename in sorted(os.listdir(PROFILES_DIR)):
         if not filename.endswith(".yaml"):
             continue
         stem = filename[:-5]
         if stem in skip or stem.startswith("secrets"):
             continue
         try:
-            with open(os.path.join(CONFIG_DIR, filename)) as f:
+            with open(os.path.join(PROFILES_DIR, filename)) as f:
                 cfg = yaml.safe_load(f) or {}
             pkgs = cfg.get("machine_specific", {}).get("aur", [])
             for p in pkgs:
