@@ -22,15 +22,6 @@ def configure(config, feature):
             run(f"sudo systemctl enable --now {svc}")
 
     if cfg.get("auto_up"):
-        authkey = (
-            config.get("secrets", {}).get("tailscale_authkey")
-            or config.get("tailscale", {}).get("oauth_secret")
-            or config.get("tailscale", {}).get("authkey")
-            or cfg.get("authkey")
-        )
-        if authkey:
-            logger.info("[tailscale] Authenticating with authkey / OAuth secret...")
-            run(f"sudo tailscale up --authkey={authkey} || true")
-        else:
-            logger.info("[tailscale] Running tailscale up with 5s timeout to prevent hanging...")
-            run("sudo tailscale up --timeout=5s || true", check=False)
+        logger.info("[tailscale] Running tailscale up with 5s timeout...")
+        run("sudo tailscale up --timeout=5s || true", check=False)
+

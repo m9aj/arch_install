@@ -16,6 +16,9 @@ root:
     - name: "@local_aur_repo"
       mount: /srv/local-aur-repo
       reuse: yes
+    - name: "@tailscale"
+      mount: /var/lib/tailscale
+      reuse: yes
 
 additional_mounts:
   - name: personal

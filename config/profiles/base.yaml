@@ -35,12 +35,10 @@ root:
     - name: "@pkg"
       mount: /var/cache/pacman/pkg
       reuse: yes
-    - name: "@tailscale"
-      mount: /var/lib/tailscale
-      reuse: yes
     - name: "@ssh"
       mount: /etc/ssh
       reuse: yes
+
 
 system:
   hostname:
@@ -158,7 +156,7 @@ features:
       theme: spinner
 
   tailscale:
-    enabled: true
+    enabled: false
     config:
       auto_up: false
 

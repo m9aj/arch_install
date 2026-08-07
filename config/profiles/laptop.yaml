@@ -13,6 +13,9 @@ root:
       reuse: yes
     - name: "@home"
       reuse: no
+    - name: "@tailscale"
+      mount: /var/lib/tailscale
+      reuse: yes
 
 additional_mounts:
   - name: personal

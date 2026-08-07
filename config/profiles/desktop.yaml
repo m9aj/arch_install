@@ -61,9 +61,9 @@ features:
     enabled: true
 
   tailscale:
-    enabled: true
+    enabled: false
     config:
-      auto_up: true
+      auto_up: false
 
   pia:
     enabled: false
