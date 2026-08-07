@@ -63,7 +63,12 @@ def handle_root_subvolumes(config):
             # If subvolume exists and should NOT be reused, delete it atomically
             if os.path.exists(path) and not should_reuse:
                 logger.info(f"Deleting non-reused subvolume {name}")
-                run(f"btrfs subvolume delete {path}")
+                res = run(f"btrfs subvolume delete --recursive {path}", check=False)
+                if res.returncode != 0:
+                    res = run(f"btrfs subvolume delete {path}", check=False)
+                if res.returncode != 0 and os.path.exists(path):
+                    logger.warning(f"btrfs subvolume delete failed for {path}, falling back to content cleanup...")
+                    run(f"find {path} -mindepth 1 -delete", check=False)
 
             # Ensure subvolume exists
             if not os.path.exists(path):
