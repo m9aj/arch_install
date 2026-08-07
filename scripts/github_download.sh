@@ -8,16 +8,16 @@ usage() {
 Download the arch_install project from GitHub.
 
 Usage:
-  bash github_download.sh [destination] [branch]
+  bash github_download.sh [branch] [destination]
 
 Arguments:
-  destination   Local directory to clone into (default: arch_install)
   branch        Git branch to checkout (default: main)
+  destination   Local directory to clone into (default: arch_install)
 
 Examples:
   bash github_download.sh                        # clone main → ./arch_install
-  bash github_download.sh arch_install dev       # clone dev branch
-  bash github_download.sh ~/my_install dev       # custom destination + branch
+  bash github_download.sh dev                    # clone dev branch → ./arch_install
+  bash github_download.sh dev ~/my_install       # clone dev branch → custom destination
 EOF
 }
 
@@ -28,8 +28,8 @@ case "${1:-}" in
         ;;
 esac
 
-DEST="${1:-arch_install}"
-BRANCH="${2:-main}"
+BRANCH="${1:-main}"
+DEST="${2:-arch_install}"
 
 if ! command -v git &>/dev/null; then
     echo "git not found — installing..."
