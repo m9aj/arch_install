@@ -1,7 +1,7 @@
 # core/helper_gnome.py
 
 import os
-from core.helper_basic import run
+from core.shell import run
 
 def _is_gnome(config):
     return config.get("arch", {}).get("de") == "gnome"

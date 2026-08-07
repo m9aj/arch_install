@@ -16,6 +16,10 @@ _passphrase_cache = None
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
+PROFILES_DIR = os.path.join(CONFIG_DIR, "profiles")
+DCONF_DIR = os.path.join(CONFIG_DIR, "dconf")
+SSH_DIR = os.path.join(CONFIG_DIR, "ssh")
+SECRETS_DIR = os.path.join(CONFIG_DIR, "secrets")
 LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
 
 # ------------------------
@@ -23,14 +27,15 @@ LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
 # ------------------------
 
 def _discover_profiles():
-    """Return all profile names in config/."""
+    """Return all profile names in config/profiles/ (or config/)."""
+    target_dir = PROFILES_DIR if os.path.exists(PROFILES_DIR) else CONFIG_DIR
     ignore_files = {
         "base.yaml", "package_profiles.yaml", "wifi.yaml",
         "secrets.yaml", "secrets.yaml.template", "wifi.yaml.template",
         "base_dconf.yaml", "base_ssh.yaml"
     }
     profiles = set()
-    for f in os.listdir(CONFIG_DIR):
+    for f in os.listdir(target_dir):
         if not f.endswith(".yaml") or f in ignore_files or f.endswith("_dconf.yaml") or f.endswith("_ssh.yaml"):
             continue
         if f.endswith("_core.yaml"):
@@ -84,22 +89,36 @@ def get_config_path():
 
 
 def get_dconf_path():
-    """Resolve dconf config path: {profile}_dconf.yaml in config/, or base_dconf.yaml."""
+    """Resolve dconf config path: config/dconf/{profile}.yaml or config/{profile}_dconf.yaml."""
     profile = detect_profile()
     if profile:
-        path = os.path.join(CONFIG_DIR, f"{profile}_dconf.yaml")
-        if os.path.exists(path):
-            return path
+        new_path = os.path.join(DCONF_DIR, f"{profile}.yaml")
+        if os.path.exists(new_path):
+            return new_path
+        legacy_path = os.path.join(CONFIG_DIR, f"{profile}_dconf.yaml")
+        if os.path.exists(legacy_path):
+            return legacy_path
+
+    base_new = os.path.join(DCONF_DIR, "base.yaml")
+    if os.path.exists(base_new):
+        return base_new
     return os.path.join(CONFIG_DIR, "base_dconf.yaml")
 
 def get_ssh_path():
-    """Resolve SSH config: {profile}_ssh.yaml[.age] in config/, or base_ssh.yaml."""
+    """Resolve SSH config: config/ssh/{profile}.yaml[.age] or config/{profile}_ssh.yaml[.age]."""
     profile = detect_profile()
     if profile:
         for ext in [".age", ""]:
-            path = os.path.join(CONFIG_DIR, f"{profile}_ssh.yaml{ext}")
-            if os.path.exists(path):
-                return path
+            new_path = os.path.join(SSH_DIR, f"{profile}.yaml{ext}")
+            if os.path.exists(new_path):
+                return new_path
+            legacy_path = os.path.join(CONFIG_DIR, f"{profile}_ssh.yaml{ext}")
+            if os.path.exists(legacy_path):
+                return legacy_path
+
+    base_new = os.path.join(SSH_DIR, "base.yaml")
+    if os.path.exists(base_new):
+        return base_new
     return os.path.join(CONFIG_DIR, "base_ssh.yaml")
 
 # ------------------------
@@ -108,16 +127,19 @@ def get_ssh_path():
 
 def load_yaml(filename):
     path = os.path.join(CONFIG_DIR, filename)
+    if not os.path.exists(path) and os.path.exists(os.path.join(PROFILES_DIR, filename)):
+        path = os.path.join(PROFILES_DIR, filename)
     with open(path) as f:
         return yaml.safe_load(f)
 
 def load_wifi_bootstrap():
     """Load wifi.yaml directly — no age decryption needed."""
-    path = os.path.join(CONFIG_DIR, "wifi.yaml")
-    if not os.path.exists(path):
-        return {}
-    with open(path) as f:
-        return yaml.safe_load(f) or {}
+    for dir_path in [SECRETS_DIR, CONFIG_DIR]:
+        path = os.path.join(dir_path, "wifi.yaml")
+        if os.path.exists(path):
+            with open(path) as f:
+                return yaml.safe_load(f) or {}
+    return {}
 
 def merge_dicts(base, override):
     result = base.copy()
@@ -184,6 +206,7 @@ def _decrypt_age_yaml(path):
     stdout, stderr = proc.communicate()
     os.close(master_fd)
     if proc.returncode != 0:
+        _passphrase_cache = None
         raise RuntimeError(f"age decryption failed for {path}: {stderr.decode().strip()}")
     return yaml.safe_load(stdout.decode())
 
@@ -192,58 +215,56 @@ def load_profile_config(profile):
     Load and merge all config files for a profile.
 
     Merge precedence:
-      1. Base config: config/base.yaml (or legacy base_*.yaml split files)
-      2. Profile config: config/{profile}.yaml (or legacy {profile}_*.yaml split files)
-      3. Plain wifi.yaml
-      4. Secrets (secrets.yaml or secrets.yaml.age)
+      1. Base config: config/profiles/base.yaml (or config/base.yaml)
+      2. Profile config: config/profiles/{profile}.yaml (or config/{profile}.yaml)
+      3. Plain wifi.yaml (config/secrets/wifi.yaml)
+      4. Secrets (config/secrets/secrets.yaml[.age])
     """
     config = {}
 
     # 1. Base configuration
-    base_consolidated = os.path.join(CONFIG_DIR, "base.yaml")
+    base_consolidated = os.path.join(PROFILES_DIR, "base.yaml")
+    if not os.path.exists(base_consolidated):
+        base_consolidated = os.path.join(CONFIG_DIR, "base.yaml")
     if os.path.exists(base_consolidated):
         with open(base_consolidated) as f:
             config = yaml.safe_load(f) or {}
-    else:
-        for suffix in ["_core", "_packages", "_features", "_config"]:
-            base_path = os.path.join(CONFIG_DIR, f"base{suffix}.yaml")
-            if os.path.exists(base_path):
-                with open(base_path) as f:
-                    config = merge_dicts(config, yaml.safe_load(f) or {})
 
     # 2. Profile overrides
-    profile_consolidated = os.path.join(CONFIG_DIR, f"{profile}.yaml")
+    profile_consolidated = os.path.join(PROFILES_DIR, f"{profile}.yaml")
+    if not os.path.exists(profile_consolidated):
+        profile_consolidated = os.path.join(CONFIG_DIR, f"{profile}.yaml")
     if os.path.exists(profile_consolidated):
         with open(profile_consolidated) as f:
             override = yaml.safe_load(f) or {}
         config = merge_dicts(config, override)
-    else:
-        for suffix in ["_core", "_packages", "_features", "_config"]:
-            path = os.path.join(CONFIG_DIR, f"{profile}{suffix}.yaml")
-            if os.path.exists(path):
-                with open(path) as f:
-                    override = yaml.safe_load(f) or {}
-                config = merge_dicts(config, override)
 
     # 3. Wifi config
-    wifi_path = os.path.join(CONFIG_DIR, "wifi.yaml")
-    if os.path.exists(wifi_path):
-        with open(wifi_path) as f:
-            wifi = yaml.safe_load(f) or {}
-        config = merge_dicts(config, wifi)
+    for wifi_dir in [SECRETS_DIR, CONFIG_DIR]:
+        wifi_path = os.path.join(wifi_dir, "wifi.yaml")
+        if os.path.exists(wifi_path):
+            with open(wifi_path) as f:
+                wifi = yaml.safe_load(f) or {}
+            config = merge_dicts(config, wifi)
+            break
 
     # 4. Secrets
-    age_path = os.path.join(CONFIG_DIR, "secrets.yaml.age")
-    plain_path = os.path.join(CONFIG_DIR, "secrets.yaml")
-    if os.path.exists(age_path):
-        secrets = _decrypt_age_yaml(age_path)
-    elif os.path.exists(plain_path):
-        with open(plain_path) as f:
-            secrets = yaml.safe_load(f) or {}
-    else:
-        secrets = {}
-    if secrets:
-        config = merge_dicts(config, secrets)
+    secrets_found = False
+    for sec_dir in [SECRETS_DIR, CONFIG_DIR]:
+        age_path = os.path.join(sec_dir, "secrets.yaml.age")
+        plain_path = os.path.join(sec_dir, "secrets.yaml")
+        if os.path.exists(age_path):
+            secrets = _decrypt_age_yaml(age_path)
+            secrets_found = True
+        elif os.path.exists(plain_path):
+            with open(plain_path) as f:
+                secrets = yaml.safe_load(f) or {}
+            secrets_found = True
+        else:
+            secrets = {}
+        if secrets_found:
+            config = merge_dicts(config, secrets)
+            break
 
     global _config_written
     if not _config_written:
@@ -256,11 +277,14 @@ def load_profile_config(profile):
     return config
 
 def load_dconf(path):
-    """Load dconf config, merging base_dconf.yaml with the profile-specific file."""
+    """Load dconf config, merging base dconf config with the profile-specific file."""
     with open(path) as f:
         cfg = yaml.safe_load(f) or {}
 
-    base_path = os.path.join(CONFIG_DIR, "base_dconf.yaml")
+    base_path = os.path.join(DCONF_DIR, "base.yaml")
+    if not os.path.exists(base_path):
+        base_path = os.path.join(CONFIG_DIR, "base_dconf.yaml")
+
     if os.path.abspath(path) != os.path.abspath(base_path) and os.path.exists(base_path):
         with open(base_path) as f:
             base = yaml.safe_load(f) or {}
@@ -277,14 +301,17 @@ def load_dconf(path):
     return cfg
 
 def load_ssh_config(path):
-    """Load SSH config, merging base_ssh.yaml with the profile-specific file (supports .age)."""
+    """Load SSH config, merging base SSH config with the profile-specific file (supports .age)."""
     if path.endswith(".age"):
         cfg = _decrypt_age_yaml(path)
     else:
         with open(path) as f:
             cfg = yaml.safe_load(f) or {}
 
-    base_path = os.path.join(CONFIG_DIR, "base_ssh.yaml")
+    base_path = os.path.join(SSH_DIR, "base.yaml")
+    if not os.path.exists(base_path):
+        base_path = os.path.join(CONFIG_DIR, "base_ssh.yaml")
+
     if os.path.abspath(path) != os.path.abspath(base_path) and os.path.exists(base_path):
         with open(base_path) as f:
             base = yaml.safe_load(f) or {}

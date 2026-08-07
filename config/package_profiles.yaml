@@ -13,6 +13,9 @@ bootloader:
   refind:
     packages:
       - refind
+  limine:
+    packages:
+      - limine
 
 
 core_profiles:
@@ -53,6 +56,7 @@ post_profiles:
       - mesa
     services:
       - NetworkManager
+      - systemd-resolved
       - fstrim.timer
     
   gnome:

@@ -7,9 +7,9 @@ import os
 import shlex
 import tempfile
 import urllib.request
-from core.helper_core import load_yaml, detect_profile, load_dconf, get_dconf_path
-from core.helper_basic import run
-from core.helper_gnome import _is_gnome, normalize_desktop_name
+from core.config import load_yaml, detect_profile, load_dconf, get_dconf_path
+from core.shell import run
+from core.gnome import _is_gnome, normalize_desktop_name
 from core.logger import logger
 
 

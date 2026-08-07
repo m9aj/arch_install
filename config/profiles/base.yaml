@@ -20,14 +20,23 @@ root:
     - name: "@"
       mount: /
       reuse: no                           # no = delete and recreate on install
-    - name: "@var"
+    - name: "@home"
+      mount: /home
+      reuse: yes                          # yes = keep across reinstalls
+    - name: "@snapshots"
+      mount: /.snapshots
+      reuse: yes
+    - name: "@var_log"
       mount: /var/log
+      reuse: no
+    - name: "@var_cache"
+      mount: /var/cache
+      reuse: no
+    - name: "@var_tmp"
+      mount: /var/tmp
       reuse: no
     - name: "@pkg"
       mount: /var/cache/pacman/pkg
-      reuse: yes                          # yes = keep across reinstalls
-    - name: "@home"
-      mount: /home
       reuse: yes
     - name: "@tailscale"
       mount: /var/lib/tailscale
@@ -54,7 +63,7 @@ hardware:
   gpu: auto                               # amd | nvidia | auto (detected via lspci)
 
 boot:
-  bootloader: systemd-boot                # systemd-boot | refind | none
+  bootloader: systemd-boot                # systemd-boot | refind | limine | none
   init: mkinitcpio                        # mkinitcpio | dracut | booster
   kernel_params:
     - quiet
@@ -99,7 +108,7 @@ pkgprofile:
 
 machine_specific:
   pacman: []                              # Extra pacman packages not in any profile
-  aur_helper: pikaur                      # pikaur
+  aur_helper: paru                       # paru | yay | pikaur
   aur: []
   services: []
 

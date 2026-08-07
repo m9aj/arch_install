@@ -6,7 +6,7 @@ import os
 import shlex
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.helper_basic import run, apply_kernel_parameter
+from core.shell import run, apply_kernel_parameter
 from core.logger import logger
 
 PACMAN_PACKAGES = ["zram-generator"]

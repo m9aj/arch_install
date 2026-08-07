@@ -15,7 +15,7 @@ Usage:
   arch-install help                       Show this message
 
 Profiles:
-    desktop | laptop | server    Named profile from config/
+    desktop | laptop | server    Named profile from config/profiles/
     /path/to/config.yaml         Custom config path
 
     On first run the profile is saved as a marker file and auto-detected
@@ -32,29 +32,15 @@ case "${1:-}" in
         ;;
     clean)
         echo "[INFO] Cleaning up marker files and logs..."
-        # Identify profile markers by looking at config/*.yaml files
-        for f in "$DIR"/config/*.yaml; do
-            if [ -f "$f" ]; then
-                filename=$(basename "$f")
-                case "$filename" in
-                    base.yaml|package_profiles.yaml|wifi.yaml|secrets.yaml|*_dconf.yaml|*_ssh.yaml|*_packages.yaml|*_features.yaml|*_config.yaml)
-                        continue
-                        ;;
-                    *_core.yaml)
-                        stem="${filename%_core.yaml}"
-                        ;;
-                    *.yaml)
-                        stem="${filename%.yaml}"
-                        ;;
-                esac
-                if [ "$stem" != "base" ] && [ -f "$DIR/$stem" ]; then
-                    rm "$DIR/$stem"
-                    echo "  Removed marker: $stem"
-                fi
+        for f in "$DIR"/config/profiles/*.yaml; do
+            [ -f "$f" ] || continue
+            stem="$(basename "$f" .yaml)"
+            if [ "$stem" != "base" ] && [ -f "$DIR/$stem" ]; then
+                rm -f "$DIR/$stem"
+                echo "  Removed marker: $stem"
             fi
         done
         if [ -d "$DIR/logs" ]; then
-            # Empty logs but keep the directory
             find "$DIR/logs" -mindepth 1 -delete
             echo "  Emptied logs/ directory"
         fi
@@ -77,29 +63,15 @@ case "${1:-}" in
         ;;
     feature)
         shift
-        exec python3 "$DIR/postreboot/feature_manual_install.py" "$@"
+        exec python3 "$DIR/postreboot/feature_cli.py" "$@"
         ;;
-
     post)
         shift
-        # Take ownership of any profile marker files and the entire logs directory
-        for f in "$DIR"/config/*.yaml; do
-            if [ -f "$f" ]; then
-                filename=$(basename "$f")
-                case "$filename" in
-                    base.yaml|package_profiles.yaml|wifi.yaml|secrets.yaml|*_dconf.yaml|*_ssh.yaml|*_packages.yaml|*_features.yaml|*_config.yaml)
-                        continue
-                        ;;
-                    *_core.yaml)
-                        stem="${filename%_core.yaml}"
-                        ;;
-                    *.yaml)
-                        stem="${filename%.yaml}"
-                        ;;
-                esac
-                if [[ "$stem" != "base" && -f "$DIR/$stem" ]]; then
-                    sudo chown 1000:1000 "$DIR/$stem"
-                fi
+        for f in "$DIR"/config/profiles/*.yaml; do
+            [ -f "$f" ] || continue
+            stem="$(basename "$f" .yaml)"
+            if [ "$stem" != "base" ] && [ -f "$DIR/$stem" ]; then
+                sudo chown 1000:1000 "$DIR/$stem"
             fi
         done
         if [ -d "$DIR/logs" ]; then

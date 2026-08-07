@@ -15,11 +15,17 @@ import getpass
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
+SECRETS_DIR = os.path.join(CONFIG_DIR, "secrets")
+SSH_DIR = os.path.join(CONFIG_DIR, "ssh")
 
-SENSITIVE_FILES = [
-    "secrets.yaml",
-    "laptop_ssh.yaml",
-    "desktop_ssh.yaml",
+SENSITIVE_AGE_FILES = [
+    os.path.join(SECRETS_DIR, "secrets.yaml.age"),
+    os.path.join(SSH_DIR, "laptop.yaml.age"),
+    os.path.join(SSH_DIR, "desktop.yaml.age"),
+    # Legacy fallbacks
+    os.path.join(CONFIG_DIR, "secrets.yaml.age"),
+    os.path.join(CONFIG_DIR, "laptop_ssh.yaml.age"),
+    os.path.join(CONFIG_DIR, "desktop_ssh.yaml.age"),
 ]
 
 
@@ -65,11 +71,7 @@ def _decrypt(age_path, passphrase):
 def main():
     _check_age()
 
-    to_decrypt = [
-        os.path.join(CONFIG_DIR, f + ".age")
-        for f in SENSITIVE_FILES
-        if os.path.isfile(os.path.join(CONFIG_DIR, f + ".age"))
-    ]
+    to_decrypt = [f for f in SENSITIVE_AGE_FILES if os.path.isfile(f)]
 
     if not to_decrypt:
         print("Nothing to decrypt — no .age files found.")

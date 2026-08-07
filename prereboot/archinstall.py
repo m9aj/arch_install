@@ -1,7 +1,7 @@
 # preinstall/archinstall.py
 
-from core.helper_basic import run, chroot
-from core.helper_disk import get_partition
+from core.shell import run, chroot
+from core.disk import get_partition
 from core.resolver import resolve_system
 from core.logger import logger
 import os
@@ -110,9 +110,9 @@ def create_user(config):
     fullname = config["system"].get("fullname", user)
     chroot(f"id -u {user} >/dev/null 2>&1 || useradd -m -s /bin/zsh -c '{fullname}' {user}")
     chroot(f"usermod -aG wheel {user}")
-    # Uncomment the standard %wheel rule if commented out, otherwise append it
-    chroot("sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers")
-    chroot("grep -q '^%wheel ALL=(ALL:ALL) ALL' /etc/sudoers || echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers")
+    chroot("mkdir -p /etc/sudoers.d")
+    chroot("echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel")
+    chroot("chmod 440 /etc/sudoers.d/10-wheel")
 
 def set_passwords(config):
     root_pw = config["system"].get("root_password")
@@ -153,6 +153,12 @@ fi
 """
         chroot(script)
 
+def configure_resolved():
+    logger.info("Configuring systemd-resolved and NetworkManager integration")
+    chroot("mkdir -p /etc/NetworkManager/conf.d")
+    chroot("printf '[main]\\ndns=systemd-resolved\\n' > /etc/NetworkManager/conf.d/dns.conf")
+    chroot("ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf")
+
 def initial_config(config):
     logger.info("Configuring system (chroot)")
     set_hostname(config)
@@ -161,6 +167,7 @@ def initial_config(config):
     create_user(config)
     set_passwords(config)
     configure_autologin(config)
+    configure_resolved()
 
 # ------------------------
 # Tweaks

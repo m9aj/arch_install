@@ -3,7 +3,7 @@
 import hashlib
 import json
 import subprocess
-from core.helper_core import load_yaml
+from core.config import load_yaml
 
 _resolve_cache = {}
 

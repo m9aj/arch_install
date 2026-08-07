@@ -25,7 +25,7 @@ system:
   hostname: Io
 
 boot:
-  bootloader: refind
+  bootloader: limine
   init: dracut
 
 pkgprofile:

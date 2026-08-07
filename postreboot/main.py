@@ -6,42 +6,41 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.helper_core import get_config_path, load_profile_config, LOGS_DIR
-from core.helper_basic import run
+from core.config import get_config_path, load_profile_config, LOGS_DIR
+from core.shell import run
 from core.validator import validate
 from core.state import is_done, mark_done, mark_skipped, mark_failed
 from core.logger import logger, setup as setup_logger, set_stderr_log
 
-
-from core import helper_network as network
+from core import network
 
 from postreboot import (
-    aur, home_shortcuts, feature_orchestrator, dotfiles,
-    config_steps, gnome_config, themes
+    aur, user_dirs, features, dotfiles,
+    system_config, gnome, themes
 )
 from features import local_aur_repo
 
 STEPS = [
-    ("home_shortcuts",        home_shortcuts.setup_user_dirs),
+    ("user_dirs",             user_dirs.setup_user_dirs),
     ("dotfiles",              dotfiles.setup_dotfiles),
     ("bluetooth",             dotfiles.setup_bluetooth),
-    ("network_hosts",          config_steps.apply_static_hosts),
+    ("network_hosts",          system_config.apply_static_hosts),
     ("local_aur_repo_client", local_aur_repo.configure_client),
     ("aur_helper",            aur.install_aur_helper),
-    ("features",        feature_orchestrator.run_enabled_features),
+    ("features",              features.run_enabled_features),
 
-    ("aur_packages",    aur.install_aur_packages),
-    ("gsettings",       gnome_config.apply_gsettings),
-    ("lockscreen_config", gnome_config.apply_lockscreen_config),
-    ("extensions",      gnome_config.install_gnome_extensions),
-    ("keybindings",     gnome_config.apply_custom_keybindings),
-    ("hide_apps",       gnome_config.hide_apps),
-    ("app_folders",     gnome_config.dash_folders),
-    ("dock",            gnome_config.apply_gnome_dock),
-    ("color_profiles",  gnome_config.apply_color_profiles),
-    ("themes",          themes.install_themes),
-    ("citrix",          config_steps.configure_citrix),
-    ("app_layout",      gnome_config.apply_app_picker_layout),
+    ("aur_packages",          aur.install_aur_packages),
+    ("gsettings",             gnome.apply_gsettings),
+    ("lockscreen_config",     gnome.apply_lockscreen_config),
+    ("extensions",            gnome.install_gnome_extensions),
+    ("keybindings",           gnome.apply_custom_keybindings),
+    ("hide_apps",             gnome.hide_apps),
+    ("app_folders",           gnome.dash_folders),
+    ("dock",                  gnome.apply_gnome_dock),
+    ("color_profiles",        gnome.apply_color_profiles),
+    ("themes",                themes.install_themes),
+    ("citrix",                system_config.configure_citrix),
+    ("app_layout",            gnome.apply_app_picker_layout),
 ]
 
 

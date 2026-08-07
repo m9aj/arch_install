@@ -61,13 +61,8 @@ def validate(config: Dict[str, Any]):
     require(config, "system.timezone")
 
     # Boot checks
-    enum(config, "boot.bootloader", ["systemd-boot", "refind", "none"])
+    enum(config, "boot.bootloader", ["systemd-boot", "refind", "limine", "none"])
     enum(config, "boot.init", ["mkinitcpio", "dracut", "booster"])
-
-    # Reject explicit disabling of UKI or non-standard boot_mount
-    uki_cfg = _get(config, "boot.uki")
-    if uki_cfg is False:
-        raise ValueError("boot.uki: setting uki to false is no longer supported. UKI is now the default and only boot mode.")
 
     boot_mount_cfg = _get(config, "boot.boot_mount")
     if boot_mount_cfg and boot_mount_cfg != "/efi":
@@ -76,6 +71,9 @@ def validate(config: Dict[str, Any]):
     # Hardware checks
     enum(config, "hardware.cpu", ["amd", "intel", "auto"])
     enum(config, "hardware.gpu", ["amd", "nvidia", "auto"])
+
+    # AUR helper check
+    enum_optional(config, "machine_specific.aur_helper", ["paru", "yay", "pikaur", "none"])
 
 # ------------------------
 # Helpers
@@ -99,4 +97,9 @@ def enum(config: Dict[str, Any], path: str, allowed: List[str]):
     if not value:
         raise ValueError(f"Missing required field: {path}")
     if value not in allowed:
+        raise ValueError(f"Invalid value for {path}: '{value}'. Must be one of: {', '.join(allowed)}")
+
+def enum_optional(config: Dict[str, Any], path: str, allowed: List[str]):
+    value = _get(config, path)
+    if value and value not in allowed:
         raise ValueError(f"Invalid value for {path}: '{value}'. Must be one of: {', '.join(allowed)}")

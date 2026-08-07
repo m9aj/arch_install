@@ -2,13 +2,13 @@
 
 import re
 import tempfile
-from core.helper_basic import run
+from core.shell import run
 from core.logger import logger
-from core.helper_installer import install_packages
+from core.installer import install_packages
 
 
 def install_aur_helper(config):
-    helper = config.get("machine_specific", {}).get("aur_helper", "pikaur")
+    helper = config.get("machine_specific", {}).get("aur_helper", "paru")
 
     if helper == "none":
         return
@@ -65,7 +65,7 @@ def install_aur_packages(config):
 
     run("sudo pacman -Syy --noconfirm", check=False)
     import_gpg_keys(config)
-    helper = config.get("machine_specific", {}).get("aur_helper", "pikaur")
+    helper = config.get("machine_specific", {}).get("aur_helper", "paru")
     failed = []
     for pkg in pkgs:
         logger.info(f"[AUR] Installing: {pkg}")

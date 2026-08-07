@@ -2,8 +2,8 @@
 
 import os
 import shlex
-from core.helper_basic import run, chroot
-from core.helper_disk import get_root_partition
+from core.shell import run, chroot
+from core.disk import get_root_partition
 from core.resolver import resolve_system, detect_gpu
 from core.logger import logger
 
@@ -12,7 +12,7 @@ def install_bootloader(config):
     bootloader = config.get("boot", {}).get("bootloader", "systemd-boot")
     init       = config.get("boot", {}).get("init", "mkinitcpio")
 
-    logger.info(f"Installing bootloader: {bootloader}  (init: {init}, UKI: True)")
+    logger.info(f"Installing bootloader: {bootloader}  (init: {init}, UKI mode)")
 
     generate_initramfs(config)
 
@@ -20,6 +20,8 @@ def install_bootloader(config):
         install_systemd_boot(config)
     elif bootloader == "refind":
         install_refind(config)
+    elif bootloader == "limine":
+        install_limine(config)
     elif bootloader == "none":
         register_uki_efi(config)
     else:
@@ -37,6 +39,7 @@ def generate_initramfs(config):
     boot_mount = "/efi"
 
     _write_kernel_cmdline(config)
+    _configure_kernel_install(config)
     _setup_nvidia_kms(config)
     if init == "mkinitcpio":
         _patch_mkinitcpio_preset_for_uki(config)
@@ -46,7 +49,7 @@ def generate_initramfs(config):
         run(f"mkdir -p /mnt{boot_mount}/EFI/Linux")
         chroot(f"dracut --uefi --force --hostonly --kernel-cmdline \"$(cat /etc/kernel/cmdline)\" {boot_mount}/EFI/Linux/{efi}")
 
-        # Create pacman hook to automatically update UKI when the kernel, ucode, or systemd updates
+        # Create pacman hook to automatically update UKI when the kernel, microcode, or systemd updates
         hooks_dir = "/mnt/etc/pacman.d/hooks"
         run(f"mkdir -p {hooks_dir}")
         hook_content = f"""[Trigger]
@@ -55,11 +58,11 @@ Operation = Install
 Operation = Upgrade
 Operation = Remove
 Target = usr/lib/modules/*/vmlinuz
-Target = boot/*-ucode.img
-Target = usr/lib/systemd/boot/efi/linuxx64.elf.stub
+Target = usr/lib/firmware/*
+Target = usr/lib/systemd/boot/efi/*
 
 [Action]
-Description = Updating Unified Kernel Images (UKIs) on ESP...
+Description = Updating Unified Kernel Images (UKIs) on ESP via dracut...
 When = PostTransaction
 Exec = /usr/bin/bash -c 'for pkgbase in /usr/lib/modules/*/pkgbase; do [ -f "$pkgbase" ] || continue; kver=$(basename $(dirname $pkgbase)); pkgname=$(cat "$pkgbase"); /usr/bin/dracut --uefi --force --hostonly --kernel-cmdline "$(cat /etc/kernel/cmdline)" {boot_mount}/EFI/Linux/arch-${{pkgname}}.efi --kver "$kver"; done'
 """
@@ -77,9 +80,19 @@ def _write_kernel_cmdline(config):
     if "rootflags=subvol=@" not in " ".join(params):
         params.append("rootflags=subvol=@")
 
-    uuid = run(f"blkid -s UUID -o value {root_part}").stdout.strip()
+    uuid_res = run(f"blkid -s UUID -o value {root_part}").stdout.strip()
+    uuid = uuid_res.splitlines()[0] if uuid_res else ""
     run("mkdir -p /mnt/etc/kernel")
     run(f"echo 'root=UUID={uuid} {' '.join(params)}' > /mnt/etc/kernel/cmdline")
+
+
+def _configure_kernel_install(config):
+    init = config.get("boot", {}).get("init", "mkinitcpio")
+    run("mkdir -p /mnt/etc/kernel")
+    run(f"""cat > /mnt/etc/kernel/install.conf <<_EOF_
+layout=uki
+initrd_generator={init}
+_EOF_""")
 
 
 def _patch_mkinitcpio_preset_for_uki(config):
@@ -92,12 +105,11 @@ def _patch_mkinitcpio_preset_for_uki(config):
     run(f"""cat > /mnt/etc/mkinitcpio.d/{kernel}.preset <<'_EOF_'
 ALL_config="/etc/mkinitcpio.conf"
 ALL_kver="/boot/vmlinuz-{kernel}"
-ALL_microcode=(/boot/*-ucode.img)
 
 PRESETS=('default')
 
 default_uki="{boot_mount}/EFI/Linux/{main_uki}"
-default_options=""
+default_options="--cmdline /etc/kernel/cmdline"
 _EOF_""")
 
 
@@ -364,4 +376,44 @@ def _enable_nvidia_kms_dracut():
     logger.info(f"Created {file_path} for Nvidia early KMS")
 
 
+# ------------------------
+# Limine
+# ------------------------
 
+def install_limine(config):
+    boot_mount = "/efi"
+    kernel = config.get("boot", {}).get("kernel", "linux")
+    uki_name = uki_filename(config)
+
+    logger.info("Installing Limine bootloader...")
+    run(f"mkdir -p /mnt{boot_mount}/EFI/limine /mnt{boot_mount}/EFI/BOOT")
+    chroot("cp /usr/share/limine/BOOTX64.EFI /efi/EFI/limine/limine.efi")
+    chroot("cp /usr/share/limine/BOOTX64.EFI /efi/EFI/BOOT/BOOTX64.EFI")
+
+    limine_conf = f"""timeout: 3
+verbose: no
+
+/:Arch Linux ({kernel})
+    protocol: efi_uki
+    image_path: boot():/EFI/Linux/{uki_name}
+"""
+    with open(f"/mnt{boot_mount}/limine.conf", "w") as f:
+        f.write(limine_conf)
+
+    register_limine_efi(config)
+
+
+def register_limine_efi(config):
+    disk_by_id = config["disk"]["disk_by_id"]
+    boot_part  = config["disk"]["boot_part"]
+    label      = config.get("arch", {}).get("label", "Arch")
+    de         = config.get("arch", {}).get("de", "")
+    title      = f"{label} Limine".strip()
+
+    boot_dev_path = run(f"readlink -f /dev/disk/by-id/{disk_by_id}{boot_part}").stdout.strip()
+    part_name     = os.path.basename(boot_dev_path)
+    disk_name     = run(f"lsblk -no PKNAME {boot_dev_path}").stdout.strip()
+    part_num      = run(f"cat /sys/class/block/{part_name}/partition").stdout.strip()
+
+    run(f"efibootmgr --create --disk /dev/{disk_name} --part {part_num} "
+        f"--label {shlex.quote(title)} --loader '\\EFI\\limine\\limine.efi'", check=False)

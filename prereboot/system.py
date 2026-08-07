@@ -1,6 +1,6 @@
 # preinstall/system.py
 
-from core.helper_basic import run, chroot
+from core.shell import run, chroot
 from core.resolver import resolve_system
 from core.logger import logger
 

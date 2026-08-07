@@ -4,18 +4,22 @@ A modular, profile-based Arch Linux installer and post-installation configuratio
 
 ## Features
 
+## Features
+
 - **Modular Architecture**: Separate phases for pre-reboot (installation) and post-reboot (configuration).
-- **Profile Inheritance**: Configuration files (YAML) support deep-merging of focused split files for shared defaults and machine-specific overrides.
-- **Hardware-Aware**: Automatically detects CPU (Intel/AMD) and GPU (AMD/Nvidia) to install appropriate microcode and drivers.
-- **Btrfs-First**: Defaults to Btrfs with optimized mount options and subvolume layouts.
-- **Idempotency**: Progress is tracked in `state.json`, allowing the installer to resume from where it left off in case of failure.
-- **Rich Post-Install**: Automated setup of GNOME gsettings, extensions (via Firefox-based interaction), themes, dotfiles, and system features (VPN, firewall, zram).
+- **Domain-Based Configuration**: Clean subdirectory hierarchy (`config/profiles/`, `config/dconf/`, `config/ssh/`, `config/secrets/`) with inheritance and deep merging.
+- **Unified Kernel Image (UKI)**: 100% UKI-first architecture supporting Secure Boot, measured boot, and `/etc/kernel/install.conf` automatic triggers.
+- **Bootloader Choice**: Native UKI support for `systemd-boot`, `limine`, `refind`, or direct UEFI NVRAM registration (`none`).
+- **Hardware-Aware**: Automatically detects CPU (Intel/AMD) and GPU (AMD/Nvidia) to install appropriate microcode, KMS drivers, and packages.
+- **Btrfs-First & Atomic Resets**: Defaults to Btrfs subvolume layout with atomic subvolume reset (`delete` + `create`) on clean reinstalls.
+- **Idempotency**: Progress tracked in `logs/state.json`, allowing the installer to safely resume from failure.
+- **Modern System Integration**: Out-of-the-box `systemd-resolved` NetworkManager integration and `paru` AUR helper.
 
 ## Prerequisites
 
 1.  **Arch Linux Live ISO**: Boot from the official Arch ISO.
 2.  **Internet Connection**: Required for `pacstrap` and package installation.
-3.  **Local Repository**: This project should be cloned or available on a mounted drive (e.g., `/mnt/Personal/_Ajay/Arch/arch_install`).
+3.  **Local Repository**: This project should be cloned or available on a mounted drive.
 
 ## Usage
 
@@ -26,58 +30,57 @@ cd arch_install
 ./arch-install laptop
 ```
 This phase handles:
--   Disk partitioning and formatting (Btrfs).
+-   Disk partitioning and formatting (Btrfs subvolume layout).
 -   Mounting subvolumes.
--   `pacstrap` of core system.
--   Generating `fstab` and initial system configuration.
--   Installing the bootloader (`systemd-boot`).
+-   `pacstrap` of core system and microcode.
+-   Generating `fstab`, `systemd-resolved` DNS stub, and initial system configuration.
+-   Generating UKI (`/efi/EFI/Linux/arch-*.efi`) and installing bootloader (`systemd-boot`, `limine`, `refind`, or `none`).
 
 ### Phase 2: Configuration (Post-reboot)
 After rebooting into the new system:
 ```bash
 cd ~/Arch/arch_install
-sudo ./arch-install post
+./arch-install post
 ```
 This phase handles:
--   Installing AUR helper and requested packages.
--   Enabling system features (firewall, zram, tailscale).
+-   Installing AUR helper (`paru`) and requested packages.
+-   Enabling system features (firewall, zram, tailscale, snapper, btrfs-maintenance).
 -   Applying GNOME settings (dconf/gsettings, custom keybindings, dock).
--   Opening Firefox tabs for manual extension installation.
+-   Headless/CLI installation of GNOME shell extensions.
 -   Applying themes, cursors, and wallpapers.
--   Configuring color profiles.
+-   Configuring color profiles and user directories.
 
 ## Configuration Structure
 
-Each machine profile builds on top of `base.yaml`. The loader deep-merges profile overrides on top of the base defaults.
+Configuration is organized cleanly by domain in `config/`:
 
 ```
 config/
-  base.yaml                # shared base defaults (disk, system, boot, packages, features, postconfig)
-  base_dconf.yaml          # shared GNOME gsettings
-  base_ssh.yaml            # authorized_keys for all machines (committed, no private keys)
+  profiles/                # Machine profiles
+    base.yaml              # Shared base defaults (disk, system, boot, packages, features)
+    {profile}.yaml         # Machine profile overrides (laptop.yaml, desktop.yaml, server.yaml)
 
-  {profile}.yaml           # profile overrides (laptop.yaml, desktop.yaml, server.yaml)
-  {profile}_dconf.yaml     # GNOME gsettings overrides
+  dconf/                   # GNOME gsettings / dconf overrides
+    base.yaml              # Shared GNOME defaults
+    {profile}.yaml         # Machine GNOME overrides
 
-  {profile}_ssh.yaml[.age] # SSH client keypair (git-ignored, age-encrypted)
-  wifi.yaml                # WiFi credentials (git-ignored, not encrypted)
-  secrets.yaml[.age]       # passwords, VPN, keybindings (git-ignored, age-encrypted)
+  ssh/                     # SSH keypairs & authorized keys
+    base.yaml              # Shared authorized_keys for all servers (committed)
+    {profile}.yaml[.age]   # Machine SSH client keypair (git-ignored, age-encrypted)
+
+  secrets/                 # Passwords & bootstrap networking
+    secrets.yaml[.age]     # System passwords & VPN credentials (git-ignored, age-encrypted)
+    wifi.yaml              # Live ISO Wi-Fi credentials (git-ignored, plain text)
+
+  package_profiles.yaml    # Global package group mapping lookup table
 ```
 
 Profiles: `laptop` (hostname: Io), `desktop` (hostname: Titan), `server` (hostname: Media).
 
-Key sections in `base.yaml`:
+Key sections in `profiles/base.yaml`:
 -   `disk`, `root`, `boot`, `system`: Storage partitioning, init/bootloader, accounts.
 -   `pkgprofile`, `machine_specific`: System & AUR package lists.
 -   `features`: Standalone modules (tailscale, zram, firewall, btrfs_maintenance, etc.).
--   `postconfig`: GNOME configuration, dotfiles, themes, user directories.
--   `system`: User account details, timezone.
--   `disk`: Partitioning mode and Btrfs subvolumes.
-
-Key sections in `base_features.yaml`:
--   `features`: Standalone system modules (e.g., `tailscale`, `firewall`, `ssh`).
-
-Key sections in `base_config.yaml`:
 -   `postconfig`: GNOME configuration, dotfiles, themes, user directories.
 
 ## SSH Key Authentication
@@ -101,13 +104,13 @@ The `@ssh` Btrfs subvolume persists `/etc/ssh` across reinstalls, so the server'
 ```bash
 python3 scripts/gen-ssh-key.py
 ```
-This generates an ed25519 keypair per profile, writes `config/{profile}_ssh.yaml`, and updates `config/base_ssh.yaml` with the new public keys. Pass a profile name to generate for one machine only.
+This generates an ed25519 keypair per profile, writes `config/ssh/{profile}.yaml`, and updates `config/ssh/base.yaml` with the new public keys. Pass a profile name to generate for one machine only.
 
 **2. Encrypt the SSH key files** (see Secrets & Encryption below).
 
 ## Secrets & Encryption
 
-Sensitive files (`secrets.yaml`, `laptop_ssh.yaml`, `desktop_ssh.yaml`) can be encrypted with [age](https://age-encryption.org/) before storing. `wifi.yaml` is intentionally left unencrypted — it is read before age is available during the live ISO phase.
+Sensitive files (`config/secrets/secrets.yaml`, `config/ssh/*.yaml`) can be encrypted with [age](https://age-encryption.org/) before storing. `wifi.yaml` is intentionally left unencrypted — it is read before age is available during the live ISO phase.
 
 ### Encrypting
 
@@ -115,7 +118,7 @@ Sensitive files (`secrets.yaml`, `laptop_ssh.yaml`, `desktop_ssh.yaml`) can be e
 python3 scripts/encrypt_secrets.py
 ```
 
-Prompts for a passphrase once, encrypts `secrets.yaml`, `laptop_ssh.yaml`, and `desktop_ssh.yaml` to `.age` files, then offers to delete the plaintext originals.
+Prompts for a passphrase once, encrypts `config/secrets/secrets.yaml` and `config/ssh/*.yaml` to `.age` files, then offers to delete the plaintext originals.
 
 ### Running with encrypted secrets
 

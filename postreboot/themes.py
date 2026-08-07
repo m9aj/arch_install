@@ -4,10 +4,10 @@
 import os
 import shlex
 import tempfile
-from core.helper_core import PROJECT_ROOT
-from core.helper_basic import run
+from core.config import PROJECT_ROOT
+from core.shell import run
 from core.logger import logger
-from core.helper_gnome import _is_gnome
+from core.gnome import _is_gnome
 
 
 def _resolve(source):

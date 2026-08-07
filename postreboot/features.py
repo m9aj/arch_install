@@ -5,8 +5,8 @@
 import importlib
 from core.state import is_done, mark_done, mark_failed, mark_skipped
 from core.logger import logger
-from core.helper_basic import run
-from core.helper_installer import install_packages
+from core.shell import run
+from core.installer import install_packages
 
 def run_enabled_features(config):
     """

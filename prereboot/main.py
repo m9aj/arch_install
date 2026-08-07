@@ -6,13 +6,13 @@ import os
 import shutil
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.helper_core import get_config_path, load_profile_config, load_wifi_bootstrap, LOGS_DIR
-from core.helper_basic import run
+from core.config import get_config_path, load_profile_config, load_wifi_bootstrap, LOGS_DIR
+from core.shell import run
 from core.logger import logger, setup as setup_logger, set_stderr_log
 
 from core.validator import validate
 from core.state import is_done, mark_done
-from core.helper_network import ensure_internet
+from core.network import ensure_internet
 
 from prereboot import disk, archinstall, system, bootloader
 

@@ -1,8 +1,8 @@
 # preinstall/disk.py
 
 import os
-from core.helper_basic import run, confirm
-from core.helper_disk import get_partition, get_root_partition
+from core.shell import run, confirm
+from core.disk import get_partition, get_root_partition
 from core.logger import logger
 
 # ------------------------
@@ -60,18 +60,18 @@ def handle_root_subvolumes(config):
             elif str(reuse_val).lower() == "no":
                 should_reuse = False
 
-            # 1. Ensure subvolume exists
+            # If subvolume exists and should NOT be reused, delete it atomically
+            if os.path.exists(path) and not should_reuse:
+                logger.info(f"Deleting non-reused subvolume {name}")
+                run(f"btrfs subvolume delete {path}")
+
+            # Ensure subvolume exists
             if not os.path.exists(path):
                 logger.info(f"Creating subvolume {name}")
                 run(f"btrfs subvolume create {path}")
 
-            # 2. If not reusing, empty it (keep the subvolume itself)
-            if not should_reuse:
-                logger.info(f"Cleaning contents of subvolume {name}")
-                run(f"find {path} -mindepth 1 -delete || true")
-
-            # Disable CoW for the log subvolume (@var)
-            if name == "@var":
+            # Disable CoW for log subvolumes (@var / @var_log)
+            if name in ("@var", "@var_log"):
                 logger.info(f"Disabling CoW for subvolume {name}")
                 run(f"chattr +C {path}")
     finally:

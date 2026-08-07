@@ -8,9 +8,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import importlib
 
-from core.helper_core import get_config_path, load_profile_config, LOGS_DIR
+from core.config import get_config_path, load_profile_config, LOGS_DIR
 from core.logger import logger, setup as setup_logger, set_stderr_log
-from core.helper_installer import install_packages
+from core.installer import install_packages
 
 
 

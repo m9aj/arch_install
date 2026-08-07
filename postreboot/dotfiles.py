@@ -1,7 +1,7 @@
 # postreboot/dotfiles.py
 
 import os
-from core.helper_basic import run
+from core.shell import run
 from core.logger import logger
 
 

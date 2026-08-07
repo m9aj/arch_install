@@ -1,5 +1,8 @@
 # Secrets (plaintext only — encrypted .age files are safe to commit)
-config/secrets.yaml
+config/secrets/secrets.yaml
+config/ssh/*.yaml
+!config/ssh/*.yaml.age
+TODO
 
 # Logs and runtime state
 logs/

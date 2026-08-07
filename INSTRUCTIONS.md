@@ -24,19 +24,20 @@ The Arch Install project is organized into modular phases and core libraries to 
 
 ### Configuration (`config/`)
 
-- `base.yaml`: Consolidated shared defaults across core settings, package lists, enabled features, and GNOME/theme settings.
-- `{profile}.yaml`: Consolidated machine-specific overrides (e.g., `desktop.yaml`, `laptop.yaml`, `server.yaml`) that merge on top of `base.yaml`.
-- `package_profiles.yaml`: Maps high-level groups (e.g., `gnome`, `internet`) to actual package names and systemd services.
-- `secrets.yaml`: (Ignored by git) Contains sensitive data like passwords and VPN credentials (can be stored encrypted as `secrets.yaml.age`).
-- `base_dconf.yaml` / `{profile}_dconf.yaml`: Per-profile GNOME gsettings mappings applied during Phase 2.
+- `profiles/`: Machine profile configurations (`base.yaml` shared base, plus `{profile}.yaml` machine overrides like `desktop.yaml`, `laptop.yaml`, `server.yaml`).
+- `dconf/`: GNOME gsettings mappings (`base.yaml` shared defaults, `{profile}.yaml` per-machine overrides).
+- `ssh/`: SSH server authorized keys (`base.yaml`) and client keypairs (`{profile}.yaml[.age]`).
+- `secrets/`: Sensitive data like passwords, VPN credentials (`secrets.yaml[.age]`), and live ISO Wi-Fi (`wifi.yaml`).
+- `package_profiles.yaml`: Maps high-level package groups (e.g., `gnome`, `internet`) to package names and systemd services.
 
 ### Core Library (`core/`)
 
-- `helper_basic.py`: Low-level shell execution (`run`, `chroot`), kernel parameter application, and user interaction.
-- `helper_core.py`: Configuration loading, profile merging, and path resolution.
-- `helper_disk.py`: Disk and partition identification helpers.
-- `helper_gnome.py`: Shared GNOME helpers (session detection, desktop name normalisation).
-- `helper_network.py`: Connectivity checks and WiFi setup for the live ISO.
+- `shell.py`: Low-level shell execution (`run`, `chroot`), kernel parameter application, and user interaction.
+- `config.py`: Configuration loading, profile merging, and path resolution.
+- `disk.py`: Disk and partition identification helpers.
+- `gnome.py`: Shared GNOME helpers (session detection, desktop name normalisation).
+- `network.py`: Connectivity checks and WiFi setup for the live ISO.
+- `installer.py`: High-level pacman & AUR package installation helper.
 - `logger.py`: Centralized logging setup.
 - `resolver.py`: Dynamic resolution of package lists based on hardware (CPU/GPU) and selected profiles.
 - `state.py`: Idempotency logic using `state.json` to track completed steps.
@@ -63,28 +64,31 @@ Standalone modules for post-installation system features. Each module typically 
 
 Executed from the Arch Live ISO.
 - `main.py`: Orchestrates the pre-install steps.
-- `disk.py`: Partitioning, formatting, and mounting logic for Btrfs.
-- `archinstall.py`: System configuration (hostname, locale, users, autologin, tweaks).
-- `bootloader.py`: Installation and configuration of systemd-boot and rEFInd (incorporates Nvidia Early KMS setup).
+- `disk.py`: Partitioning, formatting, atomic resetting, and mounting logic for Btrfs.
+- `archinstall.py`: System configuration (hostname, locale, users, autologin, systemd-resolved DNS, sudoers drop-in).
+- `bootloader.py`: Installation and configuration of UKI bootloaders (systemd-boot, Limine, rEFInd, or direct EFI NVRAM registration) with Nvidia Early KMS setup.
 - `system.py`: Package installation and service enablement via chroot.
 
 ### Scripts (`scripts/`)
 
 Utility scripts for development and maintenance — not part of the install flow.
+- `encrypt_secrets.py`: Encrypts `config/secrets/secrets.yaml` and `config/ssh/*.yaml` using `age`.
+- `decrypt_secrets.py`: Decrypts `.age` files back to plaintext for editing.
+- `gen-ssh-key.py`: Generates ed25519 SSH keypairs per profile and updates authorized keys.
 - `dconf_to_yaml.py`: Dumps live dconf settings into the YAML format used by `config/dconf/`.
 
 ### Phase 2: Post-reboot (`postreboot/`)
 
 Executed after rebooting into the new system.
 - `main.py`: Orchestrates the post-install steps.
-- `gnome_config.py`: Detailed GNOME environment setup (gsettings, extensions, keybindings, color profiles).
+- `gnome.py`: Detailed GNOME environment setup (gsettings, extensions, keybindings, color profiles).
 - `themes.py`: Application of icons, cursors, and wallpapers.
 - `dotfiles.py`: Deployment of user configuration files.
-- `aur.py`: Installation of the AUR helper and requested AUR packages.
-- `config_steps.py`: Miscellaneous system configuration (network optimisations, Citrix, etc.).
-- `home_shortcuts.py`: Sets up standard XDG user directories and custom mount points.
-- `feature_orchestrator.py`: Dynamic runner that iterates over and runs all enabled features.
-- `feature_manual_install.py`: Standalone runner to install and configure a single named feature (`./arch-install feature <name>`).
+- `aur.py`: Installation of the AUR helper (`paru`) and requested AUR packages.
+- `system_config.py`: System level configuration (network hosts file, Citrix, etc.).
+- `user_dirs.py`: Sets up standard XDG user directories and symlinks.
+- `features.py`: Dynamic runner that iterates over and runs all enabled features.
+- `feature_cli.py`: Standalone CLI runner to install and configure a single named feature (`./arch-install feature <name>`).
 
 ## Key Commands
 
@@ -93,7 +97,7 @@ Executed after rebooting into the new system.
 ./arch-install laptop
 
 # Phase 2 — after reboot
-sudo ./arch-install post
+./arch-install post
 
 # Reset state to re-run steps
 ./arch-install clean
@@ -105,15 +109,15 @@ The profile name (`laptop`, `desktop`, `server`) is written as an empty marker f
 
 ### Configuration System (`config/`)
 
-Profiles use `extends: base` for inheritance. `load_config()` in `core/helper_core.py` deep-merges them:
+Profiles inherit from `config/profiles/base.yaml`. `load_profile_config()` in `core/config.py` deep-merges them:
 - **Dicts**: deep-merged (child overrides keys)
 - **Lists of plain values**: concatenated
 - **Lists of dicts with a `name` key** (e.g., `subvolumes`): merged by name — child entries update matching base entries
 
-`secrets.yaml` (git-ignored) is automatically merged into the root config at load time. Alternatively, store secrets encrypted as `secrets.yaml.age` — the installer will prompt for the passphrase once at startup and decrypt it in memory. To create it:
+`config/secrets/secrets.yaml` (git-ignored) is automatically merged into the root config at load time. Alternatively, store secrets encrypted as `config/secrets/secrets.yaml.age` — the installer will prompt for the passphrase once at startup and decrypt it in memory. To encrypt it:
 
 ```bash
-age --passphrase -o config/secrets.yaml.age config/secrets.yaml
+python3 scripts/encrypt_secrets.py
 ```
 
 `logs/merged_config.yaml` is written after every load for debugging. Secret fields (`root_password`, `user_password`, `password`) are redacted to `***` in that file.

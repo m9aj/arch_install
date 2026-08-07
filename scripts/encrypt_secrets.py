@@ -15,11 +15,17 @@ import getpass
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
+SECRETS_DIR = os.path.join(CONFIG_DIR, "secrets")
+SSH_DIR = os.path.join(CONFIG_DIR, "ssh")
 
 SENSITIVE_FILES = [
-    "secrets.yaml",
-    "laptop_ssh.yaml",
-    "desktop_ssh.yaml",
+    os.path.join(SECRETS_DIR, "secrets.yaml"),
+    os.path.join(SSH_DIR, "laptop.yaml"),
+    os.path.join(SSH_DIR, "desktop.yaml"),
+    # Legacy fallbacks
+    os.path.join(CONFIG_DIR, "secrets.yaml"),
+    os.path.join(CONFIG_DIR, "laptop_ssh.yaml"),
+    os.path.join(CONFIG_DIR, "desktop_ssh.yaml"),
 ]
 
 
@@ -65,11 +71,7 @@ def _encrypt(path, passphrase):
 def main():
     _check_age()
 
-    to_encrypt = [
-        os.path.join(CONFIG_DIR, f)
-        for f in SENSITIVE_FILES
-        if os.path.isfile(os.path.join(CONFIG_DIR, f))
-    ]
+    to_encrypt = [f for f in SENSITIVE_FILES if os.path.isfile(f)]
 
     if not to_encrypt:
         print("Nothing to encrypt — no plaintext files found.")

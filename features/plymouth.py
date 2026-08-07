@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.helper_basic import run, apply_kernel_parameter
+from core.shell import run, apply_kernel_parameter
 from core.logger import logger
 
 PACMAN_PACKAGES = ["plymouth"]
@@ -23,11 +23,18 @@ def configure(config, feature):
         apply_kernel_parameter(config, param)
 
     if init == "mkinitcpio":
-        # Inject hooks
-        for hook in HOOKS:
-            check_cmd = f"sudo grep -q ' {hook} ' /etc/mkinitcpio.conf"
-            if run(f"{check_cmd}", check=False).returncode != 0:
-                run(f"sudo sed -i 's/ udev / udev {hook} /' /etc/mkinitcpio.conf")
+        # Check whether systemd or udev is used in /etc/mkinitcpio.conf HOOKS
+        mk_conf = "/etc/mkinitcpio.conf"
+        has_sd_plymouth = run(f"sudo grep -q 'sd-plymouth' {mk_conf}", check=False).returncode == 0
+        has_plymouth = run(f"sudo grep -q ' plymouth ' {mk_conf}", check=False).returncode == 0
+
+        if not has_sd_plymouth and not has_plymouth:
+            if run(f"sudo grep -q ' systemd ' {mk_conf}", check=False).returncode == 0:
+                logger.info("[plymouth] Injecting sd-plymouth hook after systemd in /etc/mkinitcpio.conf")
+                run(f"sudo sed -i 's/ systemd / systemd sd-plymouth /' {mk_conf}")
+            elif run(f"sudo grep -q ' udev ' {mk_conf}", check=False).returncode == 0:
+                logger.info("[plymouth] Injecting plymouth hook after udev in /etc/mkinitcpio.conf")
+                run(f"sudo sed -i 's/ udev / udev plymouth /' {mk_conf}")
 
         # -R regenerates the initramfs after setting the theme.
         run(f"sudo plymouth-set-default-theme -R {theme}")

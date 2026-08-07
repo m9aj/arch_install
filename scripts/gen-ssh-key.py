@@ -16,9 +16,11 @@ import yaml
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
+PROFILES_DIR = os.path.join(CONFIG_DIR, "profiles")
+SSH_DIR = os.path.join(CONFIG_DIR, "ssh")
 sys.path.insert(0, PROJECT_ROOT)
 
-from core.helper_core import _discover_profiles
+from core.config import _discover_profiles
 
 
 def _load_yaml(path):
@@ -28,14 +30,13 @@ def _load_yaml(path):
 
 def _client_enabled(profile):
     """Return True if this profile has ssh client enabled."""
-    profile_path = os.path.join(CONFIG_DIR, f"{profile}.yaml")
+    profile_path = os.path.join(PROFILES_DIR, f"{profile}.yaml")
+    if not os.path.exists(profile_path):
+        profile_path = os.path.join(CONFIG_DIR, f"{profile}.yaml")
     if os.path.exists(profile_path):
         data = _load_yaml(profile_path)
     else:
-        features_path = os.path.join(CONFIG_DIR, f"{profile}_features.yaml")
-        if not os.path.exists(features_path):
-            return False
-        data = _load_yaml(features_path)
+        return False
     return data.get("features", {}).get("ssh", {}).get("config", {}).get("client", {}).get("enabled", False)
 
 
@@ -51,18 +52,16 @@ def _resolve_profiles():
 
 
 def _get_comment(profile):
-    base_path = os.path.join(CONFIG_DIR, "base.yaml")
-    if os.path.exists(base_path):
-        base_data = _load_yaml(base_path)
-    else:
-        base_data = _load_yaml(os.path.join(CONFIG_DIR, "base_core.yaml"))
+    base_path = os.path.join(PROFILES_DIR, "base.yaml")
+    if not os.path.exists(base_path):
+        base_path = os.path.join(CONFIG_DIR, "base.yaml")
+    base_data = _load_yaml(base_path)
     username = base_data.get("system", {}).get("username", "ajay")
 
-    profile_path = os.path.join(CONFIG_DIR, f"{profile}.yaml")
-    if os.path.exists(profile_path):
-        profile_data = _load_yaml(profile_path)
-    else:
-        profile_data = _load_yaml(os.path.join(CONFIG_DIR, f"{profile}_core.yaml"))
+    profile_path = os.path.join(PROFILES_DIR, f"{profile}.yaml")
+    if not os.path.exists(profile_path):
+        profile_path = os.path.join(CONFIG_DIR, f"{profile}.yaml")
+    profile_data = _load_yaml(profile_path)
     hostname = profile_data.get("system", {}).get("hostname", profile)
     return f"{username}@{hostname}"
 
@@ -83,11 +82,12 @@ def _generate_keypair(comment):
 
 
 def _write_profile_ssh(profile, private_key, public_key, comment):
-    path = os.path.join(CONFIG_DIR, f"{profile}_ssh.yaml")
+    os.makedirs(SSH_DIR, exist_ok=True)
+    path = os.path.join(SSH_DIR, f"{profile}.yaml")
     lines = [
-        f"# config/{profile}_ssh.yaml",
+        f"# config/ssh/{profile}.yaml",
         f"# {comment} SSH client keypair.",
-        f"# Git-ignored. Encrypt with: age --passphrase -o {profile}_ssh.yaml.age {profile}_ssh.yaml",
+        f"# Git-ignored. Encrypt with: python3 scripts/encrypt_secrets.py",
         "",
         "client:",
         "  private_key: |",
@@ -102,12 +102,13 @@ def _write_profile_ssh(profile, private_key, public_key, comment):
 
 
 def _write_base_ssh(keys):
-    """Write base_ssh.yaml with keys as unquoted single-line strings."""
-    path = os.path.join(CONFIG_DIR, "base_ssh.yaml")
+    """Write config/ssh/base.yaml with keys as unquoted single-line strings."""
+    os.makedirs(SSH_DIR, exist_ok=True)
+    path = os.path.join(SSH_DIR, "base.yaml")
     lines = [
-        "# config/base_ssh.yaml",
+        "# config/ssh/base.yaml",
         "# Shared SSH server config — authorized_keys apply to all machines.",
-        "# This file is committed. Private keys live in {profile}_ssh.yaml[.age] (git-ignored).",
+        "# This file is committed. Private keys live in config/ssh/{profile}.yaml[.age] (git-ignored).",
         "",
         "server:",
         "  disable_password_auth: true",
@@ -122,7 +123,9 @@ def _write_base_ssh(keys):
 
 def _update_base_ssh(public_key, comment):
     """Replace any existing key with the same comment, or append if new."""
-    path = os.path.join(CONFIG_DIR, "base_ssh.yaml")
+    path = os.path.join(SSH_DIR, "base.yaml")
+    if not os.path.exists(path):
+        path = os.path.join(CONFIG_DIR, "base_ssh.yaml")
     data = _load_yaml(path)
     keys = [k for k in data.get("server", {}).get("authorized_keys", []) if k]
 
@@ -147,9 +150,9 @@ def _generate_for_profile(profile):
     comment = _get_comment(profile)
     print(f"Profile : {profile}  ({comment})")
 
-    ssh_yaml = os.path.join(CONFIG_DIR, f"{profile}_ssh.yaml")
+    ssh_yaml = os.path.join(SSH_DIR, f"{profile}.yaml")
     if os.path.exists(ssh_yaml):
-        answer = input(f"  config/{profile}_ssh.yaml already exists. Overwrite? [y/N] ").strip().lower()
+        answer = input(f"  config/ssh/{profile}.yaml already exists. Overwrite? [y/N] ").strip().lower()
         if answer != "y":
             print("  Skipped.")
             return
@@ -161,7 +164,7 @@ def _generate_for_profile(profile):
 
     added = _update_base_ssh(public_key, comment)
     verb = "Added" if added else "Replaced"
-    print(f"  {verb:10} : {comment} in config/base_ssh.yaml")
+    print(f"  {verb:10} : {comment} in config/ssh/base.yaml")
     print(f"  Public key : {public_key}")
 
 
@@ -176,8 +179,8 @@ def main():
         print()
 
     print("Next steps:")
-    print("  1. Run scripts/encrypt-secrets.py to encrypt the ssh yaml files")
-    print("  2. Commit config/base_ssh.yaml (public keys are not sensitive)")
+    print("  1. Run scripts/encrypt_secrets.py to encrypt the ssh yaml files")
+    print("  2. Commit config/ssh/base.yaml (public keys are not sensitive)")
 
 
 if __name__ == "__main__":
