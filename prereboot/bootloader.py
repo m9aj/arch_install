@@ -394,11 +394,16 @@ def install_limine(config):
 verbose: no
 
 /:Arch Linux ({kernel})
-    protocol: efi_uki
+    protocol: efi_chainload
     image_path: boot():/EFI/Linux/{uki_name}
 """
-    with open(f"/mnt{boot_mount}/limine.conf", "w") as f:
-        f.write(limine_conf)
+    for conf_path in [
+        f"/mnt{boot_mount}/limine.conf",
+        f"/mnt{boot_mount}/EFI/limine/limine.conf",
+        f"/mnt{boot_mount}/EFI/BOOT/limine.conf",
+    ]:
+        with open(conf_path, "w") as f:
+            f.write(limine_conf)
 
     register_limine_efi(config)
 
