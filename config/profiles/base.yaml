@@ -23,9 +23,6 @@ root:
     - name: "@home"
       mount: /home
       reuse: yes                          # yes = keep across reinstalls
-    - name: "@snapshots"
-      mount: /.snapshots
-      reuse: yes
     - name: "@var_log"
       mount: /var/log
       reuse: no
