@@ -157,7 +157,7 @@ def configure_resolved():
     logger.info("Configuring systemd-resolved and NetworkManager integration")
     chroot("mkdir -p /etc/NetworkManager/conf.d")
     chroot("printf '[main]\\ndns=systemd-resolved\\n' > /etc/NetworkManager/conf.d/dns.conf")
-    chroot("ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf")
+    chroot("rm -f /etc/resolv.conf && ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf")
 
 def initial_config(config):
     logger.info("Configuring system (chroot)")
