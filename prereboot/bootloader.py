@@ -14,6 +14,9 @@ def install_bootloader(config):
 
     logger.info(f"Installing bootloader: {bootloader}  (init: {init}, UKI mode)")
 
+    _clean_unused_bootloaders(bootloader)
+    _wipe_all_efi_entries()
+
     generate_initramfs(config)
 
     if bootloader == "systemd-boot":
@@ -26,6 +29,26 @@ def install_bootloader(config):
         register_uki_efi(config)
     else:
         raise ValueError(f"Unsupported bootloader: {bootloader!r}")
+
+
+def _clean_unused_bootloaders(selected_bootloader):
+    boot_mount = "/mnt/efi"
+    if selected_bootloader != "limine":
+        run(f"rm -rf {boot_mount}/EFI/limine {boot_mount}/limine.conf {boot_mount}/EFI/BOOT/limine.conf", check=False)
+    if selected_bootloader != "refind":
+        run(f"rm -rf {boot_mount}/EFI/refind", check=False)
+    if selected_bootloader != "systemd-boot":
+        run(f"rm -rf {boot_mount}/EFI/systemd", check=False)
+
+
+def _wipe_all_efi_entries():
+    logger.info("Wiping stale EFI boot entries from UEFI NVRAM...")
+    out = run("efibootmgr", check=False).stdout
+    for line in out.splitlines():
+        if line.startswith("Boot") and len(line) >= 8 and line[4:8].isalnum() and line[4:8] != "Order":
+            boot_num = line[4:8]
+            logger.info(f"Deleting EFI boot entry {boot_num}: {line.strip()}")
+            run(f"efibootmgr -b {boot_num} -B", check=False)
 
 
 # ------------------------
