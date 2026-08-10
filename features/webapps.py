@@ -15,27 +15,13 @@ PACMAN_PACKAGES = ["firefoxpwa", "jq"]
 def configure(config, feature):
     logger.info("[webapps] Re-registering existing Firefox PWAs and regenerating desktop files...")
     
-    # Run the shell script to list profiles/apps via firefoxpwa CLI and update each app to recreate launcher entries.
-    cmd = (
-        "if command -v firefoxpwa &>/dev/null && command -v jq &>/dev/null; then "
-        "  firefoxpwa profile list --json | jq -r '.[].apps[].id' 2>/dev/null | while read -r id; do "
-        "    logger.info \"[webapps] Re-registering PWA app: $id\"; "
-        "    firefoxpwa site update \"$id\" || true; "
-        "  done; "
-        "else "
-        "  echo \"[webapps] firefoxpwa or jq is not available. Skipping registration.\"; "
-        "fi"
-    )
-    # Since logger.info might not be available directly inside the bash shell unless we echo it,
-    # let's change `logger.info` inside the shell command to `echo` so it gets printed and drained by the helper_basic.run stdout drainer.
-    cmd = (
-        "if command -v firefoxpwa &>/dev/null && command -v jq &>/dev/null; then "
-        "  firefoxpwa profile list --json | jq -r '.[].apps[].id' 2>/dev/null | while read -r id; do "
-        "    echo \"[webapps] Re-registering PWA app: $id\"; "
-        "    firefoxpwa site update \"$id\" || true; "
-        "  done; "
-        "else "
-        "  echo \"[webapps] firefoxpwa or jq is not available. Skipping registration.\"; "
-        "fi"
-    )
-    run(cmd)
+    res = run("firefoxpwa profile list", check=False)
+    if res.returncode != 0 or not res.stdout:
+        logger.info("[webapps] firefoxpwa is not available. Skipping registration.")
+        return
+
+    import re
+    app_ids = re.findall(r'\(([0-9A-Z]{26})\)', res.stdout)
+    for app_id in app_ids:
+        logger.info(f"[webapps] Re-registering PWA app: {app_id}")
+        run(f"firefoxpwa site update {app_id}", check=False)

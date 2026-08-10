@@ -1,6 +1,7 @@
 # preinstall/bootloader.py
 
 import os
+import re
 import shlex
 from core.shell import run, chroot
 from core.disk import get_root_partition
@@ -15,7 +16,7 @@ def install_bootloader(config):
     logger.info(f"Installing bootloader: {bootloader}  (init: {init}, UKI mode)")
 
     _clean_unused_bootloaders(bootloader)
-    _wipe_all_efi_entries()
+    _clean_stale_arch_efi_entries()
 
     generate_initramfs(config)
 
@@ -41,14 +42,18 @@ def _clean_unused_bootloaders(selected_bootloader):
         run(f"rm -rf {boot_mount}/EFI/systemd", check=False)
 
 
-def _wipe_all_efi_entries():
-    logger.info("Wiping stale EFI boot entries from UEFI NVRAM...")
-    out = run("efibootmgr", check=False).stdout
+def _clean_stale_arch_efi_entries():
+    logger.info("Cleaning stale Linux/Arch EFI boot entries from UEFI NVRAM...")
+    out = run("efibootmgr -v", check=False).stdout
+    target_keywords = ["arch", "limine", "refind", "systemd-boot", "\\efi\\limine", "\\efi\\linux", "\\efi\\refind"]
     for line in out.splitlines():
-        if line.startswith("Boot") and len(line) >= 8 and line[4:8].isalnum() and line[4:8] != "Order":
-            boot_num = line[4:8]
-            logger.info(f"Deleting EFI boot entry {boot_num}: {line.strip()}")
-            run(f"efibootmgr -b {boot_num} -B", check=False)
+        match = re.match(r"^Boot([0-9A-Fa-f]{4})\*?\s+(.*)$", line)
+        if match:
+            boot_num = match.group(1)
+            entry_info = match.group(2).lower()
+            if any(kw in entry_info for kw in target_keywords):
+                logger.info(f"Deleting stale EFI boot entry {boot_num}: {line.strip()}")
+                run(f"efibootmgr -b {boot_num} -B", check=False)
 
 
 # ------------------------
@@ -413,12 +418,43 @@ def install_limine(config):
     chroot("cp /usr/share/limine/BOOTX64.EFI /efi/EFI/limine/limine.efi")
     chroot("cp /usr/share/limine/BOOTX64.EFI /efi/EFI/BOOT/BOOTX64.EFI")
 
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    wallpaper_src = os.path.join(repo_root, "assets", "limine-wallpaper.jpg")
+    wallpaper_setting = ""
+
+    if os.path.exists(wallpaper_src):
+        logger.info(f"Copying Limine background image from assets ({wallpaper_src}) to ESP...")
+        run(f"cp {shlex.quote(wallpaper_src)} /mnt{boot_mount}/EFI/limine/wallpaper.jpg", check=False)
+        wallpaper_setting = (
+            "wallpaper: boot():/EFI/limine/wallpaper.jpg\n"
+            "wallpaper_style: stretched\n"
+        )
+
     limine_conf = f"""timeout: 3
 verbose: no
+remember_last_entry: yes
 
-/:Arch Linux ({kernel})
+interface_branding: Io
+interface_branding_colour: CCCCCC
+interface_help_hidden: yes
+interface_help_colour: CCCCCC
+
+{wallpaper_setting}term_background: DD000000
+term_foreground: FFFFFF
+
+term_font_scale: 2x2
+term_margin: 0
+
+/Arch Linux
     protocol: efi_chainload
     image_path: boot():/EFI/Linux/{uki_name}
+"""
+    if os.path.exists(f"/mnt{boot_mount}/EFI/Microsoft/Boot/bootmgfw.efi"):
+        logger.info("Windows Boot Manager detected on ESP, adding Windows entry to Limine config...")
+        limine_conf += """
+/Windows 11 Pro
+    protocol: efi_chainload
+    image_path: boot():/EFI/Microsoft/Boot/bootmgfw.efi
 """
     for conf_path in [
         f"/mnt{boot_mount}/limine.conf",

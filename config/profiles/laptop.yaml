@@ -7,7 +7,7 @@ disk:
   root_part: -part3
 
 root:
-  mode: reuse
+  mode: format
   subvolumes:
     - name: "@pkg"
       reuse: yes

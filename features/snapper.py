@@ -21,7 +21,15 @@ def configure(config, feature):
     if os.path.exists(f"/etc/snapper/configs/{name}"):
         logger.info(f"[snapper] Config '{name}' already exists, skipping create")
     else:
-        run(f"sudo snapper -c {name} create-config {target}")
+        snapshots_dir = os.path.join(target, ".snapshots")
+        res = run(f"sudo snapper -c {name} create-config {target}", check=False)
+        if res.returncode != 0 and os.path.exists(snapshots_dir):
+            logger.info(f"[snapper] '{snapshots_dir}' already exists. Cleaning existing subvolume/directory to initialize config...")
+            run(f"sudo umount {snapshots_dir}", check=False)
+            run(f"sudo btrfs subvolume delete {snapshots_dir}", check=False)
+            run(f"sudo rm -rf {snapshots_dir}", check=False)
+            run(f"sudo snapper -c {name} create-config {target}")
+            run("sudo mount -a", check=False)
 
     timeline_limit = cfg.get("timeline_limit_hourly", 5)
     run(f"sudo snapper -c {name} set-config TIMELINE_LIMIT_HOURLY={timeline_limit}")
