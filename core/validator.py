@@ -61,8 +61,8 @@ def validate(config: Dict[str, Any]):
     require(config, "system.timezone")
 
     # Boot checks
-    enum(config, "boot.bootloader", ["systemd-boot", "refind", "limine", "none"])
-    enum(config, "boot.init", ["mkinitcpio", "dracut", "booster"])
+    enum(config, "boot.bootloader", ["systemd-boot", "limine", "none"])
+    enum(config, "boot.init", ["mkinitcpio", "dracut"])
 
     boot_mount_cfg = _get(config, "boot.boot_mount")
     if boot_mount_cfg and boot_mount_cfg != "/efi":
@@ -73,7 +73,7 @@ def validate(config: Dict[str, Any]):
     enum(config, "hardware.gpu", ["amd", "nvidia", "auto"])
 
     # AUR helper check
-    enum_optional(config, "machine_specific.aur_helper", ["paru", "yay", "pikaur", "none"])
+    enum_optional(config, "machine_specific.aur_helper", ["paru", "none"])
 
 # ------------------------
 # Helpers

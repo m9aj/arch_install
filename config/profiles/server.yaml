@@ -100,9 +100,6 @@ features:
   ssh:
     enabled: true
 
-  claude_code:
-    enabled: false
-
   antigravity:
     enabled: false
 

@@ -64,12 +64,14 @@ def install_wallpapers(config):
     if not cfg.get("enabled"):
         return
 
-    user = config["system"]["username"]
-    repo = cfg["repo"]
-    raw_base = repo.replace("https://github.com/", "https://raw.githubusercontent.com/")
-    install_url = f"{raw_base}/main/direct_install.sh"
+    repo = cfg.get("repo", "").strip()
+    if not repo:
+        return
 
     logger.info(f"[THEME] Installing wallpapers from {repo}")
+    raw_base = repo.replace("https://github.com/", "https://raw.githubusercontent.com/").rstrip("/")
+    install_url = f"{raw_base}/main/Easy_Install.sh"
+
     tmp_fd, tmp_path = tempfile.mkstemp(suffix=".sh")
     os.close(tmp_fd)
     try:

@@ -22,8 +22,6 @@ def install_bootloader(config):
 
     if bootloader == "systemd-boot":
         install_systemd_boot(config)
-    elif bootloader == "refind":
-        install_refind(config)
     elif bootloader == "limine":
         install_limine(config)
     elif bootloader == "none":
@@ -36,8 +34,6 @@ def _clean_unused_bootloaders(selected_bootloader):
     boot_mount = "/mnt/efi"
     if selected_bootloader != "limine":
         run(f"rm -rf {boot_mount}/EFI/limine {boot_mount}/limine.conf {boot_mount}/EFI/BOOT/limine.conf", check=False)
-    if selected_bootloader != "refind":
-        run(f"rm -rf {boot_mount}/EFI/refind", check=False)
     if selected_bootloader != "systemd-boot":
         run(f"rm -rf {boot_mount}/EFI/systemd", check=False)
 
@@ -218,138 +214,6 @@ def register_uki_efi(config):
 
 
 
-# ------------------------
-# rEFInd
-# ------------------------
-
-def install_refind(config):
-    boot_mount = "/efi"
-
-    # Run refind-install in the chroot environment.
-    logger.info("Installing rEFInd via refind-install inside chroot")
-    chroot("refind-install")
-
-    logger.info("rEFInd: UKI mode enabled. Kernels will be auto-scanned from EFI/Linux.")
-
-    # Further configuration of rEFInd
-    refind_conf_path = f"/mnt{boot_mount}/EFI/refind/refind.conf"
-    if os.path.exists(refind_conf_path):
-        logger.info(f"Configuring rEFInd resolution in {refind_conf_path}")
-        with open(refind_conf_path, "r") as f:
-            content = f.read()
-
-        # Set resolution to max
-        import re
-        if re.search(r"^\s*resolution\s+", content, re.MULTILINE):
-            content = re.sub(r"^\s*resolution\s+.*$", "resolution max", content, flags=re.MULTILINE)
-        elif re.search(r"^\s*#\s*resolution\s+", content, re.MULTILINE):
-            content = re.sub(r"^\s*#\s*resolution\s+.*$", "resolution max", content, flags=re.MULTILINE)
-        else:
-            content += "\nresolution max\n"
-
-        # Install digital-void theme
-        theme_dir = f"/mnt{boot_mount}/EFI/refind/themes"
-        theme_path = f"{theme_dir}/rEFInd-digital-void"
-        logger.info("Installing rEFInd theme: rEFInd-digital-void")
-        run(f"mkdir -p {theme_dir}")
-        theme_installed = False
-        if not os.path.exists(theme_path):
-            try:
-                import shutil
-                if not shutil.which("git"):
-                    logger.info("git is not installed on the live ISO. Attempting to install it...")
-                    run("pacman -Sy --noconfirm git")
-                run(f"git clone https://github.com/Wi-Fight-IT/rEFInd-digital-void {theme_path}")
-                theme_installed = True
-            except Exception as e:
-                logger.warning(f"Failed to install git or clone rEFInd theme: {e}. Skipping theme configuration.")
-        else:
-            logger.info("Theme already cloned, skipping clone")
-            theme_installed = True
-
-        # Append theme include if not already present
-        if theme_installed and "include themes/rEFInd-digital-void/theme.conf" not in content:
-            content += "\ninclude themes/rEFInd-digital-void/theme.conf\n"
-
-        # Exclude raw kernel from scanning to prevent duplicate UKI entries
-        if "dont_scan_files +,vmlinuz-linux" not in content:
-            if "#dont_scan_files shim.efi,MokManager.efi" in content:
-                content = content.replace(
-                    "#dont_scan_files shim.efi,MokManager.efi",
-                    "#dont_scan_files shim.efi,MokManager.efi\ndont_scan_files +,vmlinuz-linux"
-                )
-            else:
-                content += "\ndont_scan_files +,vmlinuz-linux\n"
-
-        with open(refind_conf_path, "w") as f:
-            f.write(content)
-
-        # Update the theme config file to set background to background.blue.png
-        if theme_installed:
-            theme_conf_path = f"{theme_path}/theme.conf"
-            if os.path.exists(theme_conf_path):
-                logger.info(f"Setting blue background in {theme_conf_path}")
-                with open(theme_conf_path, "r") as f:
-                    theme_conf_content = f.read()
-
-                # Replace banner line
-                import re
-                if re.search(r"^\s*banner\s+", theme_conf_content, re.MULTILINE):
-                    theme_conf_content = re.sub(
-                        r"^\s*banner\s+.*$",
-                        "banner themes/rEFInd-digital-void/background.blue.png",
-                        theme_conf_content,
-                        flags=re.MULTILINE
-                    )
-                else:
-                    theme_conf_content += "\nbanner themes/rEFInd-digital-void/background.blue.png\n"
-
-                with open(theme_conf_path, "w") as f:
-                    f.write(theme_conf_content)
-
-    # Set Arch Linux logo for boot entries (copy os_arch.png)
-    src_icon = None
-    theme_icon = f"/mnt{boot_mount}/EFI/refind/themes/rEFInd-digital-void/icons/os_arch.png"
-    fallback_icon = "/mnt/usr/share/refind/icons/os_arch.png"
-
-    if os.path.exists(theme_icon):
-        src_icon = theme_icon
-        logger.info(f"Using theme Arch icon: {src_icon}")
-    elif os.path.exists(fallback_icon):
-        src_icon = fallback_icon
-        logger.info(f"Using fallback system Arch icon: {src_icon}")
-
-    if src_icon:
-        import glob
-        # For UKIs in EFI/Linux
-        for uki_file in glob.glob(f"/mnt{boot_mount}/EFI/Linux/*.efi"):
-            # Set icon for both .png and .efi.png filenames for robustness
-            base_name, _ = os.path.splitext(uki_file)
-            logger.info(f"Copying Arch icon for UKI entry to {base_name}.png")
-            run(f"cp {src_icon} {base_name}.png")
-            run(f"cp {src_icon} {uki_file}.png")
-    else:
-        logger.warning("Could not find any Arch icon to copy for boot entries")
-
-    # Set up automatic updates for rEFInd via a pacman hook
-    hooks_dir = "/mnt/etc/pacman.d/hooks"
-    hook_path = f"{hooks_dir}/refind.hook"
-    logger.info(f"Creating pacman hook for automatic rEFInd updates at {hook_path}")
-    run(f"mkdir -p {hooks_dir}")
-    hook_content = """[Trigger]
-Operation = Upgrade
-Type = Package
-Target = refind
-
-[Action]
-Description = Updating rEFInd on ESP...
-When = PostTransaction
-Exec = /usr/bin/refind-install
-"""
-    with open(hook_path, "w") as f:
-        f.write(hook_content)
-
-
 def _setup_nvidia_kms(config):
     gpu_cfg = config.get("hardware", {}).get("gpu", "auto")
     gpu = detect_gpu() if gpu_cfg == "auto" else gpu_cfg
@@ -412,38 +276,70 @@ def install_limine(config):
     boot_mount = "/efi"
     kernel = config.get("boot", {}).get("kernel", "linux")
     uki_name = uki_filename(config)
+    limine_cfg = config.get("boot", {}).get("limine", {})
 
     logger.info("Installing Limine bootloader...")
     run(f"mkdir -p /mnt{boot_mount}/EFI/limine /mnt{boot_mount}/EFI/BOOT")
     chroot("cp /usr/share/limine/BOOTX64.EFI /efi/EFI/limine/limine.efi")
     chroot("cp /usr/share/limine/BOOTX64.EFI /efi/EFI/BOOT/BOOTX64.EFI")
 
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    wallpaper_src = os.path.join(repo_root, "assets", "limine-wallpaper.jpg")
+    timeout = limine_cfg.get("timeout", 3)
+
+    remember_val = limine_cfg.get("remember_last_entry", True)
+    remember = "yes" if remember_val is True else "no" if remember_val is False else str(remember_val)
+
+    verbose_val = limine_cfg.get("verbose", False)
+    verbose = "yes" if verbose_val is True else "no" if verbose_val is False else str(verbose_val)
+
+    branding = limine_cfg.get("interface_branding", "auto")
+    if branding == "auto" or not branding:
+        branding = config.get("system", {}).get("hostname") or "Arch Linux"
+
+    branding_colour = limine_cfg.get("interface_branding_colour", "CCCCCC")
+
+    help_hidden_val = limine_cfg.get("interface_help_hidden", True)
+    help_hidden = "yes" if help_hidden_val is True else "no" if help_hidden_val is False else str(help_hidden_val)
+
+    help_colour = limine_cfg.get("interface_help_colour", "CCCCCC")
+    term_bg = limine_cfg.get("term_background", "DD000000")
+    term_fg = limine_cfg.get("term_foreground", "FFFFFF")
+    font_scale = limine_cfg.get("term_font_scale", "2x2")
+    term_margin = limine_cfg.get("term_margin", 0)
+
+    # Wallpaper configuration
+    wallpaper_cfg = limine_cfg.get("wallpaper", True)
+    wallpaper_style = limine_cfg.get("wallpaper_style", "stretched")
     wallpaper_setting = ""
 
-    if os.path.exists(wallpaper_src):
-        logger.info(f"Copying Limine background image from assets ({wallpaper_src}) to ESP...")
-        run(f"cp {shlex.quote(wallpaper_src)} /mnt{boot_mount}/EFI/limine/wallpaper.jpg", check=False)
-        wallpaper_setting = (
-            "wallpaper: boot():/EFI/limine/wallpaper.jpg\n"
-            "wallpaper_style: stretched\n"
-        )
+    if wallpaper_cfg:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        if isinstance(wallpaper_cfg, str) and wallpaper_cfg.lower() not in ("true", "yes"):
+            wallpaper_src = wallpaper_cfg if os.path.isabs(wallpaper_cfg) else os.path.join(repo_root, wallpaper_cfg)
+        else:
+            wallpaper_src = os.path.join(repo_root, "assets", "limine-wallpaper.jpg")
 
-    limine_conf = f"""timeout: 3
-verbose: no
-remember_last_entry: yes
+        if os.path.exists(wallpaper_src):
+            logger.info(f"Copying Limine background image from assets ({wallpaper_src}) to ESP...")
+            run(f"cp {shlex.quote(wallpaper_src)} /mnt{boot_mount}/EFI/limine/wallpaper.jpg", check=False)
+            wallpaper_setting = (
+                "wallpaper: boot():/EFI/limine/wallpaper.jpg\n"
+                f"wallpaper_style: {wallpaper_style}\n"
+            )
 
-interface_branding: Io
-interface_branding_colour: CCCCCC
-interface_help_hidden: yes
-interface_help_colour: CCCCCC
+    limine_conf = f"""timeout: {timeout}
+verbose: {verbose}
+remember_last_entry: {remember}
 
-{wallpaper_setting}term_background: DD000000
-term_foreground: FFFFFF
+interface_branding: {branding}
+interface_branding_colour: {branding_colour}
+interface_help_hidden: {help_hidden}
+interface_help_colour: {help_colour}
 
-term_font_scale: 2x2
-term_margin: 0
+{wallpaper_setting}term_background: {term_bg}
+term_foreground: {term_fg}
+
+term_font_scale: {font_scale}
+term_margin: {term_margin}
 
 /Arch Linux
     protocol: efi_chainload

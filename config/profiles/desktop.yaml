@@ -25,7 +25,7 @@ system:
   hostname: Titan
 
 boot:
-  bootloader: refind
+  bootloader: limine
   init: mkinitcpio
 
 pkgprofile:
@@ -74,9 +74,6 @@ features:
   ssh:
     enabled: true
 
-  claude_code:
-    enabled: false
-
   antigravity:
     enabled: true
 
@@ -94,6 +91,8 @@ network:
     media.local: 192.168.0.150
     kvm.local: 192.168.0.155
     laptop.local: 192.168.0.160
+    router.local: 192.168.0.1
+    modem.local: 192.168.1.254
 
 postconfig:
   user_dirs:

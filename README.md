@@ -9,7 +9,7 @@ A modular, profile-based Arch Linux installer and post-installation configuratio
 - **Modular Architecture**: Separate phases for pre-reboot (installation) and post-reboot (configuration).
 - **Domain-Based Configuration**: Clean subdirectory hierarchy (`config/profiles/`, `config/dconf/`, `config/ssh/`, `config/secrets/`) with inheritance and deep merging.
 - **Unified Kernel Image (UKI)**: 100% UKI-first architecture supporting Secure Boot, measured boot, and `/etc/kernel/install.conf` automatic triggers.
-- **Bootloader Choice**: Native UKI support for `systemd-boot`, `limine`, `refind`, or direct UEFI NVRAM registration (`none`).
+- **Bootloader Choice**: Native UKI support for `limine`, `systemd-boot`, or direct UEFI NVRAM registration (`none`).
 - **Hardware-Aware**: Automatically detects CPU (Intel/AMD) and GPU (AMD/Nvidia) to install appropriate microcode, KMS drivers, and packages.
 - **Btrfs-First & Atomic Resets**: Defaults to Btrfs subvolume layout with atomic subvolume reset (`delete` + `create`) on clean reinstalls.
 - **Idempotency**: Progress tracked in `logs/state.json`, allowing the installer to safely resume from failure.
@@ -34,7 +34,7 @@ This phase handles:
 -   Mounting subvolumes.
 -   `pacstrap` of core system and microcode.
 -   Generating `fstab`, `systemd-resolved` DNS stub, and initial system configuration.
--   Generating UKI (`/efi/EFI/Linux/arch-*.efi`) and installing bootloader (`systemd-boot`, `limine`, `refind`, or `none`).
+-   Generating UKI (`/efi/EFI/Linux/arch-*.efi`) and installing bootloader (`limine`, `systemd-boot`, or `none`).
 
 ### Phase 2: Configuration (Post-reboot)
 After rebooting into the new system:

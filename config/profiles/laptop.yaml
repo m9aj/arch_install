@@ -80,9 +80,6 @@ features:
   ssh:
     enabled: true
 
-  claude_code:
-    enabled: false
-
   antigravity:
     enabled: true
 
@@ -131,7 +128,7 @@ postconfig:
       cursor:
         enabled: true
       wallpapers:
-        enabled: false
+        enabled: true
 
     extensions:
       enabled: true

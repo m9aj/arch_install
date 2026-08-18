@@ -58,8 +58,8 @@ hardware:
   gpu: auto                               # amd | nvidia | auto (detected via lspci)
 
 boot:
-  bootloader: systemd-boot                # systemd-boot | refind | limine | none
-  init: mkinitcpio                        # mkinitcpio | dracut | booster
+  bootloader: limine                      # limine | systemd-boot | none
+  init: mkinitcpio                        # mkinitcpio | dracut
   kernel_params:
     - quiet
     - rw
@@ -67,6 +67,19 @@ boot:
     timeout: 3
     console-mode: auto
     editor: yes
+  limine:
+    timeout: 3
+    remember_last_entry: yes
+    verbose: no
+    interface_branding: auto              # auto (uses system.hostname or 'Arch Linux') or custom string
+    interface_branding_colour: CCCCCC
+    interface_help_hidden: yes
+    interface_help_colour: CCCCCC
+    term_background: DD000000
+    term_foreground: FFFFFF
+    term_font_scale: 2x2
+    term_margin: 0
+    wallpaper: true
 
 arch:
   label: Arch                             # Btrfs filesystem label
@@ -103,7 +116,7 @@ pkgprofile:
 
 machine_specific:
   pacman: []                              # Extra pacman packages not in any profile
-  aur_helper: paru                       # paru | yay | pikaur
+  aur_helper: paru                       # paru | none
   aur: []
   services: []
 
@@ -176,9 +189,6 @@ features:
       timeline_limit_daily: 7
 
   ssh:
-    enabled: false
-
-  claude_code:
     enabled: false
 
   antigravity:
@@ -255,7 +265,7 @@ postconfig:
         name: Smooth-Cursor
       wallpapers:
         enabled: false
-        repo: https://github.com/simple-sunrise/Light-and-Dark-Wallpapers-for-Gnome
+        repo: https://github.com/saint-13/Linux_Dynamic_Wallpapers
 
     extensions:
       enabled: true

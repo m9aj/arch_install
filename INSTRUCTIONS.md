@@ -49,7 +49,6 @@ Standalone modules for post-installation system features. Each module typically 
 - `ananicy.py`: Auto NICe daemon (`ananicy-cpp`) for application responsiveness.
 - `antigravity.py`: Custom environment tweaks.
 - `btrfs_maintenance.py`: Automated Btrfs scrub, balance, trim, and defrag scheduling.
-- `claude_code.py`: Setup environment configurations for Claude Code.
 - `firewall.py`: Firewalld setup.
 - `local_aur_repo.py`: Pacman local repository for building and hosting custom AUR packages.
 - `pia.py`: Private Internet Access VPN setup.
@@ -66,7 +65,7 @@ Executed from the Arch Live ISO.
 - `main.py`: Orchestrates the pre-install steps.
 - `disk.py`: Partitioning, formatting, atomic resetting, and mounting logic for Btrfs.
 - `archinstall.py`: System configuration (hostname, locale, users, autologin, systemd-resolved DNS, sudoers drop-in).
-- `bootloader.py`: Installation and configuration of UKI bootloaders (systemd-boot, Limine, rEFInd, or direct EFI NVRAM registration) with Nvidia Early KMS setup.
+- `bootloader.py`: Installation and configuration of UKI bootloaders (systemd-boot, Limine, or direct EFI NVRAM registration) with Nvidia Early KMS setup.
 - `system.py`: Package installation and service enablement via chroot.
 
 ### Scripts (`scripts/`)
