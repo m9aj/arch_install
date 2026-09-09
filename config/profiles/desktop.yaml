@@ -88,12 +88,11 @@ features:
 
 network:
   hosts:
-    media.local: 192.168.0.150
-    kvm.local: 192.168.0.155
-    laptop.local: 192.168.0.160
-    router.local: 192.168.0.1
+    media.local: 192.168.10.150
+    kvm.local: 192.168.10.155
+    laptop.local: 192.168.10.160
     modem.local: 192.168.1.254
-
+    
 postconfig:
   user_dirs:
     enabled: true

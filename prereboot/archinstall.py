@@ -109,7 +109,8 @@ def create_user(config):
     user = config["system"]["username"]
     fullname = config["system"].get("fullname", user)
     chroot(f"id -u {user} >/dev/null 2>&1 || useradd -m -s /bin/zsh -c '{fullname}' {user}")
-    chroot(f"usermod -aG wheel {user}")
+    chroot("groupadd -rf adbusers")
+    chroot(f"usermod -aG wheel,uucp,adbusers {user}")
     chroot("mkdir -p /etc/sudoers.d")
     chroot("echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel")
     chroot("chmod 440 /etc/sudoers.d/10-wheel")

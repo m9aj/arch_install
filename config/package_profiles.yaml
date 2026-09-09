@@ -176,6 +176,7 @@ post_profiles:
       - gvfs-mtp
       - mtpfs
       - android-tools
+      - android-udev
 
   music_batching:
     packages:
