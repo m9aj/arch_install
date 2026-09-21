@@ -1,16 +1,89 @@
 #!/bin/bash
-# Native Wayland Screenshot Tool
+# Native Smart Wayland Screenshot Tool
+# Behaviors:
+#   - Single-click on any window -> captures that window
+#   - Single-click on desktop/gap -> captures fullscreen
+#   - Click and drag -> captures custom region
+#   - Escape -> cancels
+
 mkdir -p "$HOME/Pictures/Screenshots"
 TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
 FILEPATH="$HOME/Pictures/Screenshots/screenshot-$TIMESTAMP.png"
 
+# Handle instant fullscreen flag
 if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   grim "$FILEPATH" || exit 1
-else
-  SELECTION=$(slurp 2>/dev/null)
-  [[ -z "$SELECTION" ]] && exit 0
-  grim -g "$SELECTION" "$FILEPATH" || exit 1
+  wl-copy --type image/png < "$FILEPATH"
+  notify-send -i "$FILEPATH" "Screenshot Saved" "Fullscreen saved to Screenshots & clipboard"
+  exit 0
 fi
+
+# Optional: Freeze screen during selection with hyprpicker
+FREEZE_PID=""
+if command -v hyprpicker >/dev/null 2>&1; then
+  hyprpicker -r -z >/dev/null 2>&1 &
+  FREEZE_PID=$!
+  sleep 0.05
+fi
+
+cleanup() {
+  [[ -n "$FREEZE_PID" ]] && kill "$FREEZE_PID" 2>/dev/null
+}
+trap cleanup EXIT
+
+# Get active workspace
+ACTIVE_WS=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused == true) | .activeWorkspace.id' 2>/dev/null || echo "1")
+
+# Get window rectangles for active workspace
+WINDOW_RECTS=$(hyprctl clients -j 2>/dev/null | jq -r --arg ws "$ACTIVE_WS" \
+  '[.[] | select(.workspace.id == ($ws | tonumber) and .hidden != true) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"] | unique[]' 2>/dev/null)
+
+# Get monitor geometry
+MONITOR_RECTS=$(hyprctl monitors -j 2>/dev/null | jq -r --arg ws "$ACTIVE_WS" \
+  '.[] | select(.activeWorkspace.id == ($ws | tonumber)) | "\(.x),\(.y) \((.width / .scale) | floor)x\((.height / .scale) | floor)"' 2>/dev/null)
+
+CANDIDATES=$(printf "%s\n%s\n" "$MONITOR_RECTS" "$WINDOW_RECTS" | grep -v '^$')
+
+# Run slurp with candidates
+SELECTION=$(echo "$CANDIDATES" | slurp -d 2>/dev/null)
+
+# User cancelled
+[[ -z "$SELECTION" ]] && exit 0
+
+# If user single-clicked (area < 25), snap to the smallest matching candidate (window over monitor)
+if [[ $SELECTION =~ ^(-?[0-9]+),(-?[0-9]+)[[:space:]]([0-9]+)x([0-9]+)$ ]]; then
+  sel_x=${BASH_REMATCH[1]}
+  sel_y=${BASH_REMATCH[2]}
+  sel_w=${BASH_REMATCH[3]}
+  sel_h=${BASH_REMATCH[4]}
+
+  if (( sel_w * sel_h < 25 )); then
+    MATCHED=""
+    MATCHED_AREA=999999999
+    while IFS= read -r rect; do
+      [[ $rect =~ ^(-?[0-9]+),(-?[0-9]+)[[:space:]]([0-9]+)x([0-9]+)$ ]] || continue
+      rx=${BASH_REMATCH[1]}
+      ry=${BASH_REMATCH[2]}
+      rw=${BASH_REMATCH[3]}
+      rh=${BASH_REMATCH[4]}
+      if (( sel_x >= rx && sel_x < rx + rw && sel_y >= ry && sel_y < ry + rh )); then
+        area=$(( rw * rh ))
+        if (( area < MATCHED_AREA )); then
+          MATCHED_AREA=$area
+          MATCHED="$rect"
+        fi
+      fi
+    done <<< "$CANDIDATES"
+    [[ -n "$MATCHED" ]] && SELECTION="$MATCHED"
+  fi
+fi
+
+# Dismiss freeze overlay before capturing
+cleanup
+trap - EXIT
+
+# Capture with grim
+grim -g "$SELECTION" "$FILEPATH" || exit 1
 
 if [[ -f "$FILEPATH" ]]; then
   wl-copy --type image/png < "$FILEPATH"
