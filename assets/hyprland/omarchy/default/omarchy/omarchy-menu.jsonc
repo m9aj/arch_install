@@ -2,9 +2,9 @@
   // Curated Hyprland & Quickshell Menu
   // Root Menu
   "apps": {"icon":"󰀻","label":"Apps","aliases":["app","applications"],"provider":"apps"},
-  "help": {"icon":"󰋖","label":"Help","aliases":["shortcuts","keybindings","cheatsheet","help"]},
+  "trigger": {"icon":"󱓞","label":"Triggers"},
   "style": {"icon":"","label":"Style"},
-  "trigger": {"icon":"󱓞","label":"Trigger"},
+  "help": {"icon":"󰋖","label":"Help","aliases":["shortcuts","keybindings","cheatsheet","help"]},
   "system": {"icon":"","label":"System","aliases":["power-menu"]},
 
   // Help
