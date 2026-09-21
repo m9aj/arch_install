@@ -339,12 +339,13 @@ QtObject {
   }
 
   readonly property QtObject bar: QtObject {
-    readonly property int sizeHorizontal: root.barToken("size-horizontal", 26)
-    readonly property int sizeVertical:   root.barToken("size-vertical",   28)
-    readonly property int iconSlot:       root.barToken("icon-slot",       27)
-    readonly property int iconCanvas:     root.barToken("icon-canvas",     16)
-    readonly property int iconFont:       root.barToken("icon-font",       13)
-    readonly property int statusSlot:     root.barToken("status-slot",     21)
+    readonly property int fontSize:       root.barToken("font-size",       0)
+    readonly property int sizeHorizontal: root.barToken("size-horizontal", (fontSize > 0) ? Math.max(26, fontSize + 14) : 26)
+    readonly property int sizeVertical:   root.barToken("size-vertical",   (fontSize > 0) ? Math.max(28, fontSize + 16) : 28)
+    readonly property int iconSlot:       root.barToken("icon-slot",       (fontSize > 0) ? Math.max(27, fontSize + 14) : 27)
+    readonly property int iconCanvas:     root.barToken("icon-canvas",     (fontSize > 0) ? Math.max(16, fontSize + 2) : 16)
+    readonly property int iconFont:       root.barToken("icon-font",       (fontSize > 0) ? fontSize : 13)
+    readonly property int statusSlot:     root.barToken("status-slot",     (fontSize > 0) ? Math.max(21, fontSize + 8) : 21)
   }
 
   function refresh() {
@@ -405,7 +406,7 @@ QtObject {
       } else if (section === "bar") {
         if (key === "scale-with-font") {
           nextBarScaleWithFont = boolToken(raw, nextBarScaleWithFont)
-        } else if (key === "size-horizontal" || key === "size-vertical") {
+        } else {
           var b = parseInt(raw, 10)
           if (isFinite(b)) barOut[key] = b
         }

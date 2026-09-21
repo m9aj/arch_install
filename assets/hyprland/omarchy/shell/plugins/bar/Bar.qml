@@ -1340,7 +1340,7 @@ Item {
           text: root.tooltipText
           color: Color.tooltip.text
           font.family: root.fontFamily
-          font.pixelSize: Style.font.body
+          font.pixelSize: (Style.bar.fontSize > 0) ? Style.bar.fontSize : Style.font.body
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
         }

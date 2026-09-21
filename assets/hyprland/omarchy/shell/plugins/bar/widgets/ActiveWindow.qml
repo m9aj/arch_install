@@ -36,7 +36,7 @@ BarWidget {
       text: root.title
       color: root.bar ? root.bar.barForeground : Color.foreground
       font.family: root.bar ? root.bar.fontFamily : Style.font.family
-      font.pixelSize: Style.font.body
+      font.pixelSize: (Style.bar.fontSize > 0) ? Style.bar.fontSize : Style.font.body
       elide: Text.ElideRight
       opacity: 0.85
     }

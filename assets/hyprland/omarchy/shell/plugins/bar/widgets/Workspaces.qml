@@ -63,7 +63,7 @@ BarWidget {
         opacity: occupied || focused ? 1 : 0.5
         horizontalMargin: 6
         verticalPadding: 6
-        fixedWidth: root.vertical ? root.barSize : Style.space(20)
+        fixedWidth: root.vertical ? root.barSize : (Style.bar.fontSize > 0 ? Math.max(Style.space(20), Math.round(Style.bar.fontSize * 1.6)) : Style.space(20))
         fixedHeight: root.barSize
         onPressed: function() { root.focusWorkspace(modelData) }
       }
