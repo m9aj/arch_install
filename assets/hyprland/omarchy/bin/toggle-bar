@@ -1,3 +1,12 @@
 #!/bin/bash
 # Toggle Quickshell top bar visibility
-quickshell ipc -p "${QUICKSHELL_PATH:-$HOME/.local/share/omarchy/shell}" call shell toggle omarchy.bar '{}'
+FLAG="$HOME/.local/state/omarchy/toggles/bar-off"
+mkdir -p "$(dirname "$FLAG")"
+
+if [[ -f "$FLAG" ]]; then
+  rm -f "$FLAG"
+else
+  touch "$FLAG"
+fi
+
+quickshell ipc -p "${QUICKSHELL_PATH:-$HOME/.local/share/omarchy/shell}" call omarchy.bar syncHidden 2>/dev/null || true
