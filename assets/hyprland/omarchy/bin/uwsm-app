@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Universal application launcher shim
+# Dispatches via uwsm-app if installed, otherwise executes directly
+
+if command -v /usr/bin/uwsm-app >/dev/null 2>&1; then
+    exec /usr/bin/uwsm-app "$@"
+fi
+
+# Strip leading '--' if passed as option separator
+if [[ "$1" == "--" ]]; then
+    shift
+fi
+
+exec "$@"

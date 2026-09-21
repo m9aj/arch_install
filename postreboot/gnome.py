@@ -337,3 +337,21 @@ def apply_lockscreen_config(config):
     logger.info("Applying monitor configuration to /etc/xdg")
     run(f"sudo cp {shlex.quote(src)} {dst}")
     run(f"sudo chmod 644 {dst}")
+
+
+def setup_gnome(config):
+    """Executes all enabled GNOME configuration steps in sequence."""
+    if not _is_gnome(config):
+        return False
+
+    logger.info("[GNOME] Configuring GNOME desktop environment...")
+    apply_gsettings(config)
+    apply_lockscreen_config(config)
+    install_gnome_extensions(config)
+    apply_custom_keybindings(config)
+    hide_apps(config)
+    dash_folders(config)
+    apply_gnome_dock(config)
+    apply_color_profiles(config)
+    apply_app_picker_layout(config)
+    return True

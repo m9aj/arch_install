@@ -160,12 +160,18 @@ def resolve_system(config):
     kernel_params += boot.get("kernel_params", [])
 
     # DE auto
-    de = config["arch"].get("de")
-    if de in POST_PROFILES:
-        profile = POST_PROFILES[de]
-        post_pkgs += profile.get("packages", [])
-        services += profile.get("services", [])
-        kernel_params += profile.get("kernel_params", [])
+    des = config["arch"].get("de")
+    if isinstance(des, str):
+        des = [des]
+    elif not isinstance(des, list):
+        des = []
+
+    for de in des:
+        if de in POST_PROFILES:
+            profile = POST_PROFILES[de]
+            post_pkgs += profile.get("packages", [])
+            services += profile.get("services", [])
+            kernel_params += profile.get("kernel_params", [])
 
     result = {
         "core": dedupe(core_pkgs),

@@ -1,0 +1,5 @@
+#!/bin/bash
+# omarchy:summary=Open the visual wallpaper switcher and apply chosen background
+
+background=$(omarchy-theme-bg-switcher)
+[[ -n $background ]] && omarchy-theme-bg-set "$background"

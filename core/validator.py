@@ -75,9 +75,42 @@ def validate(config: Dict[str, Any]):
     # AUR helper check
     enum_optional(config, "machine_specific.aur_helper", ["paru", "none"])
 
+    # Desktop Environment checks
+    validate_desktop_environment(config)
+
 # ------------------------
 # Helpers
 # ------------------------
+
+def validate_desktop_environment(config: Dict[str, Any]):
+    """Validate arch.de configuration and disallow incompatible desktop combinations."""
+    de_val = _get(config, "arch.de")
+    if not de_val:
+        return
+
+    allowed_des = {"gnome", "kde", "hyprland", "none"}
+
+    if isinstance(de_val, str):
+        des = [de_val.strip()]
+    elif isinstance(de_val, list):
+        des = [str(d).strip() for d in de_val]
+    else:
+        raise ValueError(f"Invalid type for arch.de: expected string or list of strings, got {type(de_val).__name__}")
+
+    for d in des:
+        if d not in allowed_des:
+            raise ValueError(
+                f"Invalid desktop environment '{d}' in arch.de. Allowed values are: {', '.join(sorted(allowed_des))}"
+            )
+
+    # Disallow GNOME + KDE conflict (including the triple combination)
+    if "gnome" in des and "kde" in des:
+        raise ValueError(
+            f"Unsupported desktop combination in arch.de: {des}. Co-installing GNOME and KDE together "
+            "causes application duplication (dual file managers, calculators), keyring conflicts "
+            "(gnome-keyring vs kwallet), and portal/MIME clashes. Supported configurations are a single DE "
+            "(gnome, kde, hyprland) or dual pairs with Hyprland (e.g. [gnome, hyprland])."
+        )
 
 def _get(config: Dict[str, Any], path: str) -> Any:
     current = config

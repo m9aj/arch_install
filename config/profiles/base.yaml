@@ -83,7 +83,12 @@ boot:
 
 arch:
   label: Arch                             # Btrfs filesystem label
-  de: gnome                               # gnome | kde
+  de: gnome                               # Supported: gnome | kde | hyprland (or [gnome, hyprland])
+                                          # NOTE: Avoid the triple combination (gnome + kde + hyprland).
+                                          # Co-installing GNOME and KDE causes application duplication
+                                          # (dual file managers, dual calculators), keyring friction
+                                          # (gnome-keyring vs kwallet prompts), and MIME/portal clashes.
+                                          # Dual combinations (e.g. gnome + hyprland) share GDM and GTK cleanly.
 
 # ==========================================
 # 2. PACKAGE SELECTION & PROFILES

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# omarchy:summary=Log out after closing application windows
+# omarchy:examples=omarchy logout | omarchy system logout
+# omarchy:aliases=omarchy logout
+
+session_id="${XDG_SESSION_ID:-}"
+
+nohup bash -c "sleep 1.5 && (
+  if command -v uwsm >/dev/null 2>&1 && uwsm check may-start 2>/dev/null; then
+    uwsm stop
+  elif command -v hyprctl >/dev/null 2>&1; then
+    hyprctl dispatch exit 2>/dev/null || true
+    sleep 0.5
+    [[ -n '$session_id' ]] && loginctl terminate-session '$session_id' 2>/dev/null || true
+  elif [[ -n '$session_id' ]]; then
+    loginctl terminate-session '$session_id' 2>/dev/null || true
+  else
+    loginctl terminate-user '$USER' 2>/dev/null || true
+  fi
+)" >/dev/null 2>&1 &
+
+omarchy-osd -i logout -m "Logging out" -d 3000 2>/dev/null || true
+
+# Now close all windows
+omarchy-hyprland-window-close-all 2>/dev/null || true
+sleep 1 # Allow apps like Chrome to shutdown correctly
