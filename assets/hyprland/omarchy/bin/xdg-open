@@ -1,0 +1,111 @@
+#!/bin/bash
+# ~/.local/bin/xdg-open
+# Smart xdg-open wrapper for Omarchy / Hyprland
+# Ensures terminal link clicks (files & URLs) and CLI app launches from
+# scratchpad workspaces (like Antigravity) open cleanly on the desktop workspace.
+
+target="$1"
+
+if [ -z "$target" ]; then
+    exec /usr/bin/xdg-open "$@"
+fi
+
+# Detect if special workspace (like Antigravity) is active
+has_special=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .specialWorkspace.name' 2>/dev/null || echo "")
+if [ -z "$has_special" ] || [ "$has_special" = "null" ]; then
+    has_special=$(hyprctl monitors -j 2>/dev/null | jq -r '.[0].specialWorkspace.name' 2>/dev/null || echo "")
+fi
+
+# Helper to open via launch utility if in a special workspace, or directly in background if not
+open_app() {
+    if [[ "$has_special" == special:* ]]; then
+        exec launch "$@"
+    else
+        "$@" >/dev/null 2>&1 &
+        exit 0
+    fi
+}
+
+# 1. Handle Web URLs (http / https / ftp)
+if [[ "$target" =~ ^(https?|ftp):// ]]; then
+    browser=""
+    if command -v zen-browser >/dev/null 2>&1; then
+        browser="zen-browser"
+    elif command -v zen >/dev/null 2>&1; then
+        browser="zen"
+    elif command -v firefox >/dev/null 2>&1; then
+        browser="firefox"
+    fi
+
+    if [ -n "$browser" ]; then
+        open_app "$browser" "$target"
+    fi
+fi
+
+# 2. Extract and decode local file path if target is a file:// URI or local file
+file_path="$target"
+if [[ "$file_path" == file://* ]]; then
+    file_path="${file_path#file://}"
+    # Decode URL-encoded characters (%20, etc.)
+    file_path=$(python3 -c "import urllib.parse, sys; print(urllib.parse.unquote(sys.argv[1]))" "$file_path" 2>/dev/null || echo "$file_path")
+fi
+
+# Resolve relative path if existing
+if [[ "$file_path" != /* ]] && [ -e "$file_path" ]; then
+    file_path="$(pwd)/$file_path"
+fi
+
+# 3. Handle Directories
+if [ -d "$file_path" ]; then
+    if command -v nautilus >/dev/null 2>&1; then
+        open_app nautilus "$file_path"
+    fi
+fi
+
+# 4. Handle Text and Code Files
+ext="${file_path##*.}"
+ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+
+is_text_file=0
+case "$ext" in
+    txt|md|markdown|lua|qml|toml|json|yaml|yml|py|sh|bash|zsh|fish|c|cpp|cc|h|hpp|rs|go|js|ts|jsx|tsx|css|scss|html|xml|conf|ini|cfg|desktop|service|diff|patch|log|env|rasi|vim)
+        is_text_file=1
+        ;;
+    *)
+        if [ -f "$file_path" ]; then
+            mime=$(file -b --mime-type "$file_path" 2>/dev/null || echo "")
+            if [[ "$mime" == text/* ]] || [[ "$mime" == application/json ]] || [[ "$mime" == application/xml ]] || [[ "$mime" == application/x-yaml ]]; then
+                is_text_file=1
+            fi
+        fi
+        ;;
+esac
+
+if [ "$is_text_file" -eq 1 ]; then
+    editor=""
+    # Check default editor preference
+    def_app=$(xdg-mime query default text/plain 2>/dev/null || echo "")
+    case "$def_app" in
+        *code*|*Code*)
+            command -v code >/dev/null 2>&1 && editor="code"
+            ;;
+        *TextEditor*|*gnome*)
+            command -v gnome-text-editor >/dev/null 2>&1 && editor="gnome-text-editor"
+            ;;
+    esac
+
+    [ -z "$editor" ] && command -v gnome-text-editor >/dev/null 2>&1 && editor="gnome-text-editor"
+    [ -z "$editor" ] && command -v code >/dev/null 2>&1 && editor="code"
+
+    if [ -n "$editor" ]; then
+        open_app "$editor" "$file_path"
+    fi
+fi
+
+# 5. Fallback for other file types or non-special workspaces
+if [[ "$has_special" == special:* ]]; then
+    # Still route through launch so the application doesn't get trapped in special workspace
+    open_app /usr/bin/xdg-open "$target"
+else
+    exec /usr/bin/xdg-open "$@"
+fi
