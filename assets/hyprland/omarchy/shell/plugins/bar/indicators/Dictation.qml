@@ -24,7 +24,7 @@ BarIndicator {
   }
 
   Process {
-    command: ["bash", "-c", "omarchy-voxtype-status"]
+    command: ["bash", "-c", "command -v omarchy-voxtype-status >/dev/null && omarchy-voxtype-status || true"]
     running: true
     stdout: SplitParser {
       onRead: function(data) { root.update(data) }
@@ -32,7 +32,6 @@ BarIndicator {
   }
 
   onPressed: function() {
-    if (!root.bar) return
-    root.bar.run("omarchy-voxtype-config")
+    // Voxtype uninstalled
   }
 }

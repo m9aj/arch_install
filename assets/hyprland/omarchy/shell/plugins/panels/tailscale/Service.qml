@@ -373,7 +373,7 @@ Item {
       _loginUrlOpened = true
       _loginInProgress = false
       loginTimeoutTimer.stop()
-      Quickshell.execDetached(["omarchy-launch-browser", url])
+      Quickshell.execDetached(["open-web", url])
       return true
     }
     return false

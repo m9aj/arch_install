@@ -43,7 +43,7 @@ def setup_hyprland(config):
     # Deploy standalone helper binaries to ~/.local/bin
     local_bin_dir = os.path.join(home, ".local", "bin")
     os.makedirs(local_bin_dir, exist_ok=True)
-    for script in ["screenshot", "ocr-snip", "qr-scan", "toggle-bar", "toggle-nightlight", "toggle-stay-awake", "toggle-dnd"]:
+    for script in ["screenshot", "ocr-snip", "qr-scan", "toggle-bar", "toggle-nightlight", "toggle-stay-awake", "toggle-dnd", "open-web", "edit-config"]:
         s_src = os.path.join(assets_dir, "omarchy", "bin", script)
         s_dst = os.path.join(local_bin_dir, script)
         if os.path.exists(s_src):

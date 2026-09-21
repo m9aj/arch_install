@@ -9,9 +9,9 @@
 
   // Help
   "help.keybindings": {"icon":"","label":"Keybindings","aliases":["shortcuts","keys","bindings","cheatsheet"],"action":"omarchy-menu-keybindings"},
-  "help.hyprland": {"icon":"","label":"Hyprland Wiki","aliases":["hyprland","docs"],"action":"xdg-open 'https://wiki.hyprland.org/'"},
-  "help.arch": {"icon":"󰣇","label":"Arch Linux Wiki","aliases":["arch","wiki"],"action":"xdg-open 'https://wiki.archlinux.org/'"},
-  "help.edit-config": {"icon":"","label":"Edit Hyprland Config","aliases":["config","hyprland.lua"],"action":"xdg-open \"$HOME/.config/hypr/hyprland.lua\""},
+  "help.hyprland": {"icon":"","label":"Hyprland Wiki","aliases":["hyprland","docs"],"action":"open-web 'https://wiki.hyprland.org/'"},
+  "help.arch": {"icon":"󰣇","label":"Arch Linux Wiki","aliases":["arch","wiki"],"action":"open-web 'https://wiki.archlinux.org/'"},
+  "help.edit-config": {"icon":"","label":"Edit Hyprland Config","aliases":["config","hyprland.lua"],"action":"edit-config \"$HOME/.config/hypr/hyprland.lua\""},
 
   // System
   "system.lock": {"icon":"","label":"Lock","action":"hyprlock"},
@@ -32,7 +32,7 @@
   "style.bar.position.left": {"icon":"󰁍","label":"Left","action":"omarchy-bar position left"},
   "style.bar.position.right": {"icon":"󰁔","label":"Right","action":"omarchy-bar position right"},
   "style.bar.transparency": {"icon":"󰂵","label":"Transparency","action":"omarchy-bar transparent toggle"},
-  "style.hyprland": {"icon":"","label":"Hyprland Config","action":"xdg-open \"$HOME/.config/hypr/hyprland.lua\""},
+  "style.hyprland": {"icon":"","label":"Hyprland Config","action":"edit-config \"$HOME/.config/hypr/hyprland.lua\""},
 
   // Trigger
   "trigger.notice": {"icon":"󰂚","label":"Notices","aliases":["notice","notices","status"]},
