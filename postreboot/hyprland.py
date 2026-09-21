@@ -67,6 +67,15 @@ def setup_hyprland(config):
         shutil.copy2(shell_json_src, shell_json_dst)
         logger.info(f"[HYPRLAND] Initialized {shell_json_dst}")
 
+    # Initialize screensaver branding
+    branding_dir = os.path.join(omarchy_cfg_dir, "branding")
+    os.makedirs(branding_dir, exist_ok=True)
+    branding_src = os.path.join(omarchy_src, "logo.txt")
+    branding_dst = os.path.join(branding_dir, "screensaver.txt")
+    if os.path.exists(branding_src) and not os.path.exists(branding_dst):
+        shutil.copy2(branding_src, branding_dst)
+        logger.info(f"[HYPRLAND] Initialized screensaver branding at {branding_dst}")
+
     # 3. Deploy Antigravity Custom Skill
     skill_src = os.path.join(assets_dir, "skills", "hyprland-pilot", "SKILL.md")
     skill_dst_dir = os.path.join(home, ".gemini", "antigravity-cli", "skills", "hyprland-pilot")

@@ -314,6 +314,13 @@ hl.window_rule({
 })
 
 hl.window_rule({
+    name       = "screensaver",
+    match      = { class = "^(org.omarchy.screensaver)$" },
+    fullscreen = true,
+    float      = true,
+})
+
+hl.window_rule({
     name        = "citrix-epic",
     match       = { class = "^(Hyperspace.*)$" },
     border_size = 0,
