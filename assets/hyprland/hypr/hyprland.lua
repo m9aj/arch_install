@@ -307,6 +307,13 @@ hl.window_rule({
 })
 
 hl.window_rule({
+    name   = "satty-editor",
+    match  = { class = "^(com.gabm.satty|satty)$" },
+    float  = true,
+    center = true,
+})
+
+hl.window_rule({
     name        = "citrix-epic",
     match       = { class = "^(Hyperspace.*)$" },
     border_size = 0,

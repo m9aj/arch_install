@@ -1,24 +1,47 @@
 #!/bin/bash
-# Native Smart Wayland Screenshot Tool
+# Native Smart Wayland Screenshot Tool with Satty Integration
 # Behaviors:
-#   - Single-click on any window -> captures that window
-#   - Single-click on desktop/gap -> captures fullscreen
-#   - Click and drag -> captures custom region
+#   - Single-click on any window -> selects that window
+#   - Single-click on desktop/gap -> selects fullscreen
+#   - Click and drag -> selects custom region
 #   - Escape -> cancels
+#   - Opens in Satty with resize handles and annotation tools:
+#       * Drag edges/corners to resize crop area (like GNOME)
+#       * Add arrows, text, numbered badges (1, 2, 3), or blur
+#       * Press Enter or click Copy/Save to copy & save
+#       * Press Escape to exit without saving
+#
+# Flags:
+#   --quick / -q : Direct capture to clipboard and disk (skips Satty editor)
+#   --full / -f  : Fullscreen capture
 
 mkdir -p "$HOME/Pictures/Screenshots"
 TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
 FILEPATH="$HOME/Pictures/Screenshots/screenshot-$TIMESTAMP.png"
 
-# Handle instant fullscreen flag
-if [[ "$1" == "--full" || "$1" == "-f" ]]; then
-  grim "$FILEPATH" || exit 1
-  wl-copy --type image/png < "$FILEPATH"
-  notify-send -i "$FILEPATH" "Screenshot Saved" "Fullscreen saved to Screenshots & clipboard"
-  exit 0
+QUICK_MODE=false
+FULLSCREEN_MODE=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --quick|-q) QUICK_MODE=true ;;
+    --full|-f) FULLSCREEN_MODE=true ;;
+  esac
+done
+
+if [[ "$FULLSCREEN_MODE" == true ]]; then
+  if [[ "$QUICK_MODE" == true ]] || ! command -v satty >/dev/null 2>&1; then
+    grim "$FILEPATH" || exit 1
+    wl-copy --type image/png < "$FILEPATH"
+    notify-send -i "$FILEPATH" "Screenshot Saved" "Fullscreen saved to Screenshots & clipboard"
+    exit 0
+  else
+    grim - | satty --filename - --output-filename "$FILEPATH"
+    exit 0
+  fi
 fi
 
-# Optional: Freeze screen during selection with hyprpicker
+# Freeze screen during selection with hyprpicker
 FREEZE_PID=""
 if command -v hyprpicker >/dev/null 2>&1; then
   hyprpicker -r -z >/dev/null 2>&1 &
@@ -82,10 +105,13 @@ fi
 cleanup
 trap - EXIT
 
-# Capture with grim
-grim -g "$SELECTION" "$FILEPATH" || exit 1
-
-if [[ -f "$FILEPATH" ]]; then
-  wl-copy --type image/png < "$FILEPATH"
-  notify-send -i "$FILEPATH" "Screenshot Saved" "Copied to clipboard and saved to Pictures/Screenshots"
+if [[ "$QUICK_MODE" == true ]] || ! command -v satty >/dev/null 2>&1; then
+  grim -g "$SELECTION" "$FILEPATH" || exit 1
+  if [[ -f "$FILEPATH" ]]; then
+    wl-copy --type image/png < "$FILEPATH"
+    notify-send -i "$FILEPATH" "Screenshot Saved" "Copied to clipboard and saved to Pictures/Screenshots"
+  fi
+else
+  # Pipe to Satty for interactive resize, crop, and annotation
+  grim -g "$SELECTION" - | satty --filename - --output-filename "$FILEPATH"
 fi

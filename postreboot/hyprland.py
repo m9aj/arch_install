@@ -75,6 +75,15 @@ def setup_hyprland(config):
         shutil.copy2(skill_src, os.path.join(skill_dst_dir, "SKILL.md"))
         logger.info(f"[HYPRLAND] Deployed Antigravity skill to {skill_dst_dir}")
 
+    # Deploy Satty screenshot editor configuration
+    satty_cfg_dir = os.path.join(home, ".config", "satty")
+    os.makedirs(satty_cfg_dir, exist_ok=True)
+    satty_src = os.path.join(assets_dir, "satty", "config.toml")
+    satty_dst = os.path.join(satty_cfg_dir, "config.toml")
+    if os.path.exists(satty_src) and not os.path.exists(satty_dst):
+        shutil.copy2(satty_src, satty_dst)
+        logger.info(f"[HYPRLAND] Deployed satty configuration to {satty_dst}")
+
     # 4. Apply initial theme
     chosen_theme = config.get("postconfig", {}).get("hyprland", {}).get("theme", "tokyo-night")
     theme_script = os.path.join(bin_dst, "omarchy-theme-set")
@@ -83,7 +92,7 @@ def setup_hyprland(config):
         run(f"sudo -H -u {user} env OMARCHY_PATH='{omarchy_dir}' PATH='{bin_dst}':$PATH bash '{theme_script}' '{chosen_theme}'", check=False)
 
     # 5. Enforce User Ownership
-    run(f"chown -R {user}:{user} '{home}/.config/hypr' '{home}/.config/omarchy' '{omarchy_dir}' '{home}/.config/quickshell'")
+    run(f"chown -R {user}:{user} '{home}/.config/hypr' '{home}/.config/omarchy' '{home}/.config/satty' '{local_bin_dir}' '{omarchy_dir}' '{home}/.config/quickshell'")
 
     logger.info("[HYPRLAND] Setup completed successfully.")
     return True

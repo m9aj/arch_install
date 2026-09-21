@@ -115,6 +115,7 @@ post_profiles:
       - wofi
       - grim
       - slurp
+      - satty
       - hyprpicker
       - hyprsunset
       - zxing-cpp
