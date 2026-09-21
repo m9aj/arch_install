@@ -1,0 +1,18 @@
+#!/bin/bash
+# Native Wayland Screenshot Tool
+mkdir -p "$HOME/Pictures/Screenshots"
+TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
+FILEPATH="$HOME/Pictures/Screenshots/screenshot-$TIMESTAMP.png"
+
+if [[ "$1" == "--full" || "$1" == "-f" ]]; then
+  grim "$FILEPATH" || exit 1
+else
+  SELECTION=$(slurp 2>/dev/null)
+  [[ -z "$SELECTION" ]] && exit 0
+  grim -g "$SELECTION" "$FILEPATH" || exit 1
+fi
+
+if [[ -f "$FILEPATH" ]]; then
+  wl-copy --type image/png < "$FILEPATH"
+  notify-send -i "$FILEPATH" "Screenshot Saved" "Copied to clipboard and saved to Pictures/Screenshots"
+fi

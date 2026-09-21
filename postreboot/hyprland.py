@@ -40,6 +40,17 @@ def setup_hyprland(config):
             run(f"chmod +x '{bin_dst}'/*")
         logger.info(f"[HYPRLAND] Deployed Omarchy components to {omarchy_dir}")
 
+    # Deploy standalone helper binaries to ~/.local/bin
+    local_bin_dir = os.path.join(home, ".local", "bin")
+    os.makedirs(local_bin_dir, exist_ok=True)
+    for script in ["screenshot", "ocr-snip", "qr-scan", "toggle-bar", "toggle-nightlight", "toggle-stay-awake", "toggle-dnd"]:
+        s_src = os.path.join(assets_dir, "omarchy", "bin", script)
+        s_dst = os.path.join(local_bin_dir, script)
+        if os.path.exists(s_src):
+            shutil.copy2(s_src, s_dst)
+            os.chmod(s_dst, 0o755)
+    logger.info(f"[HYPRLAND] Deployed standalone scripts to {local_bin_dir}")
+
     # Symlink ~/.config/quickshell -> ~/.local/share/omarchy/shell
     shell_dst = os.path.join(omarchy_dir, "shell")
     qs_cfg_link = os.path.join(home, ".config", "quickshell")

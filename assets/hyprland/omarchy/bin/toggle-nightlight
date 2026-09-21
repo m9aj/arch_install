@@ -1,0 +1,17 @@
+#!/bin/bash
+# Native Hyprland Night Light Toggle using hyprsunset
+if ! pgrep -x hyprsunset >/dev/null; then
+  hyprsunset &
+  sleep 0.2
+fi
+
+RAW_TEMP=$(hyprctl hyprsunset temperature 2>/dev/null | grep -oE '[0-9]+' | head -n1)
+CURRENT_TEMP=${RAW_TEMP:-6000}
+
+if (( CURRENT_TEMP < 5500 )); then
+  hyprctl hyprsunset temperature 6000 >/dev/null 2>&1
+  notify-send -t 2000 "Night Light" "Disabled (6000K)"
+else
+  hyprctl hyprsunset temperature 4000 >/dev/null 2>&1
+  notify-send -t 2000 "Night Light" "Enabled (4000K)"
+fi
