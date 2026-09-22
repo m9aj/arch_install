@@ -1,5 +1,6 @@
 #!/bin/bash
-# launch: Launch graphical applications cleanly from terminal to the active desktop workspace
+# launch: Launch graphical applications cleanly from terminal, keybinds, or menus
+# Ensures applications spawn on the active desktop workspace and decouple from scratchpads.
 
 if [ $# -eq 0 ]; then
     echo "Usage: launch <command> [args...]" >&2
@@ -12,17 +13,23 @@ if [ -z "$target_ws" ] || [ "$target_ws" = "null" ]; then
     target_ws=$(hyprctl monitors -j 2>/dev/null | jq -r '.[0].activeWorkspace.name' 2>/dev/null || echo "1")
 fi
 
-# Check if special workspace (like Antigravity) is active
+# Check if special workspace (like Antigravity or btop) is active on focused monitor
 has_special=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .specialWorkspace.name' 2>/dev/null || echo "")
 if [ -z "$has_special" ] || [ "$has_special" = "null" ]; then
     has_special=$(hyprctl monitors -j 2>/dev/null | jq -r '.[0].specialWorkspace.name' 2>/dev/null || echo "")
 fi
 
-# Dispatch application to regular workspace detached from terminal
-hyprctl dispatch "hl.dsp.exec_cmd([=[[workspace $target_ws] $*]=])" >/dev/null 2>&1
-
-# If launched from inside a special workspace (e.g. Antigravity), dismiss it so the app is immediately visible in front
+# If launched while a special workspace (e.g. Antigravity) is active,
+# dismiss it FIRST so that the active workspace reverts to the desktop workspace.
+# This prevents the new window from being assigned to and trapped inside the special workspace.
 if [[ "$has_special" == special:* ]]; then
     special_name="${has_special#special:}"
     hyprctl dispatch "hl.dsp.workspace.toggle_special(\"$special_name\")" >/dev/null 2>&1
+fi
+
+# Detach cleanly if invoked from an interactive terminal
+if [ -t 0 ] || [ -t 1 ]; then
+    nohup "$@" >/dev/null 2>&1 &
+else
+    exec "$@"
 fi

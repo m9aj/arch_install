@@ -195,11 +195,11 @@ hl.bind(mainMod .. " + CTRL + V", hl.dsp.exec_cmd("cliphist list | wofi --dmenu 
 
 -- Menus & Launchers
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("quickshell ipc -p " .. home .. "/.local/share/omarchy/shell call shell toggle omarchy.menu '{}'"), { description = "Launcher menu" })
-hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu), { description = "Launch apps" })
-hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(terminal), { description = "Terminal" })
-hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("firefox"), { description = "Browser" })
-hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("firefox --private-window"), { description = "Browser (incognito)" })
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { description = "File manager" })
+hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("launch " .. menu), { description = "Launch apps" })
+hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("launch " .. terminal), { description = "Terminal" })
+hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("launch firefox"), { description = "Browser" })
+hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("launch firefox --private-window"), { description = "Browser (incognito)" })
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("launch " .. fileManager), { description = "File manager" })
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("omarchy-menu-wallpaper"), { description = "Wallpaper menu" })
 hl.bind(mainMod .. " + SHIFT + T", hl.dsp.exec_cmd("omarchy-menu-theme"), { description = "Theme menu" })
 hl.bind(mainMod .. " + Q", hl.dsp.window.close(), { description = "Close window" })

@@ -82,7 +82,7 @@ Item {
     // inherit wayland-wm@.service. Keeping gtk-launch as the desktop-entry
     // resolver supports IDs with spaces and entries that UWSM rejects.
     var target = (id.slice(-8) === ".desktop") ? id : (id + ".desktop")
-    Util.execDetached("(command -v uwsm-app >/dev/null 2>&1 && uwsm-app -- gtk-launch " + Util.shellQuote(target) + " || gtk-launch " + Util.shellQuote(target) + ")")
+    Util.execDetached("launch gtk-launch " + Util.shellQuote(target))
   }
 
   function remove(desktopId, name) {

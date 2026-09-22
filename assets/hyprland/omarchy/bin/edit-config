@@ -1,13 +1,13 @@
 #!/bin/bash
-# Open config file in an editor on the current workspace
+# Open config file in an editor on the regular desktop workspace
 TARGET="${1:-$HOME/.config/hypr/hyprland.lua}"
 
 if command -v gnome-text-editor >/dev/null 2>&1; then
-  exec gnome-text-editor --new-window "$TARGET"
+  exec launch gnome-text-editor --new-window "$TARGET"
 elif [[ -n "$EDITOR" ]] && command -v "$EDITOR" >/dev/null 2>&1; then
-  exec ghostty -e "$EDITOR" "$TARGET"
+  exec launch ghostty -e "$EDITOR" "$TARGET"
 elif command -v nano >/dev/null 2>&1; then
-  exec ghostty -e nano "$TARGET"
+  exec launch ghostty -e nano "$TARGET"
 else
-  exec xdg-open "$TARGET"
+  exec launch xdg-open "$TARGET"
 fi

@@ -138,7 +138,7 @@ Item {
     var command = String(action || "")
     if (!command) return
 
-    Util.execDetached(command)
+    Util.execDetached("launch bash -c " + Util.shellQuote(command))
   }
 
   // Menu rows only surface their detail while a search is narrowing them;
