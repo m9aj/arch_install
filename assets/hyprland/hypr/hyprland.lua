@@ -47,11 +47,12 @@ end)
 hl.env("OMARCHY_PATH", home .. "/.local/share/omarchy")
 hl.env("PATH", home .. "/.local/share/omarchy/bin:" .. (os.getenv("PATH") or ""))
 hl.env("OMARCHY_SCREENSHOT_DIR", home .. "/Pictures/Screenshots")
-hl.env("XCURSOR_SIZE", "24")
-hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("QT_QPA_PLATFORM", "wayland")
 hl.env("GDK_BACKEND", "wayland,x11")
-
+hl.env("XCURSOR_THEME", "Numix-Cursor-Dark")
+hl.env("XCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_THEME", "Numix-Cursor-Dark")
+hl.env("HYPRCURSOR_SIZE", "24")
 ------------------------------
 ---- LOOK & FEEL SETTINGS ----
 ------------------------------
@@ -101,6 +102,7 @@ hl.config({
         force_default_wallpaper = 0,
         disable_hyprland_logo   = true,
         vrr                     = 1, -- 0 = off, 1 = on, 2 = fullscreen only
+        focus_on_activate       = true,
     },
 
     input = {
@@ -112,12 +114,16 @@ hl.config({
             clickfinger_behavior = true,
         },
     },
-
+    
     xwayland = {
         force_zero_scaling = true,
     },
 })
 
+hl.device({
+    name        = "pixa3854:00-093a:0274-touchpad",
+    sensitivity = 0.7,
+})
 --------------------
 ---- ANIMATIONS ----
 --------------------
@@ -318,6 +324,7 @@ hl.window_rule({
     match      = { class = "^(org.omarchy.screensaver)$" },
     fullscreen = true,
     float      = true,
+    animation  = "fade",
 })
 
 hl.window_rule({
@@ -370,7 +377,4 @@ hl.gesture({
     direction = "pinch",
     action    = "fullscreen",
 })
-
-
-
 
