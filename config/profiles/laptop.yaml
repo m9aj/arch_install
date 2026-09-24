@@ -46,6 +46,7 @@ machine_specific:
   aur:
     - frog-ocr-no-telemetry
     - icaclient
+    - ferdium-bin
   services:
     - bluetooth
 
