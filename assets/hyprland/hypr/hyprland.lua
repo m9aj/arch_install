@@ -27,6 +27,7 @@ end
 local terminal = "ghostty"
 local fileManager = "nautilus"
 local menu = "wofi --show drun"
+local browser = "zen-browser"
 
 -------------------
 ---- AUTOSTART ----
@@ -39,6 +40,12 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
     hl.exec_cmd("hyprsunset")
+
+    -- Autostart applications on designated workspaces
+    hl.exec_cmd("[workspace 1] " .. browser)
+    hl.exec_cmd("[workspace 3 silent] firefoxpwa site launch 01KYKD44VJAES35FFZ52PDF3XD")
+    hl.exec_cmd("[workspace 4 silent] firefoxpwa site launch 01KYKD71MMBSANDW29ZQ3GK6PE")
+    hl.exec_cmd("[workspace 4 silent] firefoxpwa site launch 01KYKCWQYKGQ5NT68W2FC88V2Q")
 end)
 
 -------------------------------
@@ -197,8 +204,8 @@ hl.bind(mainMod .. " + CTRL + V", hl.dsp.exec_cmd("cliphist list | wofi --dmenu 
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("quickshell ipc -p " .. home .. "/.local/share/omarchy/shell call shell toggle omarchy.menu '{}'"), { description = "Launcher menu" })
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("launch " .. menu), { description = "Launch apps" })
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("launch " .. terminal), { description = "Terminal" })
-hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("launch firefox"), { description = "Browser" })
-hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("launch firefox --private-window"), { description = "Browser (incognito)" })
+hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("launch " .. browser), { description = "Browser" })
+hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("launch " .. browser .. " --private-window"), { description = "Browser (incognito)" })
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("launch " .. fileManager), { description = "File manager" })
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("omarchy-menu-wallpaper"), { description = "Wallpaper menu" })
 hl.bind(mainMod .. " + SHIFT + T", hl.dsp.exec_cmd("omarchy-menu-theme"), { description = "Theme menu" })
@@ -302,6 +309,24 @@ hl.window_rule({
     name  = "webapps",
     match = { class = "^(FFPWA-.*)$" },
     tag   = "webapp",
+})
+
+hl.window_rule({
+    name      = "pwa-todo-workspace",
+    match     = { class = "^(FFPWA-01KYKD44VJAES35FFZ52PDF3XD)$" },
+    workspace = "3",
+})
+
+hl.window_rule({
+    name      = "pwa-messages-workspace",
+    match     = { class = "^(FFPWA-01KYKD71MMBSANDW29ZQ3GK6PE)$" },
+    workspace = "4",
+})
+
+hl.window_rule({
+    name      = "pwa-whatsapp-workspace",
+    match     = { class = "^(FFPWA-01KYKCWQYKGQ5NT68W2FC88V2Q)$" },
+    workspace = "4",
 })
 
 hl.window_rule({
