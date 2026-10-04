@@ -345,6 +345,41 @@ hl.window_rule({
 })
 
 hl.window_rule({
+    name   = "bitwarden-popup",
+    match  = {
+        title = "^(Bitwarden|Bitwarden [—–-] (Mozilla Firefox|Zen Browser|LibreWolf)|Extension: \\(Bitwarden.*\\).*)$",
+    },
+    float  = true,
+    size   = { 500, 650 },
+    center = true,
+})
+
+hl.window_rule({
+    name   = "bitwarden-app",
+    match  = { class = "^(Bitwarden|bitwarden)$" },
+    float  = true,
+    size   = { 500, 650 },
+    center = true,
+})
+
+-- Float and center Bitwarden password prompt if title is updated dynamically
+hl.on("window.title", function(win)
+    if not win then return end
+    local title = win.title or ""
+    local is_bw = title == "Bitwarden"
+        or title:find("^Bitwarden — Mozilla Firefox")
+        or title:find("^Bitwarden %- Mozilla Firefox")
+        or title:find("^Bitwarden – Mozilla Firefox")
+        or title:find("^Bitwarden — Zen Browser")
+        or title:find("^Bitwarden %- Zen Browser")
+        or title:find("^Extension: %(Bitwarden.-%) %- Bitwarden")
+    if is_bw and not win.floating then
+        hl.dispatch(hl.dsp.window.float({ action = "on", window = "address:" .. win.address }))
+        hl.dispatch(hl.dsp.window.center({ window = "address:" .. win.address }))
+    end
+end)
+
+hl.window_rule({
     name       = "screensaver",
     match      = { class = "^(org.omarchy.screensaver)$" },
     fullscreen = true,
