@@ -142,7 +142,8 @@ features:
       enabled: false
       config:
         url: http://aur.local:8080/local-aur-repo
-        tailscale_ip: 100.100.1.1          # Pinned in /etc/hosts as aur.local
+        tailscale_ip: 100.100.1.1          # Pinned in /etc/hosts as aur.local when tailscale is enabled
+        lan_ip: 192.168.40.100             # Pinned in /etc/hosts as aur.local when tailscale is disabled
 
   reflector:
     enabled: true
@@ -260,10 +261,6 @@ postconfig:
           file: /home/ajay/Arch/config/fw13_28k.icm
 
     theme:
-      icons:
-        enabled: false
-        source: assets/icons.zip          # Relative to PROJECT_ROOT
-        name: Qodir
       cursor:
         enabled: true
         source: assets/cursors.zip
@@ -295,40 +292,45 @@ postconfig:
         - citrix-conncenter
         - citrix-configmgr
         - citrix-workspace
+        - micro
 
       folders:
-        System:
-          - org.gnome.Settings
-          - org.gnome.tweaks
-          - org.gnome.Extensions
-          - ca.desrt.dconf-editor
-          - org.gnome.Firmware
-          - firewall-config
         Office:
-          - libreoffice-writer
-          - libreoffice-calc
-          - libreoffice-impress
           - libreoffice-startcenter
           - libreoffice-base
+          - libreoffice-calc
           - libreoffice-draw
+          - libreoffice-impress
           - libreoffice-math
-          - conncentre
+          - libreoffice-writer
+        System:
+          - ca.desrt.dconf-editor
+          - org.gnome.Extensions
+          - firewall-config
+          - org.gnome.Firmware
+          - org.gnome.Settings
+          - org.gnome.tweaks
         Utilities:
-          - org.gnome.DiskUtility
           - org.gnome.baobab
-          - net.nokyan.Resources.desktop
-          - com.github.tenderowl.frog
+          - org.gnome.DiskUtility
           - filezilla
-          - org.gnome.Screenshot
-          - simple-scan
+          - com.github.tenderowl.frog
           - org.gnome.Logs
-          - btrfs-assistant
-          - com.github.wwmm.easyeffects
+          - org.gnome.Resources
+          - org.gnome.Screenshot
+        Webapps:
+          - FFPWA-01KYK98VFAZ2GMZJ67TPRW591H  # Citrix
+          - FFPWA-01KYKCFVSDKCGXT6WFFNG7QY30  # Outlook Prov
+          - FFPWA-01KYKC8DGJ8KVZJA0FWYQHX5DG  # Outlook Sound
 
       dock:
         - org.gnome.Nautilus
         - firefox
         - org.gnome.TextEditor
         - org.gnome.Console
+        - FFPWA-01KYKD71MMBSANDW29ZQ3GK6PE  # Messages
+        - FFPWA-01KYKCWQYKGQ5NT68W2FC88V2Q  # Whatsapp
+        - FFPWA-01KYKD44VJAES35FFZ52PDF3XD  # Todo
+        - FFPWA-01M46PZY404S71WYYV92TXMZXD  # Calendar
 
       layout: []

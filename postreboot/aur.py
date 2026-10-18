@@ -1,6 +1,7 @@
 # postreboot/aur.py
 
 import re
+import shutil
 import tempfile
 from core.shell import run
 from core.logger import logger
@@ -11,6 +12,10 @@ def install_aur_helper(config):
     helper = config.get("machine_specific", {}).get("aur_helper", "paru")
 
     if helper == "none":
+        return
+
+    if shutil.which(helper):
+        logger.info(f"[AUR] Helper '{helper}' is already installed, skipping compilation.")
         return
 
     user = config["system"]["username"]

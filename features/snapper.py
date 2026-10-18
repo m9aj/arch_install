@@ -26,7 +26,10 @@ def configure(config, feature):
         if res.returncode != 0 and os.path.exists(snapshots_dir):
             logger.info(f"[snapper] '{snapshots_dir}' already exists. Cleaning existing subvolume/directory to initialize config...")
             run(f"sudo umount {snapshots_dir}", check=False)
-            run(f"sudo btrfs subvolume delete {snapshots_dir}", check=False)
+            del_res = run(f"sudo btrfs subvolume delete --recursive {snapshots_dir}", check=False)
+            if del_res.returncode != 0:
+                run(f"sudo btrfs subvolume delete {snapshots_dir}/*/snapshot", check=False)
+                run(f"sudo btrfs subvolume delete {snapshots_dir}", check=False)
             run(f"sudo rm -rf {snapshots_dir}", check=False)
             run(f"sudo snapper -c {name} create-config {target}")
             run("sudo mount -a", check=False)

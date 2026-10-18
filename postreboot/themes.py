@@ -1,5 +1,5 @@
 # postreboot/themes.py
-# Installs icon/cursor themes from local zip archives and downloads wallpapers.
+# Installs cursor themes from local zip archives and downloads wallpapers.
 
 import os
 import shlex
@@ -12,29 +12,6 @@ from core.gnome import _is_gnome
 
 def _resolve(source):
     return source if os.path.isabs(source) else os.path.join(PROJECT_ROOT, source)
-
-
-def install_icons(config):
-    cfg = config.get("postconfig", {}).get("gnome", {}).get("theme", {}).get("icons", {})
-    if not cfg.get("enabled"):
-        return
-
-    source = _resolve(cfg["source"])
-    name = cfg["name"]
-    user = config["system"]["username"]
-    icons_dir = f"/home/{user}/.local/share/icons"
-
-    if not os.path.exists(source):
-        logger.warning(f"[THEME] Icon archive not found: {source}")
-        return
-
-    logger.info(f"[THEME] Installing icon theme: {name}")
-    run(f"mkdir -p {icons_dir}")
-    run(f"unzip -o '{source}' -d {icons_dir}")
-    run(f"gtk-update-icon-cache -f {icons_dir}/{name}/")
-    
-    if _is_gnome(config):
-        run(f"gsettings set org.gnome.desktop.interface icon-theme '{name}'")
 
 
 def install_cursors(config):
@@ -85,6 +62,5 @@ def install_wallpapers(config):
 
 
 def install_themes(config):
-    install_icons(config)
     install_cursors(config)
     install_wallpapers(config)

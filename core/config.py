@@ -171,7 +171,7 @@ def merge_dicts(base, override):
 
     return result
 
-_SECRET_KEYS = {"root_password", "user_password", "password"}
+_SECRET_KEYS = {"root_password", "user_password", "password", "command"}
 
 def _redact(obj):
     """Recursively replace known secret keys with *** for safe debug logging."""

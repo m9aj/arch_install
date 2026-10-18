@@ -42,7 +42,6 @@ machine_specific:
   aur:
     - frog-ocr-no-telemetry
     - icaclient
-    - ferdium-bin
 
 features:
   local_aur_repo:
@@ -89,7 +88,7 @@ features:
 
 network:
   hosts:
-    media.local: 192.168.10.150
+    media.local: 192.168.40.100
     kvm.local: 192.168.10.155
     laptop.local: 192.168.10.160
     modem.local: 192.168.1.254
@@ -115,8 +114,6 @@ postconfig:
       enabled: false
 
     theme:
-      icons:
-        enabled: false
       cursor:
         enabled: true
       wallpapers:
@@ -132,17 +129,19 @@ postconfig:
     appdrawer:
       enabled: true
       layout:
-        - # page 1
-          - org.gnome.Decibels
-          - org.gnome.Calculator
-          - org.gnome.Calendar
-          - org.gnome.clocks
-          - org.gnome.SimpleScan
-          - org.gnome.Papers
-          - gimp
-          - org.gnome.Loupe
-          - Office
-          - System
-          - Utilities
-          - org.gnome.Showtime
-          - org.gnome.Weather
+        - # page 1 (alphabetical by display name)
+          - org.gnome.Decibels        # Audio Player
+          - org.gnome.Calculator      # Calculator
+          - org.gnome.Calendar        # Calendar
+          - org.gnome.clocks          # Clocks
+          - code-oss                  # Code - OSS
+          - org.gnome.SimpleScan      # Document Scanner
+          - org.gnome.Papers          # Document Viewer
+          - gimp                      # GNU Image Manipulation Program
+          - org.gnome.Loupe           # Image Viewer
+          - Office                    # Office
+          - System                    # System
+          - Utilities                 # Utilities
+          - org.gnome.Showtime        # Video Player
+          - org.gnome.Weather         # Weather
+          - Webapps                   # Webapps

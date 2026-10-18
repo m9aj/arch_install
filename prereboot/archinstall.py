@@ -96,7 +96,6 @@ def set_timezone(config):
         raise ValueError(f"Invalid or unknown timezone: {tz!r}")
     chroot(f"ln -sf /usr/share/zoneinfo/{tz} /etc/localtime")
     chroot("hwclock --systohc")
-    chroot("timedatectl set-ntp true")
     chroot("systemctl enable systemd-timesyncd")
 
 def configure_locales():

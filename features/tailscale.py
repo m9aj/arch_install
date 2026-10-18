@@ -22,6 +22,6 @@ def configure(config, feature):
             run(f"sudo systemctl enable --now {svc}")
 
     if cfg.get("auto_up"):
-        logger.info("[tailscale] Running tailscale up with 5s timeout...")
-        run("sudo tailscale up --timeout=5s || true", check=False)
+        logger.info("[tailscale] Bringing up Tailscale (authenticate via URL if prompted)...")
+        run("sudo tailscale up", check=False)
 

@@ -18,7 +18,8 @@ KERNEL_PARAMS = ["zswap.enabled=0"]
 
 def configure(config, feature):
     # Disable zswap for current session
-    run("echo 0 | sudo tee /sys/module/zswap/parameters/enabled")
+    if os.path.exists("/sys/module/zswap/parameters/enabled"):
+        run("echo 0 | sudo tee /sys/module/zswap/parameters/enabled > /dev/null", check=False)
 
     # Persistent Kernel Parameters in bootloader
     for param in KERNEL_PARAMS:

@@ -1,5 +1,8 @@
 # core/network.py
 
+import glob
+import os
+import re
 import shlex
 import time
 from core.shell import run
@@ -13,10 +16,17 @@ def check_internet():
 
 def detect_wifi_interface():
     result = run("iwctl device list", check=False)
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
     for line in result.stdout.splitlines():
-        parts = line.split()
-        if parts and parts[0].startswith("wlan"):
+        clean_line = ansi_escape.sub("", line)
+        parts = clean_line.split()
+        if parts and parts[0].startswith("wl"):
             return parts[0]
+
+    for path in sorted(glob.glob("/sys/class/net/*")):
+        if os.path.exists(os.path.join(path, "wireless")) or os.path.exists(os.path.join(path, "phy80211")):
+            return os.path.basename(path)
+
     return "wlan0"
 
 
@@ -29,10 +39,12 @@ def connect_wifi(config):
         logger.warning("No WiFi SSID configured in network.wifi")
         return False
 
-    interface = wifi.get("interface") or detect_wifi_interface()
+    ssid = str(ssid)
+    interface = str(wifi.get("interface") or detect_wifi_interface())
     logger.info(f"Connecting to WiFi: {ssid} on {interface}")
 
-    if password:
+    if password is not None and password != "":
+        password = str(password)
         result = run(f"iwctl --passphrase {shlex.quote(password)} station {shlex.quote(interface)} connect {shlex.quote(ssid)}", check=False)
     else:
         result = run(f"iwctl station {shlex.quote(interface)} connect {shlex.quote(ssid)}", check=False)

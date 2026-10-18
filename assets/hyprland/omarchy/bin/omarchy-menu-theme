@@ -1,5 +1,0 @@
-#!/bin/bash
-# omarchy:summary=Open the visual theme switcher and apply chosen theme
-
-theme=$(omarchy-theme-switcher)
-[[ -n $theme ]] && omarchy-theme-set "$theme"

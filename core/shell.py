@@ -122,12 +122,23 @@ __CHROOT_EOF__
 # Kernel Parameter Management
 # -----------------------------------------------------------------------------
 
-def apply_kernel_parameter(config, param):
+def rebuild_uki(config):
     boot = config.get("boot", {})
     init = boot.get("init", "mkinitcpio")
     kernel = boot.get("kernel", "linux")
     boot_mount = "/efi"
+    cmdline_path = "/mnt/etc/kernel/cmdline" if os.path.exists("/mnt/etc/kernel") and os.getuid() == 0 else "/etc/kernel/cmdline"
 
+    logger.info(f"Regenerating UKI (init: {init})")
+    if init == "mkinitcpio":
+        run("sudo mkinitcpio -P")
+    elif init == "dracut":
+        efi_name = f"arch-{kernel}.efi"
+        run(f"sudo mkdir -p {boot_mount}/EFI/Linux")
+        run(f"sudo dracut --uefi --force --hostonly --kernel-cmdline \"$(cat {cmdline_path})\" {boot_mount}/EFI/Linux/{efi_name}")
+
+
+def apply_kernel_parameter(config, param, rebuild=True):
     cmdline_path = "/mnt/etc/kernel/cmdline" if os.path.exists("/mnt/etc/kernel") and os.getuid() == 0 else "/etc/kernel/cmdline"
     
     if os.path.exists(cmdline_path):
@@ -142,11 +153,8 @@ def apply_kernel_parameter(config, param):
 
         run(f"echo {shlex.quote(new_content)} | sudo tee {cmdline_path} > /dev/null")
         
-        logger.info("Regenerating UKI after kernel parameter update")
-        if init == "mkinitcpio":
-            run("sudo mkinitcpio -P")
-        elif init == "dracut":
-            efi_name = f"arch-{kernel}.efi"
-            run(f"sudo mkdir -p {boot_mount}/EFI/Linux")
-            run(f"sudo dracut --uefi --force --hostonly --kernel-cmdline \"$(cat {cmdline_path})\" {boot_mount}/EFI/Linux/{efi_name}")
+        if rebuild:
+            rebuild_uki(config)
+        return True
+    return False
 

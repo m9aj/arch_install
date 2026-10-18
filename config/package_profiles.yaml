@@ -97,48 +97,6 @@ post_profiles:
     services:
       - sddm
 
-  hyprland:
-    packages:
-      - hyprland
-      - xdg-desktop-portal-hyprland
-      - xdg-desktop-portal-gtk
-      - polkit-gnome
-      - qt6-wayland
-      - qt6-declarative
-      - qt6-imageformats
-      - quickshell
-      - kitty
-      - ghostty
-      - xdg-terminal-exec
-      - wl-clipboard
-      - cliphist
-      - wofi
-      - grim
-      - slurp
-      - satty
-      - hyprpicker
-      - hyprsunset
-      - zxing-cpp
-      - tesseract
-      - tesseract-data-eng
-      - fzf
-      - zoxide
-      - eza
-      - bat
-      - tealdeer
-      - duf
-      - dust
-      - btop
-      - fastfetch
-      - jq
-      - inotify-tools
-      - brightnessctl
-      - wireplumber
-      - playerctl
-      - gdm
-    services:
-      - gdm
-
   hardware:
     packages:
       - pam-u2f

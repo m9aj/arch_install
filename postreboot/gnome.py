@@ -153,7 +153,7 @@ def apply_custom_keybindings(config):
         path = paths[i]
         for field in ("name", "command", "binding"):
             escaped = kb[field].replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
-            run(f"gsettings set {schema}:{path} {field} \"'{escaped}'\"")
+            run(f"gsettings set {schema}:{path} {field} \"'{escaped}'\"", log_cmd=(field != "command"))
 
 
 # ------------------------
@@ -184,11 +184,22 @@ def hide_apps(config):
         dst = f"{user_dir}/{app}"
 
         if not os.path.exists(src):
-            logger.warning(f"App not found: {app}")
-            continue
+            matches = [
+                f for f in os.listdir("/usr/share/applications")
+                if f.endswith(f".{app}") or f == f"{name}.desktop"
+            ] if os.path.exists("/usr/share/applications") else []
+            if matches:
+                app = matches[0]
+                src = f"/usr/share/applications/{app}"
+                dst = f"{user_dir}/{app}"
+            else:
+                logger.warning(f"App not found: {app}")
+                continue
 
         run(f"cp {shlex.quote(src)} {shlex.quote(dst)}")
-        run(f"grep -q 'NoDisplay=true' {shlex.quote(dst)} || echo 'NoDisplay=true' >> {shlex.quote(dst)}")
+        run(f"grep -q '^NoDisplay=' {shlex.quote(dst)} && sed -i 's/^NoDisplay=.*/NoDisplay=true/' {shlex.quote(dst)} || sed -i '/^\\[Desktop Entry\\]/a NoDisplay=true' {shlex.quote(dst)}")
+
+    run(f"update-desktop-database {shlex.quote(user_dir)}", check=False)
 
 
 def dash_folders(config):

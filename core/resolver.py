@@ -50,6 +50,8 @@ def detect_gpu():
             result = "nvidia"
         elif "amd" in out:
             result = "amd"
+        elif "intel" in out and ("vga" in out or "display" in out or "3d" in out):
+            result = "intel"
     except Exception:
         pass
     _gpu_cache = result
@@ -81,6 +83,10 @@ def hardware_profile(config):
         post_pkgs.append("libva-nvidia-driver")
     elif gpu == "amd":
         post_pkgs.append("xf86-video-amdgpu")
+        post_pkgs.append("vulkan-radeon")
+    elif gpu == "intel":
+        post_pkgs.append("intel-media-driver")
+        post_pkgs.append("vulkan-intel")
 
     return {
         "core": core_pkgs,

@@ -70,7 +70,7 @@ def validate(config: Dict[str, Any]):
 
     # Hardware checks
     enum(config, "hardware.cpu", ["amd", "intel", "auto"])
-    enum(config, "hardware.gpu", ["amd", "nvidia", "auto"])
+    enum(config, "hardware.gpu", ["amd", "nvidia", "intel", "auto"])
 
     # AUR helper check
     enum_optional(config, "machine_specific.aur_helper", ["paru", "none"])

@@ -6,12 +6,12 @@ This file provides guidance to AI assistants when working with code in this repo
 
 Automated Arch Linux installer and post-install configurator. Two-phase execution:
 
-- **Phase 1** (`prereboot/`): Run from the Arch live ISO. Partitions disk (Btrfs), runs `pacstrap`, sets up locale/hostname/users, installs bootloader.
-- **Phase 2** (`postreboot/`): Run after rebooting into the new system. Installs AUR packages, configures GNOME, applies themes/dotfiles, enables system features.
+- **Phase 1** (`prereboot/`): Run from the Arch live ISO. Partitions disk (Btrfs subvolumes), runs `pacstrap`, sets up locale/hostname/users, generates UKI, installs bootloader.
+- **Phase 2** (`postreboot/`): Run after rebooting into the new system. Installs AUR packages via `paru`, configures GNOME or Hyprland, restores persistent `age` decryption keys and applies unified `chezmoi` dotfiles, enables system features, and deploys Antigravity AI skills.
 
 ## Project Structure
 
-The Arch Install project is organized into modular phases and core libraries to ensure a reproducible and maintainable installation process.
+The Arch Install project is organized into modular phases, asset bundles, and core libraries:
 
 ### Root Directory
 
@@ -19,8 +19,11 @@ The Arch Install project is organized into modular phases and core libraries to 
 - `INSTRUCTIONS.md`: AI instructions, project structure, and key commands (this file).
 - `README.md`: High-level project documentation.
 - `TODO`: Tracking pending features and fixes.
-- `assets/`: Local binary assets (icons, cursors, wallpapers) used during configuration.
-- `logs/`: Directory for execution logs and the `state.json` file for tracking progress.
+- `assets/`: Deployment assets, window manager configs, and Antigravity customizations.
+  - `gemini/`: Antigravity master rules (`GEMINI.md`) and specialized skills (`skills/`).
+  - `hyprland/`: Hyprland Lua settings (`hypr/`), Omarchy shell & Quickshell top bar (`omarchy/`), and Satty screenshot configs (`satty/`).
+  - `cursors.zip`, `icons.zip`, `limine-wallpaper.jpg`: Visual themes and boot splash assets.
+- `logs/`: Directory for execution logs and `state.json` file for tracking progress.
 
 ### Configuration (`config/`)
 
@@ -28,7 +31,7 @@ The Arch Install project is organized into modular phases and core libraries to 
 - `dconf/`: GNOME gsettings mappings (`base.yaml` shared defaults, `{profile}.yaml` per-machine overrides).
 - `ssh/`: SSH server authorized keys (`base.yaml`) and client keypairs (`{profile}.yaml[.age]`).
 - `secrets/`: Sensitive data like passwords, VPN credentials (`secrets.yaml[.age]`), and live ISO Wi-Fi (`wifi.yaml`).
-- `package_profiles.yaml`: Maps high-level package groups (e.g., `gnome`, `internet`) to package names and systemd services.
+- `package_profiles.yaml`: Maps high-level package groups (e.g., `gnome`, `hyprland`, `internet`) to package names and systemd services.
 
 ### Core Library (`core/`)
 
@@ -36,18 +39,18 @@ The Arch Install project is organized into modular phases and core libraries to 
 - `config.py`: Configuration loading, profile merging, and path resolution.
 - `disk.py`: Disk and partition identification helpers.
 - `gnome.py`: Shared GNOME helpers (session detection, desktop name normalisation).
-- `network.py`: Connectivity checks and WiFi setup for the live ISO.
+- `network.py`: Connectivity checks and Wi-Fi interface detection/setup for the live ISO.
 - `installer.py`: High-level pacman & AUR package installation helper.
 - `logger.py`: Centralized logging setup.
-- `resolver.py`: Dynamic resolution of package lists based on hardware (CPU/GPU) and selected profiles.
+- `resolver.py`: Dynamic resolution of package lists based on hardware (CPU microcode, GPU drivers for AMD/Nvidia/Intel) and selected profiles.
 - `state.py`: Idempotency logic using `state.json` to track completed steps.
 - `validator.py`: Schema validation for the YAML configuration.
 
 ### Features (`features/`)
 
-Standalone modules for post-installation system features. Each module typically defines its own packages, services, and configuration logic.
+Standalone modules for post-installation system features. Each module defines its own packages, services, and configuration logic:
 - `ananicy.py`: Auto NICe daemon (`ananicy-cpp`) for application responsiveness.
-- `antigravity.py`: Custom environment tweaks.
+- `antigravity.py`: Installs Antigravity CLI and automatically deploys all skills and global rules from `assets/gemini/` into `~/.gemini/config/` and `~/.gemini/antigravity-cli/`.
 - `btrfs_maintenance.py`: Automated Btrfs scrub, balance, trim, and defrag scheduling.
 - `firewall.py`: Firewalld setup.
 - `local_aur_repo.py`: Pacman local repository for building and hosting custom AUR packages.
@@ -57,7 +60,7 @@ Standalone modules for post-installation system features. Each module typically 
 - `snapper.py`: Btrfs snapshot management.
 - `tailscale.py`: Tailscale VPN integration.
 - `webapps.py`: FirefoxPWA installation and desktop launchers synchronization.
-- `zram.py`: Zram-generator configuration.
+- `zram.py`: Zram-generator configuration with automatic conflict avoidance for kernel zswap.
 
 ### Phase 1: Pre-reboot (`prereboot/`)
 
@@ -80,10 +83,11 @@ Utility scripts for development and maintenance — not part of the install flow
 
 Executed after rebooting into the new system.
 - `main.py`: Orchestrates the post-install steps.
-- `gnome.py`: Detailed GNOME environment setup (gsettings, extensions, keybindings, color profiles).
+- `gnome.py`: Detailed GNOME environment setup (gsettings, extensions, keybindings, color profiles, app picker layout).
+- `hyprland.py`: Hyprland desktop environment deployment (Lua configs, Omarchy shell, Quickshell top bar, Satty).
 - `themes.py`: Application of icons, cursors, and wallpapers.
-- `dotfiles.py`: Deployment of user configuration files.
-- `aur.py`: Installation of the AUR helper (`paru`) and requested AUR packages.
+- `dotfiles.py`: Deployment of user dotfiles via `chezmoi` with persistent `age` key recovery and non-interactive `--force` apply.
+- `aur.py`: Installation of the AUR helper (`paru`) and requested AUR packages with build validation.
 - `system_config.py`: System level configuration (network hosts file, Citrix, etc.).
 - `user_dirs.py`: Sets up standard XDG user directories and symlinks.
 - `features.py`: Dynamic runner that iterates over and runs all enabled features.
@@ -145,6 +149,32 @@ Each feature (`firewall`, `zram`, `tailscale`, etc.) is a standalone module. Fea
 ### GNOME Configuration
 
 All GNOME settings live under the `gnome:` key in YAML. Sub-sections (`gsettings`, `extensions`, `keybindings`, `color_profiles`, `lockscreen_scaling`) each require `enabled: true`. Extensions are opened as Firefox tabs for manual installation — they are not installed automatically.
+
+### Hyprland & Omarchy Configuration
+
+Hyprland desktop settings live under the `hyprland:` key in YAML and are orchestrated by `postreboot/hyprland.py`:
+- Deploys `assets/hyprland/hypr/` (including `hyprland.lua`, `monitors.lua`, and `hyprsunset.conf`) to `~/.config/hypr/`.
+- Deploys Omarchy shell components, helper scripts to `~/.local/share/omarchy/bin/` and symlinks `~/.config/quickshell` to the Omarchy top bar shell.
+- Deploys Satty screenshot editor configuration (`assets/hyprland/satty/config.toml`) to `~/.config/satty/config.toml`.
+- Initializes screensaver branding at `~/.config/omarchy/branding/screensaver.txt`.
+
+### Unified Dotfiles (`postreboot/dotfiles.py`)
+
+Dotfiles are managed via `chezmoi` from `/home/ajay/Arch/config/dotfiles` (backed by the central private repository `m9aj/dotfiles`):
+- **Age Decryption Key**: Restored automatically from `/home/ajay/Arch/config/chezmoi-key.txt` (stored on the persistent NVMe `/mnt/Personal` partition) into `~/.config/chezmoi/key.txt`.
+- **Dynamic Profile Generation**: Calls `chezmoi init --source {source_dir}` to evaluate `.chezmoi.toml.tmpl`, determining device role (`laptop`, `desktop`, `server`), GUI flag (`is_gui`), and age recipient key.
+- **Target Filtering & Templates**: Headless servers omit all GUI configs via `.chezmoiignore`; physical displays are customized via `dot_config/monitors.xml.tmpl`.
+- **Execution**: Applied non-interactively via `chezmoi apply --source {source_dir} --force`.
+
+### Antigravity AI Customizations & System Synchronization Policy
+
+Antigravity AI agent customizations are centralized in `assets/gemini/`:
+- **System Modification & Sync Rule (`assets/gemini/GEMINI.md`)**: Whenever an agent makes modifications to the running machine outside the `arch_install` repository (packages, `/etc/` configs, desktop settings, dotfiles, network hosts), it MUST ask the user whether to persist those changes into `arch_install`.
+- **Automated Deployment (`features/antigravity.py`)**: Automatically symlinks all skills and the global rulebook into `~/.gemini/config/` and `~/.gemini/antigravity-cli/skills/`.
+- **Pilot Skills (`assets/gemini/skills/`)**:
+  - `arch-install-pilot`: Subsystem mapping and guidelines for updating installer configs, profiles, and assets.
+  - `hyprland-pilot`: Hyprland Lua settings, window rules, keybindings, scratchpads, and Quickshell status bar.
+  - `media-server-pilot`: Container and service deployment on the home media server (`media.local`).
 
 ## Adding a New Profile
 

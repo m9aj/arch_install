@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PYTHONDONTWRITEBYTECODE=1
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
@@ -9,6 +10,7 @@ Usage:
   arch-install [profile]                  Phase 1 — pre-reboot (run from live ISO as root)
   arch-install post [profile]             Phase 2 — post-install (run after reboot)
   arch-install feature <name> [profile]   Install and configure a single feature
+  arch-install pkg [group ...]            Install package group(s) from package_profiles.yaml (or list all)
   arch-install clean                      Remove profile markers and empty logs
   arch-install reset <step>               Mark a completed step as pending so it reruns on next execution
   arch-install reset all                  Mark all steps as pending (keeps logs, markers, and state history)
@@ -44,6 +46,7 @@ case "${1:-}" in
             find "$DIR/logs" -mindepth 1 -delete
             echo "  Emptied logs/ directory"
         fi
+        find "$DIR" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
         echo "[SUCCESS] Cleanup complete."
         ;;
     reset)
@@ -65,17 +68,26 @@ case "${1:-}" in
         shift
         exec python3 "$DIR/postreboot/feature_cli.py" "$@"
         ;;
+    pkg)
+        shift
+        exec python3 "$DIR/postreboot/pkg_cli.py" "$@"
+        ;;
     post)
         shift
+        CURRENT_UID="$(id -u)"
+        CURRENT_GID="$(id -g)"
         for f in "$DIR"/config/profiles/*.yaml; do
             [ -f "$f" ] || continue
             stem="$(basename "$f" .yaml)"
             if [ "$stem" != "base" ] && [ -f "$DIR/$stem" ]; then
-                sudo chown 1000:1000 "$DIR/$stem"
+                sudo chown "${CURRENT_UID}:${CURRENT_GID}" "$DIR/$stem"
             fi
         done
         if [ -d "$DIR/logs" ]; then
-            sudo chown -R 1000:1000 "$DIR/logs"
+            sudo chown -R "${CURRENT_UID}:${CURRENT_GID}" "$DIR/logs"
+        fi
+        if [ -n "$(find "$DIR" -name "__pycache__" -user root 2>/dev/null)" ]; then
+            sudo chown -R "${CURRENT_UID}:${CURRENT_GID}" "$DIR"/*/__pycache__ 2>/dev/null || true
         fi
         exec python3 "$DIR/postreboot/main.py" "$@"
         ;;

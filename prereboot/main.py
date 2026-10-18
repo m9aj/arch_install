@@ -44,7 +44,13 @@ def main():
     # Install age on the live ISO so encrypted secrets can be decrypted.
     if not shutil.which("age"):
         logger.info("Installing age on live ISO")
-        run("pacman -Sy --noconfirm age")
+        res = run("pacman -Sy --noconfirm age", check=False)
+        if res.returncode != 0:
+            logger.info("Refreshing pacman keyring and archlinux-keyring before retrying age install")
+            run("pacman-key --init", check=False)
+            run("pacman-key --populate archlinux", check=False)
+            run("pacman -Sy --noconfirm archlinux-keyring")
+            run("pacman -S --noconfirm age")
 
     config = load_profile_config(profile)
     validate(config)

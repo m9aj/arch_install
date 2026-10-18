@@ -36,3 +36,45 @@ def configure(config, feature):
         run(f"bash {script_path}")
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
+
+    deploy_skills(config)
+
+
+def deploy_skills(config):
+    user = config["system"]["username"]
+    home = f"/home/{user}"
+    from core.config import PROJECT_ROOT
+    skills_src = os.path.join(PROJECT_ROOT, "assets", "gemini", "skills")
+    if not os.path.exists(skills_src):
+        return
+
+    dest_dirs = [
+        os.path.join(home, ".gemini", "config", "skills"),
+        os.path.join(home, ".gemini", "antigravity-cli", "skills"),
+    ]
+
+    import shutil
+    for d in dest_dirs:
+        os.makedirs(d, exist_ok=True)
+        for skill_name in os.listdir(skills_src):
+            src_dir = os.path.join(skills_src, skill_name)
+            if os.path.isdir(src_dir):
+                target = os.path.join(d, skill_name)
+                if os.path.islink(target) or os.path.exists(target):
+                    if os.path.islink(target) or os.path.isfile(target):
+                        os.unlink(target)
+                    else:
+                        shutil.rmtree(target)
+                os.symlink(src_dir, target)
+                logger.info(f"[antigravity] Linked skill {skill_name} -> {target}")
+
+    # Deploy global GEMINI.md rule
+    rule_src = os.path.join(PROJECT_ROOT, "assets", "gemini", "GEMINI.md")
+    if os.path.exists(rule_src):
+        rule_dst = os.path.join(home, ".gemini", "config", "GEMINI.md")
+        if os.path.islink(rule_dst) or os.path.exists(rule_dst):
+            os.unlink(rule_dst)
+        os.symlink(rule_src, rule_dst)
+        logger.info(f"[antigravity] Linked rule -> {rule_dst}")
+
+    run(f"chown -R {user}:{user} '{home}/.gemini'")

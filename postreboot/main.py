@@ -16,7 +16,7 @@ from core import network
 
 from postreboot import (
     aur, user_dirs, features, dotfiles,
-    system_config, gnome, hyprland, themes
+    system_config, gnome, themes
 )
 from features import local_aur_repo
 
@@ -25,16 +25,15 @@ STEPS = [
     ("dotfiles",              dotfiles.setup_dotfiles),
     ("bluetooth",             dotfiles.setup_bluetooth),
     ("network_hosts",         system_config.apply_static_hosts),
+    ("features",              features.run_enabled_features),
     ("local_aur_repo_client", local_aur_repo.configure_client),
     ("aur_helper",            aur.install_aur_helper),
-    ("features",              features.run_enabled_features),
     ("aur_packages",          aur.install_aur_packages),
     ("themes",                themes.install_themes),
     ("citrix",                system_config.configure_citrix),
 
     # Modular Desktop Environment Runners
     ("gnome_setup",           gnome.setup_gnome),
-    ("hyprland_setup",        hyprland.setup_hyprland),
 ]
 
 

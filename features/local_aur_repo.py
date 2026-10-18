@@ -344,6 +344,7 @@ def _create_empty_pacman_db(name):
         pass
     run(f"sudo mkdir -p /var/lib/pacman/sync")
     run(f"sudo cp {tmp} /var/lib/pacman/sync/{name}.db")
+    run(f"sudo chmod 644 /var/lib/pacman/sync/{name}.db")
     run(f"rm {tmp}")
     logger.info(f"[local_aur_repo] Created empty placeholder db for [{name}] — will be replaced when server has packages")
 
@@ -358,15 +359,20 @@ def configure_client(config):
     if not url:
         return False
 
-    tailscale_ip = cfg.get("tailscale_ip") or ""
-    parsed       = urlparse(url)
-    hostname     = parsed.hostname           # aur.local
-    name         = parsed.path.strip("/").split("/")[-1] or "local-aur-repo"
+    tailscale_enabled = config.get("features", {}).get("tailscale", {}).get("enabled", False)
+    tailscale_ip      = cfg.get("tailscale_ip") or ""
+    lan_ip            = cfg.get("lan_ip") or config.get("network", {}).get("hosts", {}).get("media.local", "")
+    parsed            = urlparse(url)
+    hostname          = parsed.hostname           # aur.local
+    name              = parsed.path.strip("/").split("/")[-1] or "local-aur-repo"
 
-    # Pin aur.local → Tailscale IP permanently. Tailscale is always-on so no
-    # dynamic host switching is needed — it works on LAN and off LAN alike.
-    if tailscale_ip:
-        _set_hosts_entry(hostname, tailscale_ip)
+    # Route aur.local according to whether Tailscale is enabled:
+    # - If Tailscale is enabled (e.g. laptop): route via Tailscale IP (works on & off LAN).
+    # - If Tailscale is disabled (e.g. desktop): route directly via LAN IP.
+    target_ip = tailscale_ip if (tailscale_enabled and tailscale_ip) else lan_ip
+    if target_ip:
+        _set_hosts_entry(hostname, target_ip)
+        logger.info(f"[local_aur_repo] Set /etc/hosts: {target_ip}  {hostname} (tailscale={tailscale_enabled})")
 
     # Add [local-aur-repo] to pacman.conf, or migrate an existing entry whose
     # Server URL still points to the old hostname (media.local).
@@ -394,7 +400,7 @@ def configure_client(config):
         if result.returncode != 0:
             logger.warning("[local_aur_repo] pacman -Sy had errors")
     else:
-        logger.warning("[local_aur_repo] aur.local unreachable — skipping pacman -Sy (Tailscale up?)")
+        logger.warning(f"[local_aur_repo] {hostname} unreachable — skipping pacman -Sy")
 
     if not os.path.exists(f"/var/lib/pacman/sync/{name}.db"):
         _create_empty_pacman_db(name)

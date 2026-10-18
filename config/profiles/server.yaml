@@ -133,8 +133,6 @@ postconfig:
       enabled: false
 
     theme:
-      icons:
-        enabled: false
       cursor:
         enabled: true
       wallpapers:

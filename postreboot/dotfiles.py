@@ -19,17 +19,22 @@ def setup_dotfiles(config):
         logger.warning(f"Dotfiles source_dir missing or not found: {source_dir}")
         return
 
-    # Write chezmoi.toml so the source dir is set persistently for future chezmoi calls
     chezmoi_cfg_dir = os.path.join(home, ".config", "chezmoi")
-    chezmoi_cfg_file = os.path.join(chezmoi_cfg_dir, "chezmoi.toml")
-    if not os.path.exists(chezmoi_cfg_file):
-        os.makedirs(chezmoi_cfg_dir, exist_ok=True)
-        with open(chezmoi_cfg_file, "w") as f:
-            f.write(f'sourceDir = "{source_dir}"\n')
-        run(f"chown -R {user}:{user} {chezmoi_cfg_dir}")
+    os.makedirs(chezmoi_cfg_dir, exist_ok=True)
 
-    logger.info(f"Applying dotfiles with chezmoi from {source_dir}")
-    run(f"sudo -H -u {user} chezmoi apply --source {source_dir}")
+    # Restore age decryption key from persistent storage if available
+    key_backup = os.path.join(os.path.dirname(source_dir), "chezmoi-key.txt")
+    target_key = os.path.join(chezmoi_cfg_dir, "key.txt")
+    if os.path.exists(key_backup) and not os.path.exists(target_key):
+        logger.info("Restoring chezmoi age decryption key from persistent storage")
+        run(f"cp '{key_backup}' '{target_key}'")
+        run(f"chmod 600 '{target_key}'")
+
+    run(f"chown -R {user}:{user} {chezmoi_cfg_dir}")
+
+    logger.info(f"Initializing and applying dotfiles with chezmoi from {source_dir}")
+    run(f"sudo -H -u {user} chezmoi init --source {source_dir}")
+    run(f"sudo -H -u {user} chezmoi apply --source {source_dir} --force")
 
 
 
