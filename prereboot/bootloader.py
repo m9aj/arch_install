@@ -179,9 +179,10 @@ _EOF_""")
 def register_uki_efi(config):
     disk_by_id = config["disk"]["disk_by_id"]
     boot_part  = config["disk"]["boot_part"]
+    from core.gnome import get_des
     label      = config.get("arch", {}).get("label", "Arch")
-    de         = config.get("arch", {}).get("de", "")
-    title      = f"{label} {de.capitalize()}".strip()
+    de_str     = "/".join(d.capitalize() for d in get_des(config))
+    title      = f"{label} {de_str}".strip()
     efi        = uki_filename(config)
 
     boot_dev_path = run(f"readlink -f /dev/disk/by-id/{disk_by_id}{boot_part}").stdout.strip()

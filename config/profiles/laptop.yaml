@@ -31,6 +31,9 @@ boot:
   bootloader: limine
   init: dracut
 
+arch:
+  de: gnome, hyprland
+
 pkgprofile:
   post:
     - hardware

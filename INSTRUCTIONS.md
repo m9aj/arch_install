@@ -160,8 +160,8 @@ Hyprland desktop settings live under the `hyprland:` key in YAML and are orchest
 
 ### Unified Dotfiles (`postreboot/dotfiles.py`)
 
-Dotfiles are managed via `chezmoi` from `/home/ajay/Arch/config/dotfiles` (backed by the central private repository `m9aj/dotfiles`):
-- **Age Decryption Key**: Restored automatically from `/home/ajay/Arch/config/chezmoi-key.txt` (stored on the persistent NVMe `/mnt/Personal` partition) into `~/.config/chezmoi/key.txt`.
+Dotfiles are managed via `chezmoi` from `/mnt/Personal/_Ajay/Config/dotfiles` (backed by the central private repository `m9aj/dotfiles`):
+- **Age Decryption Key**: Restored automatically from `/mnt/Personal/_Ajay/Config/chezmoi-key.txt` (stored on the persistent NVMe `/mnt/Personal` partition) into `~/.config/chezmoi/key.txt`.
 - **Dynamic Profile Generation**: Calls `chezmoi init --source {source_dir}` to evaluate `.chezmoi.toml.tmpl`, determining device role (`laptop`, `desktop`, `server`), GUI flag (`is_gui`), and age recipient key.
 - **Target Filtering & Templates**: Headless servers omit all GUI configs via `.chezmoiignore`; physical displays are customized via `dot_config/monitors.xml.tmpl`.
 - **Execution**: Applied non-interactively via `chezmoi apply --source {source_dir} --force`.

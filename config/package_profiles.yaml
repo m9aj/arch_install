@@ -97,6 +97,18 @@ post_profiles:
     services:
       - sddm
 
+  hyprland:
+    packages:
+      - hyprland
+      - xdg-desktop-portal-hyprland
+      - xdg-desktop-portal-gtk
+      - polkit-gnome
+      - qt6-wayland
+      - kitty
+      - gdm
+    services:
+      - gdm
+
   hardware:
     packages:
       - pam-u2f

@@ -4,6 +4,7 @@
 
 import sys
 import os
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.shell import run
@@ -22,6 +23,8 @@ def configure(config, feature):
             run(f"sudo systemctl enable --now {svc}")
 
     if cfg.get("auto_up"):
+        # Give tailscaled a moment to finish its initial control-plane handshake
+        # and load any existing state from /var/lib/tailscale before calling 'tailscale up'.
+        time.sleep(3)
         logger.info("[tailscale] Bringing up Tailscale (authenticate via URL if prompted)...")
-        run("sudo tailscale up", check=False)
-
+        run("sudo tailscale up 2>&1", check=False)

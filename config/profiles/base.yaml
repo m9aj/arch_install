@@ -224,9 +224,10 @@ network:
 postconfig:
   user_dirs:
     enabled: true
+    method: bind                            # bind | symlink
     parent: /mnt/Personal/_Ajay
     folders:
-      - Arch
+      - Projects
       - Desktop
       - Documents
       - Downloads
@@ -237,11 +238,11 @@ postconfig:
 
   dotfiles:
     enabled: true
-    source_dir: /home/ajay/Arch/config/dotfiles
+    source_dir: /mnt/Personal/_Ajay/Config/dotfiles
 
   bluetooth:
     enabled: false
-    source: /home/ajay/Arch/config/bluetooth
+    source: /mnt/Personal/_Ajay/Config/bluetooth
 
   gnome:
     gsettings:
@@ -258,7 +259,7 @@ postconfig:
       enabled: false
       profiles:
         - name: framework_2.8k
-          file: /home/ajay/Arch/config/fw13_28k.icm
+          file: /mnt/Personal/_Ajay/Config/fw13_28k.icm
 
     theme:
       cursor:

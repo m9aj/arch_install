@@ -3,29 +3,22 @@
 import os
 from core.shell import run
 
-def _is_gnome(config):
+def get_des(config):
     de = config.get("arch", {}).get("de", [])
     if isinstance(de, str):
-        return de == "gnome"
+        return [d.strip() for d in de.split(",") if d.strip()]
     if isinstance(de, list):
-        return "gnome" in de
-    return False
+        return [str(d).strip() for item in de for d in str(item).split(",") if str(d).strip()]
+    return []
+
+def _is_gnome(config):
+    return "gnome" in get_des(config)
 
 def _is_hyprland(config):
-    de = config.get("arch", {}).get("de", [])
-    if isinstance(de, str):
-        return de == "hyprland"
-    if isinstance(de, list):
-        return "hyprland" in de
-    return False
+    return "hyprland" in get_des(config)
 
 def _is_kde(config):
-    de = config.get("arch", {}).get("de", [])
-    if isinstance(de, str):
-        return de == "kde"
-    if isinstance(de, list):
-        return "kde" in de
-    return False
+    return "kde" in get_des(config)
 
 def normalize_desktop_name(name):
     name = str(name)

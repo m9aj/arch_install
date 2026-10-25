@@ -18,6 +18,6 @@ Proactively ask the user whenever you:
 
 ### How to Prompt
 At the end of your response after applying the change, always ask clearly:
-> *"I've applied this change to your system. Would you like me to update the `arch_install` repository (`/home/ajay/Arch/arch_install`) with this change?"*
+> *"I've applied this change to your system. Would you like me to update the `arch_install` repository (`/home/ajay/Projects/arch_install`) with this change?"*
 
-Specify the target file and section in `arch_install` that corresponds to the change, using the [`arch-install-pilot`](file:///home/ajay/Arch/arch_install/assets/gemini/skills/arch-install-pilot/SKILL.md) skill for the subsystem mapping.
+Specify the target file and section in `arch_install` that corresponds to the change, using the [`arch-install-pilot`](file:///home/ajay/Projects/arch_install/assets/gemini/skills/arch-install-pilot/SKILL.md) skill for the subsystem mapping.

@@ -148,7 +148,7 @@ Dotfiles are managed via a centralized, Git-backed repository ([`m9aj/dotfiles`]
 - **Headless Filtering (`.chezmoiignore`)**: On headless servers (`is_gui == false`), all GUI applications (VS Code, GTK bookmarks, Citrix, PWAs, icons, `monitors.xml`) are omitted.
 - **Hardware Display Profiles (`dot_config/monitors.xml.tmpl`)**: Renders display configurations matching each physical machine (Framework 2.8K display vs Samsung 4K HDR display).
 - **Encrypted Secrets (`age`)**: Credentials (`~/.git-credentials`) and SSH server definitions (`~/.ssh/config`) are encrypted at rest with `age`.
-- **Installer Integration (`postreboot/dotfiles.py`)**: Automatically restores the decryption key from persistent storage (`/home/ajay/Arch/config/chezmoi-key.txt`), initializes chezmoi, and applies dotfiles non-interactively.
+- **Installer Integration (`postreboot/dotfiles.py`)**: Automatically restores the decryption key from persistent storage (`/mnt/Personal/_Ajay/Config/chezmoi-key.txt`), initializes chezmoi, and applies dotfiles non-interactively.
 
 ## Antigravity AI Customizations & Pilots
 

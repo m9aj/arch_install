@@ -166,10 +166,12 @@ def resolve_system(config):
     kernel_params += boot.get("kernel_params", [])
 
     # DE auto
-    des = config["arch"].get("de")
-    if isinstance(des, str):
-        des = [des]
-    elif not isinstance(des, list):
+    raw_de = config["arch"].get("de")
+    if isinstance(raw_de, str):
+        des = [d.strip() for d in raw_de.split(",") if d.strip()]
+    elif isinstance(raw_de, list):
+        des = [str(d).strip() for item in raw_de for d in str(item).split(",") if str(d).strip()]
+    else:
         des = []
 
     for de in des:

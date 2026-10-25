@@ -91,9 +91,9 @@ def validate_desktop_environment(config: Dict[str, Any]):
     allowed_des = {"gnome", "kde", "hyprland", "none"}
 
     if isinstance(de_val, str):
-        des = [de_val.strip()]
+        des = [d.strip() for d in de_val.split(",") if d.strip()]
     elif isinstance(de_val, list):
-        des = [str(d).strip() for d in de_val]
+        des = [str(d).strip() for item in de_val for d in str(item).split(",") if str(d).strip()]
     else:
         raise ValueError(f"Invalid type for arch.de: expected string or list of strings, got {type(de_val).__name__}")
 

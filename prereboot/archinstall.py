@@ -128,11 +128,11 @@ def configure_autologin(config):
     if not config["system"].get("autologin"):
         return
 
-    de = config["arch"].get("de", "gnome")
+    from core.gnome import _is_gnome
     user = config["system"]["username"]
 
     # Only implement for GNOME/GDM as requested
-    if de == "gnome":
+    if _is_gnome(config):
         logger.info(f"Enabling GDM autologin for {user}")
         conf_path = "/etc/gdm/custom.conf"
         # The script ensures [daemon] section exists and adds autologin lines.
