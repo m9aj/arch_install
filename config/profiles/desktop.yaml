@@ -28,6 +28,9 @@ boot:
   bootloader: limine
   init: mkinitcpio
 
+arch:
+  de: hyprland
+
 pkgprofile:
   post:
     - hardware
@@ -99,6 +102,7 @@ postconfig:
 
   dotfiles:
     enabled: true
+    source_dir: /mnt/Personal/_Ajay/Arch/config/dotfiles
 
   bluetooth:
     enabled: false
