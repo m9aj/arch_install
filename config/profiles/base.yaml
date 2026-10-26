@@ -294,6 +294,10 @@ postconfig:
         - citrix-configmgr
         - citrix-workspace
         - micro
+        - kitty
+        - btop
+        - cmake-gui
+        - qt6ct
 
       folders:
         Office:

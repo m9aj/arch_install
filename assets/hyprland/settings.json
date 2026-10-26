@@ -1,0 +1,236 @@
+{
+    "animationPreset": "macos",
+    "barEverywhere": true,
+    "barHeight": 24,
+    "barHidden": false,
+    "barLeft": [
+        "workspaces",
+        "battery",
+        "network",
+        "bluetooth"
+    ],
+    "barMargin": 8,
+    "barRight": [
+        "notifications",
+        "volume",
+        "brightness",
+        "caffeine",
+        "session"
+    ],
+    "barShadow": false,
+    "barSideMargin": 16,
+    "barSides": "bare",
+    "barStyle": "island",
+    "cameraEffect": "mono",
+    "cameraEnabled": true,
+    "cameraReactions": [
+        "thumbsup",
+        "heart",
+        "peace",
+        "thumbsdown",
+        "horns",
+        "ok"
+    ],
+    "captureKind": "photo",
+    "captureShape": "region",
+    "centreBlocks": [
+        {
+            "col": 0,
+            "id": "toggles",
+            "key": "toggles",
+            "row": 0,
+            "size": "2x3",
+            "toggles": [
+                "wifi",
+                "bluetooth",
+                "caffeine",
+                "power",
+                "focus",
+                "nightlight"
+            ]
+        },
+        {
+            "col": 0,
+            "id": "volume",
+            "key": "volume",
+            "row": 3,
+            "size": "2x1"
+        },
+        {
+            "col": 0,
+            "id": "brightness",
+            "key": "brightness",
+            "row": 4,
+            "size": "2x1"
+        },
+        {
+            "col": 0,
+            "id": "appearance",
+            "key": "appearance",
+            "row": 5,
+            "size": "2x3"
+        },
+        {
+            "col": 2,
+            "id": "media",
+            "key": "media",
+            "row": 0,
+            "size": "2x2"
+        },
+        {
+            "col": 2,
+            "id": "weather",
+            "key": "weather",
+            "row": 2,
+            "size": "2x2"
+        },
+        {
+            "col": 2,
+            "id": "calendar",
+            "key": "calendar",
+            "row": 4,
+            "size": "2x4"
+        },
+        {
+            "col": 4,
+            "id": "notifications",
+            "key": "notifications",
+            "row": 0,
+            "size": "2x8"
+        }
+    ],
+    "centreButtons": null,
+    "centreColumns": 0,
+    "centreRows": 0,
+    "centreToggles": null,
+    "centreTop": {
+        "left": [
+            "stats",
+            "board",
+            "notes"
+        ],
+        "right": [
+            "packages",
+            "settings"
+        ]
+    },
+    "chipFigure": "hover",
+    "chipShape": "icon",
+    "clipboardHistory": true,
+    "clipboardImages": true,
+    "clipboardKeep": 200,
+    "clipboardWipeOnLock": false,
+    "clockFormat": "hh:mm AP",
+    "clockShowsDate": true,
+    "clockShowsSeconds": false,
+    "compositor": {
+        "decoration:blur:enabled": "false",
+        "decoration:blur:size": "1",
+        "decoration:inactive_opacity": "0.90",
+        "decoration:rounding": "18",
+        "general:border_size": "0",
+        "general:gaps_in": "2",
+        "general:gaps_out": "4",
+        "input:sensitivity": "0.65"
+    },
+    "cursorColor": "palette",
+    "cursorSize": 24,
+    "deckOnEmpty": false,
+    "desktopGround": "classic",
+    "desktopHidden": false,
+    "desktopOpacity": 100,
+    "desktopTheme": "modern",
+    "desktopWidgets": [
+    ],
+    "displays": {
+        "BOE NE135A1M-NY1": {
+            "monitors": {
+                "BOE NE135A1M-NY1": {
+                    "scale": 1.667,
+                    "vrr": 1
+                }
+            },
+            "primary": ""
+        }
+    },
+    "doNotDisturb": false,
+    "dockAlignment": "center",
+    "dockAutohide": true,
+    "dockEdge": "bottom",
+    "dockEnabled": true,
+    "dockEverywhere": true,
+    "dockGround": "classic",
+    "dockIconSize": 64,
+    "dockLauncher": true,
+    "dockMagnify": false,
+    "dockOpacity": 100,
+    "dockPinned": [
+    ],
+    "dockRunning": true,
+    "dockShadow": false,
+    "emojiTone": 0,
+    "fontFamily": "Inter, Cantarell, SF Pro Text, sans-serif",
+    "fontMono": "JetBrainsMono Nerd Font Mono, monospace",
+    "gameMode": false,
+    "githubUser": "",
+    "greeting": "random",
+    "idleLock": 4,
+    "idleScreen": 2,
+    "idleSuspend": 10,
+    "islandActivities": [
+        "privacy",
+        "timer",
+        "media",
+        "workspace"
+    ],
+    "islandActivitiesSeen": [
+        "privacy",
+        "timer",
+        "media",
+        "machine",
+        "workspace"
+    ],
+    "islandAttached": true,
+    "islandSummary": false,
+    "keyboard": {
+    },
+    "keys": {
+    },
+    "language": "en",
+    "launcherFits": false,
+    "launcherOrder": "recent",
+    "launcherPrefixes": {
+    },
+    "launcherResults": 9,
+    "lidPolicy": "off",
+    "lockBlur": 32,
+    "lockClock": "inline",
+    "lockMusic": "lyrics",
+    "lockMusicGround": "cover",
+    "lyrics": true,
+    "markets": "BTC, ETH, EUR/USD",
+    "motionCurve": "OutCubic",
+    "motionScale": 100,
+    "nightLight": false,
+    "nightTemperature": 4000,
+    "notesHandwriting": true,
+    "notificationTimeout": 5000,
+    "petStyle": "creature",
+    "recorderAudio": false,
+    "screenCorners": false,
+    "shakeToFind": true,
+    "spectrumOnEmpty": false,
+    "surfaceStyle": "classic",
+    "terminalGround": "glass",
+    "userAvatar": "",
+    "userName": "",
+    "wallpaperTransition": "random",
+    "weatherPlace": "",
+    "widgetShadow": false,
+    "windowGlass": true,
+    "windowShadow": false,
+    "workspaceCount": 5,
+    "workspaceMax": 10,
+    "workspaceMode": "shared",
+    "workspaceStyle": "kanji"
+}

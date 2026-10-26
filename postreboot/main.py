@@ -16,7 +16,7 @@ from core import network
 
 from postreboot import (
     aur, user_dirs, features, dotfiles,
-    system_config, gnome, themes
+    system_config, gnome, hyprland, themes
 )
 from features import local_aur_repo
 
@@ -34,6 +34,7 @@ STEPS = [
 
     # Modular Desktop Environment Runners
     ("gnome_setup",           gnome.setup_gnome),
+    ("hyprland_setup",        hyprland.setup_hyprland),
 ]
 
 
