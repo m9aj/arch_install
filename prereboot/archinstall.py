@@ -159,6 +159,79 @@ def configure_resolved():
     run("printf '[main]\\ndns=systemd-resolved\\n' > /mnt/etc/NetworkManager/conf.d/dns.conf")
     run("rm -f /mnt/etc/resolv.conf && ln -sf /run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf")
 
+def configure_wifi_connections(config):
+    wifi_data = config.get("network", {}).get("wifi", {})
+    if not wifi_data:
+        return
+
+    networks = []
+    if isinstance(wifi_data, list):
+        networks = wifi_data
+    elif isinstance(wifi_data, dict):
+        if "networks" in wifi_data and isinstance(wifi_data["networks"], list):
+            networks = wifi_data["networks"]
+        elif wifi_data.get("ssid"):
+            networks = [wifi_data]
+
+    if not networks:
+        return
+
+    conns_dir = "/mnt/etc/NetworkManager/system-connections"
+    run(f"mkdir -p '{conns_dir}'")
+    run(f"chmod 700 '{conns_dir}'")
+
+    import uuid
+    for net in networks:
+        ssid = net.get("ssid")
+        if not ssid:
+            continue
+        ssid = str(ssid).strip()
+        if not ssid:
+            continue
+        password = net.get("password")
+        logger.info(f"Persisting NetworkManager WiFi connection for '{ssid}'")
+
+        conn_uuid = str(uuid.uuid4())
+        safe_name = re.sub(r"[^\w\-.]", "_", ssid)
+        keyfile_path = f"{conns_dir}/{safe_name}.nmconnection"
+
+        lines = [
+            "[connection]",
+            f"id={ssid}",
+            f"uuid={conn_uuid}",
+            "type=wifi",
+            "autoconnect=true",
+            "",
+            "[wifi]",
+            "mode=infrastructure",
+            f"ssid={ssid}",
+            "",
+        ]
+
+        if password is not None and str(password) != "":
+            lines.extend([
+                "[wifi-security]",
+                "auth-alg=open",
+                "key-mgmt=wpa-psk",
+                f"psk={password}",
+                "",
+            ])
+
+        lines.extend([
+            "[ipv4]",
+            "method=auto",
+            "",
+            "[ipv6]",
+            "method=auto",
+            "",
+        ])
+
+        content = "\n".join(lines)
+        with open(keyfile_path, "w") as f:
+            f.write(content)
+        run(f"chmod 600 '{keyfile_path}'")
+        logger.info(f"NetworkManager WiFi connection saved to {keyfile_path}")
+
 def initial_config(config):
     logger.info("Configuring system (chroot)")
     set_hostname(config)
@@ -168,6 +241,7 @@ def initial_config(config):
     set_passwords(config)
     configure_autologin(config)
     configure_resolved()
+    configure_wifi_connections(config)
 
 # ------------------------
 # Tweaks

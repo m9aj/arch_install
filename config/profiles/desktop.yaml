@@ -102,7 +102,6 @@ postconfig:
 
   dotfiles:
     enabled: true
-    source_dir: /mnt/Personal/_Ajay/Arch/config/dotfiles
 
   bluetooth:
     enabled: false

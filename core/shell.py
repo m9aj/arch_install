@@ -102,6 +102,9 @@ def run(cmd, check=True, env=None, log_cmd=True):
 
     if check and return_code != 0:
         logger.error(f"[FAIL] {cmd} (exit code: {return_code})")
+        if full_stderr:
+            for line in full_stderr:
+                logger.error(f"[STDERR] {line}")
         raise CommandError(cmd, return_code, stdout_str, stderr_str)
 
     return Result(stdout_str, stderr_str, return_code)
