@@ -865,6 +865,116 @@ def apply_monitor_scale_patch(config_dir: Path, check_only: bool) -> list[str]:
     ]
 
 
+def apply_monitor_power_patch(config_dir: Path, check_only: bool) -> list[str]:
+    """Add Screen Power toggle to Arrangement tab and enable switch for off/charging displays in MonitorsSection.qml."""
+    mon_section = config_dir / "quickshell" / "settings" / "MonitorsSection.qml"
+    marker = "label: root.current ? `${root.current.name} · ${Tr.t(\"Power\")}` : Tr.t(\"Screen Power\")"
+
+    old = """                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 14
+                        anchors.rightMargin: 14
+                        spacing: 10
+
+                        Text {
+                            text: "󰶐"
+                            font.family: Theme.fontMono
+                            font.pixelSize: 12
+                            color: root.chosen === dark.modelData.description
+                                ? Theme.accent : Theme.textMuted
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: Tr.t("%1 — off, and still plugged in").arg(dark.modelData.name)
+                            elide: Text.ElideRight
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.textMuted
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.chosen = dark.modelData.description
+                    }
+                }
+            }
+
+            SettingRow {
+                label: Tr.t("Arrangement")"""
+
+    new = """                    MouseArea {
+                        anchors.fill: parent
+                        anchors.rightMargin: 60
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.chosen = dark.modelData.description
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 14
+                        anchors.rightMargin: 14
+                        spacing: 10
+
+                        Text {
+                            text: "󰶐"
+                            font.family: Theme.fontMono
+                            font.pixelSize: 12
+                            color: root.chosen === dark.modelData.description
+                                ? Theme.accent : Theme.textMuted
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: Tr.t("%1 — off, and still plugged in").arg(dark.modelData.name)
+                            elide: Text.ElideRight
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.textMuted
+                        }
+
+                        ToggleSwitch {
+                            checked: false
+                            onToggled: checked => {
+                                if (checked)
+                                    MonitorService.remember(dark.modelData.description, { disabled: false })
+                            }
+                        }
+                    }
+                }
+            }
+
+            SettingRow {
+                visible: !root.single
+                label: root.current ? `${root.current.name} · ${Tr.t("Power")}` : Tr.t("Screen Power")
+                reading: root.currentOff
+                    ? Tr.t("Off — out of layout, still plugged in (e.g. charging)")
+                    : Tr.t("On — active in layout")
+                locked: root.lastLit
+                reason: Tr.t("The only screen there is")
+
+                ToggleSwitch {
+                    checked: !root.currentOff
+                    onToggled: checked => root.change({ disabled: !checked })
+                }
+            }
+
+            SettingRow {
+                label: Tr.t("Arrangement")"""
+
+    return [
+        patch_file(
+            mon_section,
+            "Screen Power toggle on Arrangement tab in MonitorsSection.qml",
+            marker,
+            lambda text: text.replace(old, new, 1),
+            check_only,
+        )
+    ]
+
+
 def apply_caffeine_patch(config_dir: Path, check_only: bool) -> list[str]:
     """Add Caffeine button to Bar Layout Editor, Top Bar, Controls toggles, and Quickshell Commands."""
     results = []
@@ -1145,6 +1255,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results = []
     results.extend(apply_hypr_overrides(config_dir, check_only))
     results.extend(apply_monitor_scale_patch(config_dir, check_only))
+    results.extend(apply_monitor_power_patch(config_dir, check_only))
     results.extend(apply_launcher_patches(config_dir, check_only))
     results.extend(apply_power_profile_patches(config_dir, check_only))
     results.extend(apply_theme_manager_patches(config_dir, check_only))
