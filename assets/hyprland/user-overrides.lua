@@ -43,15 +43,19 @@ hl.window_rule({
 })
 
 -- 5. Citrix Workspace / Epic Hyperspace / Hyperdrive Window Rules
---    - Float all XWayland / Citrix child windows (Dragon Medical One, MF_systray, popups)
---      so they keep their native widget size.
---    - Keep the main Epic Hyperspace / Hyperdrive window tiled at full workspace size.
+--    - Float and center all Citrix dialogs & child windows (Dragon Medical One, logon dialogs, popups)
+--      so they are always visible on-screen and keep their native size.
+--    - Tile the main Epic Hyperspace / Hyperdrive application window at full workspace size.
 --    - Remove rounded corners, transparency, and blur on all Citrix windows.
 hl.window_rule({
     name  = "citrix-children-float",
-    match = { xwayland = true },
+    match = {
+        class    = "^(wfica|Wfica|[Cc]itrix.*)$",
+        xwayland = true,
+    },
 
     float    = true,
+    center   = true,
     opaque   = true,
     no_blur  = true,
     rounding = 0,
@@ -60,7 +64,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "citrix-hyperspace-main",
     match = {
-        class    = "^(Hyperspace|Hyperdrive).*$",
+        class    = "^(wfica|Wfica|[Cc]itrix.*)$",
+        title    = "^(Hyperspace|Hyperdrive).*$",
         xwayland = true,
     },
 
