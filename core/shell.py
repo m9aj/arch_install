@@ -39,7 +39,7 @@ def confirm(msg):
 # -----------------------------------------------------------------------------
 # Main Subprocess Runner
 # -----------------------------------------------------------------------------
-def run(cmd, check=True, env=None, log_cmd=True):
+def run(cmd, check=True, env=None, cwd=None, timeout=None, log_cmd=True):
     if log_cmd:
         logger.info(f"[CMD] {cmd}")
     else:
@@ -53,12 +53,13 @@ def run(cmd, check=True, env=None, log_cmd=True):
     process = subprocess.Popen(
         cmd,
         shell=True,
+        executable="/bin/bash",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
         bufsize=1,
-        universal_newlines=True,
         env=actual_env,
+        cwd=cwd,
     )
 
     full_stdout = []
@@ -66,26 +67,34 @@ def run(cmd, check=True, env=None, log_cmd=True):
 
     def _drain_stdout():
         for line in iter(process.stdout.readline, ""):
-            s = line.strip()
-            if s:
-                logger.info(s)
-                full_stdout.append(s)
+            line_clean = line.rstrip("\r\n")
+            if line_clean.strip():
+                logger.info(line_clean)
+            full_stdout.append(line_clean)
         process.stdout.close()
 
     def _drain_stderr():
         for line in iter(process.stderr.readline, ""):
-            s = line.strip()
-            if s:
-                full_stderr.append(s)
+            line_clean = line.rstrip("\r\n")
+            full_stderr.append(line_clean)
         process.stderr.close()
 
     t_out = threading.Thread(target=_drain_stdout, daemon=True)
     t_err = threading.Thread(target=_drain_stderr, daemon=True)
     t_out.start()
     t_err.start()
+
+    try:
+        return_code = process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        t_out.join(timeout=1)
+        t_err.join(timeout=1)
+        logger.error(f"[TIMEOUT] Command timed out after {timeout}s: {cmd}")
+        raise CommandError(cmd, -1, "\n".join(full_stdout), f"Timed out after {timeout}s")
+
     t_out.join()
     t_err.join()
-    return_code = process.wait()
 
     stdout_str = "\n".join(full_stdout)
     stderr_str = "\n".join(full_stderr)
@@ -93,18 +102,20 @@ def run(cmd, check=True, env=None, log_cmd=True):
     if full_stderr:
         stderr_log = get_stderr_log_path()
         if stderr_log:
-            with open(stderr_log, "a") as f:
+            with open(stderr_log, "a", encoding="utf-8") as f:
                 f.write(f"\n[CMD] {cmd}\n")
                 f.write(stderr_str + "\n")
         else:
             for line in full_stderr:
-                logger.warning(f"[STDERR] {line}")
+                if line.strip():
+                    logger.warning(f"[STDERR] {line}")
 
     if check and return_code != 0:
         logger.error(f"[FAIL] {cmd} (exit code: {return_code})")
         if full_stderr:
             for line in full_stderr:
-                logger.error(f"[STDERR] {line}")
+                if line.strip():
+                    logger.error(f"[STDERR] {line}")
         raise CommandError(cmd, return_code, stdout_str, stderr_str)
 
     return Result(stdout_str, stderr_str, return_code)
@@ -115,7 +126,7 @@ def run(cmd, check=True, env=None, log_cmd=True):
 # -----------------------------------------------------------------------------
 
 def chroot(cmd):
-    run(f"""arch-chroot /mnt /bin/bash <<'__CHROOT_EOF__'
+    run(f"""arch-chroot /mnt /bin/bash -e <<'__CHROOT_EOF__'
 {cmd}
 __CHROOT_EOF__
 """)
