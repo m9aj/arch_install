@@ -9,6 +9,9 @@ usage() {
 Usage:
   arch-install [profile]                  Phase 1 — pre-reboot (run from live ISO as root)
   arch-install post [profile]             Phase 2 — post-install (run after reboot)
+  arch-install status                     Show completion status of steps and features
+  arch-install check [profile]            Dry-run validate configuration for a profile
+  arch-install test                       Run automated health and sanity checks
   arch-install list [features|packages]   List available features and package groups
   arch-install feature [name] [profile]   Install and configure a single feature (or list all)
   arch-install pkg [group ...]            Install package group(s) from package_profiles.yaml (or list all)
@@ -68,6 +71,18 @@ case "${1:-}" in
     list)
         shift
         exec python3 "$DIR/postreboot/list_cli.py" "$@"
+        ;;
+    status)
+        shift
+        exec python3 "$DIR/postreboot/status_cli.py" "$@"
+        ;;
+    check|validate)
+        shift
+        exec python3 "$DIR/scripts/test_project.py" check "$@"
+        ;;
+    test)
+        shift
+        exec python3 "$DIR/scripts/test_project.py" test "$@"
         ;;
     features)
         exec python3 "$DIR/postreboot/list_cli.py" features

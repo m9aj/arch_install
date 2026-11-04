@@ -23,7 +23,7 @@ The Arch Install project is organized into modular phases, asset bundles, and co
   - `gemini/`: Antigravity master rules (`GEMINI.md`) and specialized skills (`skills/`).
   - `hyprland/`: Hyprland Lua settings (`hypr/`), Omarchy shell & Quickshell top bar (`omarchy/`), and Satty screenshot configs (`satty/`).
   - `cursors.zip`, `icons.zip`, `limine-wallpaper.jpg`: Visual themes and boot splash assets.
-- `logs/`: Directory for execution logs and `state.json` file for tracking progress.
+- `logs/`: Directory for execution logs and `state.yaml` file for tracking progress.
 
 ### Configuration (`config/`)
 
@@ -35,7 +35,7 @@ The Arch Install project is organized into modular phases, asset bundles, and co
 
 ### Core Library (`core/`)
 
-- `shell.py`: Low-level shell execution (`run`, `chroot`), timeouts, and user confirmation.
+- `shell.py`: Low-level shell execution (`run`, `chroot`), timeouts, input_data piping, and user confirmation.
 - `kernel.py`: Unified kernel cmdline management and UKI regeneration across Phase 1 and Phase 2.
 - `config.py`: Configuration loading, profile merging, and path resolution.
 - `disk.py`: Disk and partition identification helpers.
@@ -44,7 +44,7 @@ The Arch Install project is organized into modular phases, asset bundles, and co
 - `installer.py`: High-level pacman & AUR package installation helper.
 - `logger.py`: Centralized logging setup.
 - `resolver.py`: Dynamic resolution of package lists based on hardware (CPU microcode, GPU drivers for AMD/Nvidia/Intel) and selected profiles.
-- `state.py`: Idempotency logic using `state.json` to track completed steps.
+- `state.py`: Idempotency logic using `state.yaml` to track completed steps.
 - `validator.py`: Schema validation for the YAML configuration.
 
 ### Features (`features/`)
@@ -54,26 +54,27 @@ Standalone modules for post-installation system features. Each module defines it
 - `antigravity.py`: Installs Antigravity CLI and automatically deploys all skills and global rules from `assets/gemini/` into `~/.gemini/config/` and `~/.gemini/antigravity-cli/`.
 - `btrfs_maintenance.py`: Automated Btrfs scrub, balance, trim, and defrag scheduling.
 - `firewall.py`: Firewalld setup.
-- `pia.py`: Private Internet Access VPN setup.
-- `plymouth.py`: Boot splash screen configuration.
+- `pia.py`: Private Internet Access VPN setup with NetworkManager keyfiles.
+- `plymouth.py`: Boot splash screen configuration with reliable hook injection.
 - `reflector.py`: Pacman mirrorlist optimisation.
 - `snapper.py`: Btrfs snapshot management.
-- `tailscale.py`: Tailscale VPN integration.
+- `tailscale.py`: Tailscale VPN integration with non-root operator setup.
 - `webapps.py`: FirefoxPWA installation and desktop launchers synchronization.
-- `zram.py`: Zram-generator configuration with automatic conflict avoidance for kernel zswap.
+- `zram.py`: Zram-generator configuration with live activation and automatic conflict avoidance for kernel zswap.
 
 ### Phase 1: Pre-reboot (`prereboot/`)
 
 Executed from the Arch Live ISO.
 - `main.py`: Orchestrates the pre-install steps.
-- `disk.py`: Partitioning, formatting, atomic resetting, and mounting logic for Btrfs.
-- `archinstall.py`: System configuration (hostname, locale, users, autologin, systemd-resolved DNS, sudoers drop-in).
-- `bootloader.py`: Installation and configuration of UKI bootloaders (systemd-boot, Limine, or direct EFI NVRAM registration) with Nvidia Early KMS setup.
+- `disk.py`: Partitioning, formatting, atomic resetting, and mount ordering for Btrfs.
+- `archinstall.py`: System configuration (hostname, locale, users, autologin, systemd-resolved DNS, secure passwords).
+- `bootloader.py`: Installation and configuration of UKI bootloaders (systemd-boot, Limine, or direct EFI NVRAM registration) with targeted NVRAM cleanup.
 - `system.py`: Package installation and service enablement via chroot.
 
 ### Scripts (`scripts/`)
 
-Utility scripts for development and maintenance — not part of the install flow.
+Utility scripts for development, maintenance, and verification.
+- `test_project.py`: Automated project health checker and dry-run profile validator (`./arch-install test` / `./arch-install check`).
 - `encrypt_secrets.py`: Encrypts `config/secrets/secrets.yaml` and `config/ssh/*.yaml` using `age`.
 - `decrypt_secrets.py`: Decrypts `.age` files back to plaintext for editing.
 - `gen-ssh-key.py`: Generates ed25519 SSH keypairs per profile and updates authorized keys.
@@ -82,22 +83,47 @@ Utility scripts for development and maintenance — not part of the install flow
 ### Phase 2: Post-reboot (`postreboot/`)
 
 Executed after rebooting into the new system.
-- `main.py`: Orchestrates the post-install steps.
+- `main.py`: Orchestrates the post-install steps with proper AUR helper ordering.
 - `gnome.py`: Detailed GNOME environment setup (gsettings, extensions, keybindings, color profiles, app picker layout).
 - `hyprland.py`: Hyprland desktop environment deployment (Lua configs, Omarchy shell, Quickshell top bar, Satty).
 - `themes.py`: Application of icons, cursors, and wallpapers.
 - `dotfiles.py`: Deployment of user dotfiles via `chezmoi` with persistent `age` key recovery and non-interactive `--force` apply.
-- `aur.py`: Installation of the AUR helper (`paru`) and requested AUR packages with build validation.
-- `system_config.py`: System level configuration (network hosts file, Citrix, etc.).
-- `user_dirs.py`: Sets up standard XDG user directories and symlinks.
+- `aur.py`: Installation of the AUR helper (`paru`) and requested AUR packages with persistent `@pkg` cache integration.
+- `system_config.py`: System level configuration (static hosts file, Citrix, etc.).
+- `user_dirs.py`: Sets up standard XDG user directories and bind mounts.
 - `features.py`: Dynamic runner that iterates over and runs all enabled features.
 - `feature_cli.py`: Standalone CLI runner to install and configure a single named feature (`./arch-install feature <name>`).
+- `pkg_cli.py`: Standalone CLI runner to install package groups (`./arch-install pkg <group>`).
 - `list_cli.py`: Listing utility to inspect all available features, packages, and group configurations (`./arch-install list`).
+- `status_cli.py`: Status utility to view execution state across all phases and features (`./arch-install status`).
 
 ## Key Commands
 
 ```bash
+# Check current progress and completion status
+./arch-install status
+
+# Dry-run validate configuration for a profile
+./arch-install check [profile]
+
+# Run project health and sanity test suite
+./arch-install test
+
 # List all features and package groups
+./arch-install list
+./arch-install list features
+./arch-install list packages
+
+# Install a single feature
+./arch-install feature <name> [profile]
+
+# Install one or more package groups from package_profiles.yaml
+./arch-install pkg <group> [group2 ...]
+
+# Reset a step to re-run on next invocation
+./arch-install reset <step>
+./arch-install reset all
+```
 ./arch-install list
 ./arch-install list features
 ./arch-install list packages

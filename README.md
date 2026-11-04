@@ -13,8 +13,8 @@ A modular, profile-based Arch Linux installer and post-installation configuratio
 - **Desktop Environments**: Supports automated setup of **GNOME** (dconf, extensions, dock, app grid) and **Hyprland** (Lua configuration, Quickshell top bar, Omarchy shell, Satty screenshot tools).
 - **Unified Dotfiles via Chezmoi**: Central Git-backed dotfiles (`m9aj/dotfiles`) with hardware-specific templating, role targeting (`laptop`, `desktop`, `server`), headless server filtering, and native `age` encryption for credentials.
 - **Antigravity AI Integration**: Bundled AI skills (`arch-install-pilot`, `hyprland-pilot`, `media-server-pilot`) and synchronization rulebooks deployed automatically into `~/.gemini/config/`.
-- **Idempotency**: Progress tracked in `logs/state.json`, allowing the installer to safely resume from failure.
-- **Modern System Integration**: Out-of-the-box `systemd-resolved` NetworkManager integration and `paru` AUR helper.
+- **Idempotency**: Progress tracked in `logs/state.yaml`, allowing the installer to safely resume from failure or inspection via `./arch-install status`.
+- **Modern System Integration**: Out-of-the-box `systemd-resolved` NetworkManager integration, persistent `@pkg` AUR caching, and `paru` AUR helper.
 
 ## Prerequisites
 
@@ -24,6 +24,14 @@ A modular, profile-based Arch Linux installer and post-installation configuratio
 
 ## Usage
 
+### Dry-Run Verification & Health Checks
+Before starting an installation, you can validate configs or run the test suite:
+```bash
+./arch-install check laptop     # Dry-run validate profile config & partitions
+./arch-install test             # Run automated health and sanity checks
+./arch-install status           # Inspect current execution state of steps and features
+```
+
 ### Phase 1: Installation (Pre-reboot)
 Run from the live ISO environment:
 ```bash
@@ -32,7 +40,7 @@ cd arch_install
 ```
 This phase handles:
 -   Disk partitioning and formatting (Btrfs subvolume layout).
--   Mounting subvolumes.
+-   Mounting subvolumes in proper hierarchy.
 -   `pacstrap` of core system and microcode.
 -   Generating `fstab`, `systemd-resolved` DNS stub, and initial system configuration.
 -   Generating UKI (`/efi/EFI/Linux/arch-*.efi`) and installing bootloader (`limine`, `systemd-boot`, or `none`).
@@ -44,7 +52,7 @@ cd ~/Arch/arch_install
 ./arch-install post
 ```
 This phase handles:
--   Installing AUR helper (`paru`) and requested packages.
+-   Installing AUR helper (`paru`) and caching packages in `/var/cache/pacman/pkg` (`@pkg` subvolume).
 -   Enabling system features (firewall, zram, tailscale, snapper, btrfs-maintenance, antigravity).
 -   Restoring persistent `age` decryption keys and applying unified `chezmoi` dotfiles.
 -   Applying desktop settings:
@@ -53,6 +61,18 @@ This phase handles:
 -   Applying themes, cursors, and wallpapers.
 -   Configuring color profiles, static network hosts, and user directories.
 -   Deploying Antigravity AI skills and global workspace synchronization rules.
+
+### Utility & Management Commands
+```bash
+./arch-install status                   # Show completion status of steps and features
+./arch-install list                     # List all available features and package groups
+./arch-install list features            # List only system features
+./arch-install list packages            # List only package groups from package_profiles.yaml
+./arch-install feature <name> [profile] # Install and configure a single feature
+./arch-install pkg <group> [group2 ...] # Install package group(s)
+./arch-install reset <step>             # Mark a step as pending to re-run on next invocation
+./arch-install clean                    # Remove profile markers and empty logs
+```
 
 ## Project & Configuration Structure
 
@@ -77,9 +97,9 @@ arch_install/
 │
 ├── core/                      # Core installation engine (disk, network, resolver, validator)
 ├── features/                  # Standalone feature modules (antigravity, firewall, zram, tailscale, etc.)
-├── prereboot/                 # Phase 1 scripts
-├── postreboot/                # Phase 2 scripts (gnome, hyprland, dotfiles, aur, themes)
-└── scripts/                   # Maintenance utilities (secret encryption, key generation)
+├── prereboot/                 # Phase 1 scripts (disk, archinstall, system, bootloader)
+├── postreboot/                # Phase 2 scripts (gnome, hyprland, dotfiles, aur, themes, status, cli)
+└── scripts/                   # Test suite and maintenance utilities (test_project, secret encryption, key generation)
 ```
 
 Profiles: `laptop` (hostname: `Io`), `desktop` (hostname: `Titan`), `server` (hostname: `Media`).

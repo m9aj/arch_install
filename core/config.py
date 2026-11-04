@@ -217,7 +217,7 @@ def _decrypt_age_yaml(path):
         raise RuntimeError(f"age decryption failed for {path}: {stderr.decode().strip()}")
     return yaml.safe_load(stdout.decode())
 
-def load_profile_config(profile):
+def load_profile_config(profile, load_secrets=True):
     """
     Load and merge all config files for a profile.
 
@@ -259,22 +259,23 @@ def load_profile_config(profile):
             break
 
     # 4. Secrets
-    secrets_found = False
-    for sec_dir in [SECRETS_DIR, CONFIG_DIR]:
-        age_path = os.path.join(sec_dir, "secrets.yaml.age")
-        plain_path = os.path.join(sec_dir, "secrets.yaml")
-        if os.path.exists(age_path):
-            secrets = _decrypt_age_yaml(age_path)
-            secrets_found = True
-        elif os.path.exists(plain_path):
-            with open(plain_path) as f:
-                secrets = yaml.safe_load(f) or {}
-            secrets_found = True
-        else:
-            secrets = {}
-        if secrets_found:
-            config = merge_dicts(config, secrets)
-            break
+    if load_secrets:
+        secrets_found = False
+        for sec_dir in [SECRETS_DIR, CONFIG_DIR]:
+            age_path = os.path.join(sec_dir, "secrets.yaml.age")
+            plain_path = os.path.join(sec_dir, "secrets.yaml")
+            if os.path.exists(age_path):
+                secrets = _decrypt_age_yaml(age_path)
+                secrets_found = True
+            elif os.path.exists(plain_path):
+                with open(plain_path) as f:
+                    secrets = yaml.safe_load(f) or {}
+                secrets_found = True
+            else:
+                secrets = {}
+            if secrets_found:
+                config = merge_dicts(config, secrets)
+                break
 
     global _config_written
     if not _config_written:
