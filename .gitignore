@@ -1,5 +1,7 @@
 # Secrets (plaintext only — encrypted .age files are safe to commit)
 config/secrets/secrets.yaml
+config/secrets/wifi.yaml
+config/wifi.yaml
 config/ssh/*.yaml
 !config/ssh/*.yaml.age
 TODO
