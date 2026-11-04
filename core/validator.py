@@ -1,46 +1,11 @@
 # core/validator.py
 """
-Fail-fast schema validation for the installer configuration using Python standard library dataclasses.
-Runs without internet dependencies or third-party packages.
+Fail-fast schema validation for the installer configuration.
+Validates mandatory keys, data types, and supported enum combinations without third-party dependencies.
 """
 
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
 
-@dataclass
-class DiskConfig:
-    disk_by_id: str
-    boot_part: str
-    root_part: str
-    mount_ops_ssd: str = "noatime,compress=zstd:3,ssd,space_cache=v2"
-    mount_ops_oth: str = "nosuid,nodev,nofail,x-gvfs-show"
-    mount_ops_hdd: str = "noatime,autodefrag"
-
-@dataclass
-class RootConfig:
-    mode: str = "reuse"
-    subvolumes: List[Dict[str, Any]] = field(default_factory=list)
-
-@dataclass
-class SystemConfig:
-    hostname: str
-    root_password: str
-    username: str
-    user_password: str
-    timezone: str
-    fullname: str = "Ajay Moganti"
-    autologin: bool = False
-
-@dataclass
-class BootConfig:
-    bootloader: str = "systemd-boot"
-    init: str = "mkinitcpio"
-    kernel_params: List[str] = field(default_factory=list)
-
-@dataclass
-class HardwareConfig:
-    cpu: str = "auto"
-    gpu: str = "auto"
 
 def validate(config: Dict[str, Any]):
     """Validate resolved configuration against mandatory fields and allowed enum values."""
@@ -66,7 +31,9 @@ def validate(config: Dict[str, Any]):
 
     boot_mount_cfg = _get(config, "boot.boot_mount")
     if boot_mount_cfg and boot_mount_cfg != "/efi":
-        raise ValueError(f"boot.boot_mount: {boot_mount_cfg!r} is not supported. The EFI System Partition must be mounted at /efi.")
+        raise ValueError(
+            f"boot.boot_mount: {boot_mount_cfg!r} is not supported. The EFI System Partition must be mounted at /efi."
+        )
 
     # Hardware checks
     enum(config, "hardware.cpu", ["amd", "intel", "auto"])
@@ -77,6 +44,7 @@ def validate(config: Dict[str, Any]):
 
     # Desktop Environment checks
     validate_desktop_environment(config)
+
 
 # ------------------------
 # Helpers
@@ -112,6 +80,7 @@ def validate_desktop_environment(config: Dict[str, Any]):
             "(gnome, kde, hyprland) or dual pairs with Hyprland (e.g. [gnome, hyprland])."
         )
 
+
 def _get(config: Dict[str, Any], path: str) -> Any:
     current = config
     for key in path.split("."):
@@ -120,19 +89,22 @@ def _get(config: Dict[str, Any], path: str) -> Any:
         current = current[key]
     return current
 
+
 def require(config: Dict[str, Any], path: str):
     value = _get(config, path)
-    if not value:
+    if value is None or value == "":
         raise ValueError(f"Missing required field: {path}")
+
 
 def enum(config: Dict[str, Any], path: str, allowed: List[str]):
     value = _get(config, path)
-    if not value:
+    if value is None or value == "":
         raise ValueError(f"Missing required field: {path}")
     if value not in allowed:
         raise ValueError(f"Invalid value for {path}: '{value}'. Must be one of: {', '.join(allowed)}")
 
+
 def enum_optional(config: Dict[str, Any], path: str, allowed: List[str]):
     value = _get(config, path)
-    if value and value not in allowed:
+    if value is not None and value != "" and value not in allowed:
         raise ValueError(f"Invalid value for {path}: '{value}'. Must be one of: {', '.join(allowed)}")

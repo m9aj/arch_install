@@ -126,10 +126,17 @@ def get_ssh_path():
 # ------------------------
 
 def load_yaml(filename):
-    path = os.path.join(CONFIG_DIR, filename)
-    if not os.path.exists(path) and os.path.exists(os.path.join(PROFILES_DIR, filename)):
+    if os.path.isabs(filename) and os.path.exists(filename):
+        path = filename
+    elif os.path.exists(filename):
+        path = filename
+    elif os.path.exists(os.path.join(CONFIG_DIR, filename)):
+        path = os.path.join(CONFIG_DIR, filename)
+    elif os.path.exists(os.path.join(PROFILES_DIR, filename)):
         path = os.path.join(PROFILES_DIR, filename)
-    with open(path) as f:
+    else:
+        path = os.path.join(CONFIG_DIR, filename)
+    with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 def load_wifi_bootstrap():
@@ -221,6 +228,9 @@ def load_profile_config(profile):
       4. Secrets (config/secrets/secrets.yaml[.age])
     """
     config = {}
+
+    if profile.endswith(".yaml"):
+        profile = profile[:-5]
 
     # 1. Base configuration
     base_consolidated = os.path.join(PROFILES_DIR, "base.yaml")

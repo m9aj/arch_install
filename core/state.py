@@ -1,10 +1,10 @@
 # core/state.py
-# State is stored in state.json in the project root (alongside the installer).
-# Since the project lives on the Personal drive, this file persists across
-# reinstalls and is readable in ~/Arch/arch_install_py_cl/ after installation.
+# State is stored in state.json in the logs directory.
+# Tracks completed, skipped, and failed steps to ensure idempotency.
 
-import os
 import json
+import os
+import tempfile
 
 from core.config import LOGS_DIR
 
@@ -14,14 +14,28 @@ STATE_FILE = os.path.join(LOGS_DIR, "state.json")
 def _load():
     if not os.path.exists(STATE_FILE):
         return {}
-    with open(STATE_FILE) as f:
-        return json.load(f)
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            if not content:
+                return {}
+            return json.loads(content)
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 def _save(state):
     os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
+    # Atomic write via temporary file in the same directory to avoid half-written state on crash
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(STATE_FILE), prefix="state_", suffix=".tmp")
+    try:
+        with open(tmp_fd, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+        os.replace(tmp_path, STATE_FILE)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise
 
 
 def is_done(name):

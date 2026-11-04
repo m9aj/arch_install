@@ -10,8 +10,12 @@ from core.logger import logger
 
 
 def check_internet():
+    # Try hostname first; fall back to reliable public DNS IP if DNS is not yet ready
     result = run("ping -c 1 -W 3 google.com", check=False)
-    return result.returncode == 0
+    if result.returncode == 0:
+        return True
+    result_ip = run("ping -c 1 -W 3 1.1.1.1", check=False)
+    return result_ip.returncode == 0
 
 
 def detect_wifi_interface():
@@ -31,31 +35,56 @@ def detect_wifi_interface():
 
 
 def connect_wifi(config):
-    wifi = config.get("network", {}).get("wifi", {})
-    ssid = wifi.get("ssid")
-    password = wifi.get("password")
+    wifi_data = config.get("network", {}).get("wifi", {})
 
-    if not ssid:
-        logger.warning("No WiFi SSID configured in network.wifi")
-        return False
-
-    ssid = str(ssid)
-    interface = str(wifi.get("interface") or detect_wifi_interface())
-    logger.info(f"Connecting to WiFi: {ssid} on {interface}")
-
-    if password is not None and password != "":
-        password = str(password)
-        result = run(f"iwctl --passphrase {shlex.quote(password)} station {shlex.quote(interface)} connect {shlex.quote(ssid)}", check=False)
+    # Support either a single dict or a list of WiFi network dicts
+    if isinstance(wifi_data, list):
+        networks = wifi_data
+    elif isinstance(wifi_data, dict):
+        if "networks" in wifi_data and isinstance(wifi_data["networks"], list):
+            networks = wifi_data["networks"]
+        elif wifi_data.get("ssid"):
+            networks = [wifi_data]
+        else:
+            networks = []
     else:
-        result = run(f"iwctl station {shlex.quote(interface)} connect {shlex.quote(ssid)}", check=False)
+        networks = []
 
-    if result.returncode != 0:
+    if not networks:
+        logger.warning("No WiFi networks configured in network.wifi")
         return False
 
-    logger.info("Waiting for connection...")
-    time.sleep(4)
-    return check_internet()
+    # Attempt connection to configured networks in order
+    for net in networks:
+        ssid = net.get("ssid")
+        if not ssid:
+            continue
+        ssid = str(ssid).strip()
+        password = net.get("password")
+        interface = str(net.get("interface") or detect_wifi_interface())
 
+        logger.info(f"Connecting to WiFi: '{ssid}' on {interface}")
+
+        if password is not None and str(password) != "":
+            password_str = str(password)
+            result = run(
+                f"iwctl --passphrase {shlex.quote(password_str)} station {shlex.quote(interface)} connect {shlex.quote(ssid)}",
+                check=False,
+                log_cmd=False,
+            )
+        else:
+            result = run(
+                f"iwctl station {shlex.quote(interface)} connect {shlex.quote(ssid)}",
+                check=False,
+            )
+
+        if result.returncode == 0:
+            logger.info("Waiting for connection...")
+            time.sleep(4)
+            if check_internet():
+                return True
+
+    return False
 
 
 def ensure_internet(config, try_wifi=False):

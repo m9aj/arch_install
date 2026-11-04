@@ -13,10 +13,16 @@ logger.addHandler(_stream_handler)
 
 
 def setup(log_path):
-    """Call once after config is loaded to add a file handler."""
+    """Call once after config is loaded to add a file handler with UTF-8 encoding."""
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-    file_handler = logging.FileHandler(log_path, mode="a")
+    # Remove any existing FileHandlers to prevent duplicate log lines
+    for h in list(logger.handlers):
+        if isinstance(h, logging.FileHandler):
+            logger.removeHandler(h)
+            h.close()
+
+    file_handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
     file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
 
     logger.addHandler(file_handler)
@@ -34,4 +40,3 @@ def set_stderr_log(path):
 
 def get_stderr_log_path():
     return _stderr_log_path
-

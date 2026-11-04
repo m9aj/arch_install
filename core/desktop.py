@@ -1,7 +1,5 @@
 # core/desktop.py
 
-import os
-from core.shell import run
 
 def get_des(config):
     de = config.get("arch", {}).get("de", [])
@@ -11,14 +9,18 @@ def get_des(config):
         return [str(d).strip() for item in de for d in str(item).split(",") if str(d).strip()]
     return []
 
+
 def _is_gnome(config):
     return "gnome" in get_des(config)
+
 
 def _is_hyprland(config):
     return "hyprland" in get_des(config)
 
+
 def _is_kde(config):
     return "kde" in get_des(config)
+
 
 def normalize_desktop_name(name):
     name = str(name)

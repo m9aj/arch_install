@@ -124,7 +124,7 @@ def resolve_system(config):
     kernel_params = []
 
     # core
-    for p in config["pkgprofile"].get("core", []):
+    for p in config.get("pkgprofile", {}).get("core", []):
         core_pkgs += CORE_PROFILES.get(p, [])
 
     # post
@@ -153,7 +153,7 @@ def resolve_system(config):
     kernel_params += boot.get("kernel_params", [])
 
     # DE auto
-    raw_de = config["arch"].get("de")
+    raw_de = config.get("arch", {}).get("de")
     if isinstance(raw_de, str):
         des = [d.strip() for d in raw_de.split(",") if d.strip()]
     elif isinstance(raw_de, list):
