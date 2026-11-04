@@ -13,6 +13,23 @@ bootloader:
     packages:
       - limine
 
+hardware_packages:
+  cpu:
+    intel:
+      - intel-ucode
+    amd:
+      - amd-ucode
+  gpu:
+    nvidia:
+      - nvidia-open
+      - libva-nvidia-driver
+    amd:
+      - xf86-video-amdgpu
+      - vulkan-radeon
+    intel:
+      - intel-media-driver
+      - vulkan-intel
+
 core_profiles:
   base_core:
     - base

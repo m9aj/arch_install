@@ -12,6 +12,7 @@ CORE_PROFILES = _profiles.get("core_profiles", {})
 POST_PROFILES = _profiles.get("post_profiles", {})
 INIT_PACKAGES = _profiles.get("init_packages", {})
 BOOTLOADER_CFG = _profiles.get("bootloader", {})
+HARDWARE_PACKAGES = _profiles.get("hardware_packages", {})
 
 # ------------------------
 # Hardware Detection
@@ -62,31 +63,17 @@ def detect_gpu():
 # ------------------------
 
 def hardware_profile(config):
-    core_pkgs = []
-    post_pkgs = []
-
-    cpu_cfg = config["hardware"].get("cpu", "auto")
-    gpu_cfg = config["hardware"].get("gpu", "auto")
+    cpu_cfg = config.get("hardware", {}).get("cpu", "auto")
+    gpu_cfg = config.get("hardware", {}).get("gpu", "auto")
 
     cpu = detect_cpu() if cpu_cfg == "auto" else cpu_cfg
     gpu = detect_gpu() if gpu_cfg == "auto" else gpu_cfg
 
-    # CPU → core
-    if cpu == "intel":
-        core_pkgs.append("intel-ucode")
-    elif cpu == "amd":
-        core_pkgs.append("amd-ucode")
+    # CPU microcode → installed during core/prereboot
+    core_pkgs = list(HARDWARE_PACKAGES.get("cpu", {}).get(cpu, []))
 
-    # GPU → post
-    if gpu == "nvidia":
-        post_pkgs.append("nvidia-open")
-        post_pkgs.append("libva-nvidia-driver")
-    elif gpu == "amd":
-        post_pkgs.append("xf86-video-amdgpu")
-        post_pkgs.append("vulkan-radeon")
-    elif gpu == "intel":
-        post_pkgs.append("intel-media-driver")
-        post_pkgs.append("vulkan-intel")
+    # GPU drivers → installed during postreboot
+    post_pkgs = list(HARDWARE_PACKAGES.get("gpu", {}).get(gpu, []))
 
     return {
         "core": core_pkgs,

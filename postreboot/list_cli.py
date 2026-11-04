@@ -119,6 +119,14 @@ def list_packages():
         pkgs = item if isinstance(item, list) else (item.get("packages", []) if isinstance(item, dict) else [])
         print(f"  {_c(name, '1'):20s} -> {', '.join(pkgs or [])}")
 
+    hw_profiles = data.get("hardware_packages", {})
+    if hw_profiles:
+        print(_c("\n--- Hardware Drivers & Microcode ---", "1;33"))
+        for hw_type, mapping in hw_profiles.items():
+            for hw_name, pkgs in mapping.items():
+                label = f"{hw_type}:{hw_name}"
+                print(f"  {_c(label, '1'):20s} -> {', '.join(pkgs or [])}")
+
     print(_c("\nInstall package group(s):", "1"))
     print(f"  ./arch-install pkg <group> [group2 ...]\n")
 
