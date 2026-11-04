@@ -13,14 +13,12 @@ bootloader:
     packages:
       - limine
 
-
 core_profiles:
   base_core:
     - base
     - linux
     - linux-firmware
     - base-devel
-    #- sudo-rs
     - efibootmgr
     - dosfstools
     - btrfs-progs
@@ -54,6 +52,7 @@ post_profiles:
       - NetworkManager
       - systemd-resolved
       - fstrim.timer
+      - paccache.timer
     
   gnome:
     packages:
@@ -81,9 +80,7 @@ post_profiles:
       - gnome-firmware
       - gnome-logs
       - baobab
-      - papers
       - power-profiles-daemon
-      - showtime
       - gnome-browser-connector
     services:
       - gdm
@@ -158,6 +155,8 @@ post_profiles:
     packages:
       - loupe
       - decibels
+      - showtime
+      - papers
       - simple-scan
       - imagemagick
 

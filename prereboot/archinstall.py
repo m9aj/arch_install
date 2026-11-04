@@ -286,11 +286,24 @@ printf '%s\n' \
 """
 
 
+def journald_block():
+    return r"""
+# Cap systemd-journald size to prevent excessive log growth
+mkdir -p /etc/systemd/journald.conf.d
+cat << 'EOF' > /etc/systemd/journald.conf.d/00-journal-size.conf
+[Journal]
+SystemMaxUse=100M
+SystemMaxFileSize=20M
+EOF
+"""
+
+
 def initial_tweaks(config):
     script = "\n".join([
         "set -e",
         makepkg_block(),
         pacman_block(),
         sysctl_block(),
+        journald_block(),
     ])
     chroot(script)
