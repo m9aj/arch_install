@@ -31,7 +31,11 @@ class Result:
 # -----------------------------------------------------------------------------
 def confirm(msg):
     print(f"[WARNING] {msg}")
-    ans = input("Type 'YES' to proceed: ")
+    try:
+        ans = input("Type 'YES' to proceed: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        print("\n[ABORTED] Operation cancelled by user.")
+        raise RuntimeError("Aborted")
     if ans != "YES":
         raise RuntimeError("Aborted")
 
@@ -126,6 +130,8 @@ def run(cmd, check=True, env=None, cwd=None, timeout=None, log_cmd=True):
 # -----------------------------------------------------------------------------
 
 def chroot(cmd):
+    if not os.path.ismount("/mnt"):
+        raise RuntimeError("Cannot execute chroot: '/mnt' is not a mountpoint.")
     run(f"""arch-chroot /mnt /bin/bash -e <<'__CHROOT_EOF__'
 {cmd}
 __CHROOT_EOF__
@@ -133,42 +139,15 @@ __CHROOT_EOF__
 
 
 # -----------------------------------------------------------------------------
-# Kernel Parameter Management
+# Kernel & UKI Helpers (Delegated to core.kernel for backward compatibility)
 # -----------------------------------------------------------------------------
 
 def rebuild_uki(config):
-    boot = config.get("boot", {})
-    init = boot.get("init", "mkinitcpio")
-    kernel = boot.get("kernel", "linux")
-    boot_mount = "/efi"
-    cmdline_path = "/mnt/etc/kernel/cmdline" if os.path.exists("/mnt/etc/kernel") and os.getuid() == 0 else "/etc/kernel/cmdline"
-
-    logger.info(f"Regenerating UKI (init: {init})")
-    if init == "mkinitcpio":
-        run("sudo mkinitcpio -P")
-    elif init == "dracut":
-        efi_name = f"arch-{kernel}.efi"
-        run(f"sudo mkdir -p {boot_mount}/EFI/Linux")
-        run(f"sudo dracut --uefi --force --hostonly --kernel-cmdline \"$(cat {cmdline_path})\" {boot_mount}/EFI/Linux/{efi_name}")
+    from core.kernel import rebuild_uki as _rebuild_uki
+    return _rebuild_uki(config)
 
 
 def apply_kernel_parameter(config, param, rebuild=True):
-    cmdline_path = "/mnt/etc/kernel/cmdline" if os.path.exists("/mnt/etc/kernel") and os.getuid() == 0 else "/etc/kernel/cmdline"
-    
-    if os.path.exists(cmdline_path):
-        with open(cmdline_path, "r") as f:
-            content = f.read().strip()
-    else:
-        content = ""
-
-    if param not in content.split():
-        logger.info(f"Adding '{param}' to {cmdline_path}")
-        new_content = f"{content} {param}".strip()
-
-        run(f"echo {shlex.quote(new_content)} | sudo tee {cmdline_path} > /dev/null")
-        
-        if rebuild:
-            rebuild_uki(config)
-        return True
-    return False
+    from core.kernel import apply_kernel_parameter as _apply_kernel_parameter
+    return _apply_kernel_parameter(config, param, rebuild=rebuild)
 

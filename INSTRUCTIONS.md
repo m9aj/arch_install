@@ -35,7 +35,8 @@ The Arch Install project is organized into modular phases, asset bundles, and co
 
 ### Core Library (`core/`)
 
-- `shell.py`: Low-level shell execution (`run`, `chroot`), kernel parameter application, and user interaction.
+- `shell.py`: Low-level shell execution (`run`, `chroot`), timeouts, and user confirmation.
+- `kernel.py`: Unified kernel cmdline management and UKI regeneration across Phase 1 and Phase 2.
 - `config.py`: Configuration loading, profile merging, and path resolution.
 - `disk.py`: Disk and partition identification helpers.
 - `desktop.py`: Shared desktop environment helpers (session detection for GNOME/Hyprland/KDE, desktop entry normalization).
