@@ -179,7 +179,7 @@ _EOF_""")
 def register_uki_efi(config):
     disk_by_id = config["disk"]["disk_by_id"]
     boot_part  = config["disk"]["boot_part"]
-    from core.gnome import get_des
+    from core.desktop import get_des
     label      = config.get("arch", {}).get("label", "Arch")
     de_str     = "/".join(d.capitalize() for d in get_des(config))
     title      = f"{label} {de_str}".strip()

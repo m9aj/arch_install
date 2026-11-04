@@ -38,7 +38,7 @@ The Arch Install project is organized into modular phases, asset bundles, and co
 - `shell.py`: Low-level shell execution (`run`, `chroot`), kernel parameter application, and user interaction.
 - `config.py`: Configuration loading, profile merging, and path resolution.
 - `disk.py`: Disk and partition identification helpers.
-- `gnome.py`: Shared GNOME helpers (session detection, desktop name normalisation).
+- `desktop.py`: Shared desktop environment helpers (session detection for GNOME/Hyprland/KDE, desktop entry normalization).
 - `network.py`: Connectivity checks and Wi-Fi interface detection/setup for the live ISO.
 - `installer.py`: High-level pacman & AUR package installation helper.
 - `logger.py`: Centralized logging setup.

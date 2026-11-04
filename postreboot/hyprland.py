@@ -4,7 +4,7 @@
 
 import os
 import shutil
-from core.gnome import _is_hyprland
+from core.desktop import _is_hyprland
 from core.logger import logger
 from core.shell import run
 from core.config import PROJECT_ROOT

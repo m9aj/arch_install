@@ -7,7 +7,7 @@ import tempfile
 from core.config import PROJECT_ROOT
 from core.shell import run
 from core.logger import logger
-from core.gnome import _is_gnome
+from core.desktop import _is_gnome
 
 
 def _resolve(source):

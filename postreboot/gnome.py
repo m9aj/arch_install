@@ -9,7 +9,7 @@ import tempfile
 import urllib.request
 from core.config import load_yaml, detect_profile, load_dconf, get_dconf_path
 from core.shell import run
-from core.gnome import _is_gnome, normalize_desktop_name
+from core.desktop import _is_gnome, normalize_desktop_name
 from core.logger import logger
 
 

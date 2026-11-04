@@ -1,4 +1,4 @@
-# core/helper_gnome.py
+# core/desktop.py
 
 import os
 from core.shell import run

@@ -128,7 +128,7 @@ def configure_autologin(config):
     if not config["system"].get("autologin"):
         return
 
-    from core.gnome import _is_gnome
+    from core.desktop import _is_gnome
     user = config["system"]["username"]
 
     # Only implement for GNOME/GDM as requested
