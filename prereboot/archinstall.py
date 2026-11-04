@@ -6,6 +6,7 @@ from core.resolver import resolve_system
 from core.logger import logger
 import os
 import re
+import shlex
 
 # ------------------------
 # Pacstrap Core
@@ -31,12 +32,13 @@ def generate_fstab(config):
 def add_custom_fstab_entries(config):
     fstab_path = "/mnt/etc/fstab"
     disk_cfg = config.get("disk", {})
+    entries = []
     
     # Additional Disks
     mounts = config.get("additional_mounts", [])
     if mounts:
-        run(f"echo '' >> {fstab_path}")
-        run(f"echo '# Additional Disks' >> {fstab_path}")
+        entries.append("")
+        entries.append("# Additional Disks")
 
         type_map = {
             "ssd": "mount_ops_ssd",
@@ -65,20 +67,24 @@ def add_custom_fstab_entries(config):
             opts = ",".join(o for o in [type_opts, other_opts] if o) or "defaults"
 
             # Create mount point in /mnt
-            run(f"mkdir -p /mnt{mountpoint}")
-            run(f"echo '{dev_spec}  {mountpoint}  btrfs  {opts}  0 2' >> {fstab_path}")
+            os.makedirs(f"/mnt{mountpoint}", exist_ok=True)
+            entries.append(f"{dev_spec}  {mountpoint}  btrfs  {opts}  0 2")
 
     # Bind Mounts
     binds = config.get("bind_mounts", [])
     if binds:
-        run(f"echo '' >> {fstab_path}")
-        run(f"echo '# Bind Mounts' >> {fstab_path}")
+        entries.append("")
+        entries.append("# Bind Mounts")
         for b in binds:
             src = b["source"]
             tgt = b["target"]
-            # Create target mount point in /mnt
-            run(f"mkdir -p /mnt{tgt}")
-            run(f"echo '{src}  {tgt}  none  bind  0 0' >> {fstab_path}")
+            os.makedirs(f"/mnt{tgt}", exist_ok=True)
+            entries.append(f"{src}  {tgt}  none  bind  0 0")
+
+    if entries:
+        with open(fstab_path, "a", encoding="utf-8") as f:
+            for entry in entries:
+                f.write(f"{entry}\n")
 
 # ------------------------
 # Config System
@@ -88,7 +94,8 @@ def set_hostname(config):
     hostname = config["system"]["hostname"]
     if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$', hostname):
         raise ValueError(f"Invalid hostname: {hostname!r}")
-    chroot(f"echo {hostname} > /etc/hostname")
+    with open("/mnt/etc/hostname", "w", encoding="utf-8") as f:
+        f.write(f"{hostname}\n")
 
 def set_timezone(config):
     tz = config["system"]["timezone"]
@@ -101,28 +108,39 @@ def set_timezone(config):
 def configure_locales():
     chroot("sed -i 's/#\\(en_US.UTF-8\\)/\\1/' /etc/locale.gen")
     chroot("locale-gen")
-    chroot("echo LANG=en_US.UTF-8 > /etc/locale.conf")
-    chroot("echo KEYMAP=us > /etc/vconsole.conf")
+    with open("/mnt/etc/locale.conf", "w", encoding="utf-8") as f:
+        f.write("LANG=en_US.UTF-8\n")
+    with open("/mnt/etc/vconsole.conf", "w", encoding="utf-8") as f:
+        f.write("KEYMAP=us\n")
 
 def create_user(config):
     user = config["system"]["username"]
     fullname = config["system"].get("fullname", user)
-    chroot(f"id -u {user} >/dev/null 2>&1 || useradd -m -s /bin/zsh -c '{fullname}' {user}")
+    quoted_user = shlex.quote(user)
+    quoted_fullname = shlex.quote(fullname)
+    chroot(f"id -u {quoted_user} >/dev/null 2>&1 || useradd -m -s /bin/zsh -c {quoted_fullname} {quoted_user}")
     chroot("groupadd -rf adbusers")
-    chroot(f"usermod -aG wheel,uucp,adbusers {user}")
-    chroot("mkdir -p /etc/sudoers.d")
-    chroot("echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel")
-    chroot("chmod 440 /etc/sudoers.d/10-wheel")
+    chroot(f"usermod -aG wheel,uucp,adbusers {quoted_user}")
+    os.makedirs("/mnt/etc/sudoers.d", exist_ok=True)
+    with open("/mnt/etc/sudoers.d/10-wheel", "w", encoding="utf-8") as f:
+        f.write("%wheel ALL=(ALL:ALL) ALL\n")
+    run("chmod 440 /mnt/etc/sudoers.d/10-wheel")
 
 def set_passwords(config):
     root_pw = config["system"].get("root_password")
     user = config["system"]["username"]
     user_pw = config["system"].get("user_password")
 
+    payload = []
     if root_pw:
-        chroot(f"echo 'root:{root_pw}' | chpasswd")
+        payload.append(f"root:{root_pw}")
     if user_pw:
-        chroot(f"echo '{user}:{user_pw}' | chpasswd")
+        payload.append(f"{user}:{user_pw}")
+
+    if payload:
+        logger.info("Setting system passwords securely via stdin")
+        input_data = "\n".join(payload) + "\n"
+        run("arch-chroot /mnt chpasswd", check=True, log_cmd=False, input_data=input_data)
 
 def configure_autologin(config):
     if not config["system"].get("autologin"):

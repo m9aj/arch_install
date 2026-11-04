@@ -1,6 +1,6 @@
 # preinstall/system.py
 
-from core.shell import run, chroot
+from core.shell import chroot
 from core.resolver import resolve_system
 from core.logger import logger
 
@@ -23,7 +23,6 @@ def enable_services(config):
     if not services:
         return
 
-    logger.info("Enabling services")
-    for svc in services:
-        chroot(f"systemctl enable {svc}")
+    logger.info(f"Enabling services: {', '.join(services)}")
+    chroot(f"systemctl enable {' '.join(services)}")
 

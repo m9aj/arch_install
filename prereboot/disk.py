@@ -80,7 +80,7 @@ def handle_root_subvolumes(config):
                 logger.info(f"Disabling CoW for subvolume {name}")
                 run(f"chattr +C {path}")
     finally:
-        run("umount /mnt")
+        run("umount -R /mnt || true")
 
 # ------------------------
 # Mount root and subvolumes
@@ -91,11 +91,16 @@ def mount_subvolumes(config):
     mount_ops = config["disk"].get("mount_ops_ssd", "")
     root_part = get_root_partition(config)
 
-    for sv in subvols:
+    # Sort subvolumes by mount point path length (shortest first) so parent
+    # mounts (e.g. /) are mounted before nested child mounts (e.g. /home, /var, /var/log).
+    sorted_subvols = sorted(
+        [sv for sv in subvols if sv.get("mount")],
+        key=lambda s: len(s["mount"])
+    )
+
+    for sv in sorted_subvols:
         name = sv["name"]
-        mount_point = sv.get("mount")
-        if not mount_point:
-            continue  # override-only entry (machine profile reuse flag without mount path)
+        mount_point = sv["mount"]
 
         target = f"/mnt{mount_point}"
         os.makedirs(target, exist_ok=True)

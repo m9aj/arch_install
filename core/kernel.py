@@ -99,6 +99,12 @@ def apply_kernel_parameter(config, param, rebuild=True):
     return True
 
 
+def uki_filename(config):
+    """Return the filename of the Unified Kernel Image for the configured kernel."""
+    kernel = config.get("boot", {}).get("kernel", "linux")
+    return f"arch-{kernel}.efi"
+
+
 def rebuild_uki(config):
     """
     Regenerate Unified Kernel Image (UKI) using the configured init tool (mkinitcpio or dracut).
@@ -108,7 +114,7 @@ def rebuild_uki(config):
     init = boot.get("init", "mkinitcpio")
     kernel = boot.get("kernel", "linux")
     boot_mount = boot.get("boot_mount", "/efi")
-    efi_name = f"arch-{kernel}.efi"
+    efi_name = uki_filename(config)
 
     logger.info(f"[kernel] Regenerating UKI (init: {init}, kernel: {kernel})")
 

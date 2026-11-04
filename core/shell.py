@@ -43,7 +43,7 @@ def confirm(msg):
 # -----------------------------------------------------------------------------
 # Main Subprocess Runner
 # -----------------------------------------------------------------------------
-def run(cmd, check=True, env=None, cwd=None, timeout=None, log_cmd=True):
+def run(cmd, check=True, env=None, cwd=None, timeout=None, log_cmd=True, input_data=None):
     if log_cmd:
         logger.info(f"[CMD] {cmd}")
     else:
@@ -58,6 +58,7 @@ def run(cmd, check=True, env=None, cwd=None, timeout=None, log_cmd=True):
         cmd,
         shell=True,
         executable="/bin/bash",
+        stdin=subprocess.PIPE if input_data is not None else None,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -65,6 +66,13 @@ def run(cmd, check=True, env=None, cwd=None, timeout=None, log_cmd=True):
         env=actual_env,
         cwd=cwd,
     )
+
+    if input_data is not None:
+        try:
+            process.stdin.write(input_data)
+            process.stdin.close()
+        except BrokenPipeError:
+            pass
 
     full_stdout = []
     full_stderr = []
