@@ -13,9 +13,6 @@ root:
       reuse: yes
     - name: "@home"
       reuse: no
-    - name: "@local_aur_repo"
-      mount: /srv/local-aur-repo
-      reuse: yes
     - name: "@tailscale"
       mount: /var/lib/tailscale
       reuse: yes
@@ -70,10 +67,6 @@ machine_specific:
     - libation
 
 features:
-  local_aur_repo:
-    server:
-      enabled: true
-
   reflector:
     enabled: true
 

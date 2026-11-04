@@ -53,7 +53,6 @@ Standalone modules for post-installation system features. Each module defines it
 - `antigravity.py`: Installs Antigravity CLI and automatically deploys all skills and global rules from `assets/gemini/` into `~/.gemini/config/` and `~/.gemini/antigravity-cli/`.
 - `btrfs_maintenance.py`: Automated Btrfs scrub, balance, trim, and defrag scheduling.
 - `firewall.py`: Firewalld setup.
-- `local_aur_repo.py`: Pacman local repository for building and hosting custom AUR packages.
 - `pia.py`: Private Internet Access VPN setup.
 - `plymouth.py`: Boot splash screen configuration.
 - `reflector.py`: Pacman mirrorlist optimisation.

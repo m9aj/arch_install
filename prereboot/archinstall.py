@@ -257,6 +257,24 @@ elif grep -q "^MAKEFLAGS=" /etc/makepkg.conf; then
 else
   echo "MAKEFLAGS=\"-j\$(nproc)\"" >> /etc/makepkg.conf
 fi
+
+# makepkg (persistent AUR package cache destination in @pkg /var/cache/pacman/pkg)
+if grep -q "^#PKGDEST=" /etc/makepkg.conf; then
+  sed -i 's|^#PKGDEST=.*|PKGDEST="/var/cache/pacman/pkg"|' /etc/makepkg.conf
+elif grep -q "^PKGDEST=" /etc/makepkg.conf; then
+  sed -i 's|^PKGDEST=.*|PKGDEST="/var/cache/pacman/pkg"|' /etc/makepkg.conf
+else
+  echo 'PKGDEST="/var/cache/pacman/pkg"' >> /etc/makepkg.conf
+fi
+
+# Ensure wheel group has write access to package cache for user AUR builds
+mkdir -p /var/cache/pacman/pkg
+chown root:wheel /var/cache/pacman/pkg
+chmod 775 /var/cache/pacman/pkg
+chmod g+s /var/cache/pacman/pkg
+if command -v setfacl >/dev/null 2>&1; then
+  setfacl -d -m g:wheel:rwX /var/cache/pacman/pkg 2>/dev/null || true
+fi
 """
 
 

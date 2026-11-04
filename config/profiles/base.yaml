@@ -130,21 +130,6 @@ machine_specific:
 # ==========================================
 
 features:
-  local_aur_repo:
-    server:
-      enabled: false
-      config:
-        name: local-aur-repo              # Repo name used in pacman.conf
-        path: /srv/local-aur-repo         # Directory served by nginx
-        port: 8080
-        extra_packages: []                # AUR packages to build beyond machine profiles
-    client:
-      enabled: false
-      config:
-        url: http://aur.local:8080/local-aur-repo
-        tailscale_ip: 100.100.1.1          # Pinned in /etc/hosts as aur.local when tailscale is enabled
-        lan_ip: 192.168.40.100             # Pinned in /etc/hosts as aur.local when tailscale is disabled
-
   reflector:
     enabled: true
     config:

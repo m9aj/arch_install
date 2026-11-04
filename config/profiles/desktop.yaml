@@ -47,10 +47,6 @@ machine_specific:
     - icaclient
 
 features:
-  local_aur_repo:
-    client:
-      enabled: true
-
   reflector:
     enabled: true
 

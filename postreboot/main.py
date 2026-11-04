@@ -18,7 +18,6 @@ from postreboot import (
     aur, user_dirs, features, dotfiles,
     system_config, gnome, hyprland, themes
 )
-from features import local_aur_repo
 
 STEPS = [
     ("user_dirs",             user_dirs.setup_user_dirs),
@@ -26,7 +25,6 @@ STEPS = [
     ("bluetooth",             dotfiles.setup_bluetooth),
     ("network_hosts",         system_config.apply_static_hosts),
     ("features",              features.run_enabled_features),
-    ("local_aur_repo_client", local_aur_repo.configure_client),
     ("aur_helper",            aur.install_aur_helper),
     ("aur_packages",          aur.install_aur_packages),
     ("themes",                themes.install_themes),
