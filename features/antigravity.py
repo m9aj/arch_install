@@ -72,9 +72,10 @@ def deploy_skills(config):
     rule_src = os.path.join(PROJECT_ROOT, "assets", "gemini", "GEMINI.md")
     if os.path.exists(rule_src):
         rule_dst = os.path.join(home, ".gemini", "config", "GEMINI.md")
+        os.makedirs(os.path.dirname(rule_dst), exist_ok=True)
         if os.path.islink(rule_dst) or os.path.exists(rule_dst):
             os.unlink(rule_dst)
         os.symlink(rule_src, rule_dst)
         logger.info(f"[antigravity] Linked rule -> {rule_dst}")
 
-    run(f"chown -R {user}:{user} '{home}/.gemini'")
+    run(f"sudo chown -R {user}:{user} '{home}/.gemini'", check=False)

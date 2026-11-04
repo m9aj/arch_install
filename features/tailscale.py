@@ -4,6 +4,7 @@
 
 import sys
 import os
+import shlex
 import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -19,12 +20,13 @@ def configure(config, feature):
 
     if SERVICES:
         logger.info(f"[tailscale] Enabling services: {', '.join(SERVICES)}")
-        for svc in SERVICES:
-            run(f"sudo systemctl enable --now {svc}")
+        run(f"sudo systemctl enable --now {' '.join(SERVICES)}")
 
     if cfg.get("auto_up"):
         # Give tailscaled a moment to finish its initial control-plane handshake
         # and load any existing state from /var/lib/tailscale before calling 'tailscale up'.
         time.sleep(3)
+        user = config.get("system", {}).get("username")
+        up_cmd = f"sudo tailscale up --operator={shlex.quote(user)} 2>&1" if user else "sudo tailscale up 2>&1"
         logger.info("[tailscale] Bringing up Tailscale (authenticate via URL if prompted)...")
-        run("sudo tailscale up 2>&1", check=False)
+        run(up_cmd, check=False)

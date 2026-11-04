@@ -17,5 +17,4 @@ SERVICES = ["ananicy-cpp"]
 def configure(config, feature):
     if SERVICES:
         logger.info(f"[ananicy] Enabling services: {', '.join(SERVICES)}")
-        for svc in SERVICES:
-            run(f"sudo systemctl enable --now {svc}")
+        run(f"sudo systemctl enable --now {' '.join(SERVICES)}")

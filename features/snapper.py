@@ -18,6 +18,10 @@ def configure(config, feature):
     target = cfg.get("target", "/mnt/Personal")
     name = cfg.get("name", "Personal")
 
+    if not os.path.exists(target):
+        logger.warning(f"[snapper] Target directory/mount '{target}' does not exist, skipping snapper setup")
+        return
+
     if os.path.exists(f"/etc/snapper/configs/{name}"):
         logger.info(f"[snapper] Config '{name}' already exists, skipping create")
     else:
@@ -42,5 +46,4 @@ def configure(config, feature):
 
     if SERVICES:
         logger.info(f"[snapper] Enabling services: {', '.join(SERVICES)}")
-        for svc in SERVICES:
-            run(f"sudo systemctl enable --now {svc}")
+        run(f"sudo systemctl enable --now {' '.join(SERVICES)}")

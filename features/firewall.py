@@ -1,7 +1,6 @@
 # features/firewall.py
 # Installs and enables firewalld.
-# No extra config — packages and service are handled by resolve_system.
-# Phase: preboot (live ISO).
+# Phase: postboot (after first reboot).
 
 import sys
 import os
@@ -17,5 +16,4 @@ SERVICES = ["firewalld"]
 def configure(config, feature):
     if SERVICES:
         logger.info(f"[firewall] Enabling services: {', '.join(SERVICES)}")
-        for svc in SERVICES:
-            run(f"sudo systemctl enable --now {svc}")
+        run(f"sudo systemctl enable --now {' '.join(SERVICES)}")

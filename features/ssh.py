@@ -6,9 +6,9 @@
 # Client role: enabled on laptop/desktop — deploys keypair so they can SSH out.
 # Keys are stored in secrets.yaml (git-ignored, age-encryptable).
 
-import subprocess
 import sys
 import os
+import shlex
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.shell import run
@@ -88,12 +88,7 @@ def _configure_client(cfg, username):
 
 
 def _write_root_file(path, content):
-    # Use tee so content is passed via stdin — keeps key material out of the command string.
-    proc = subprocess.run(
-        ["sudo", "tee", path],
-        input=content,
-        text=True,
-        capture_output=True,
-    )
-    if proc.returncode != 0:
-        raise Exception(f"Failed to write {path}: {proc.stderr.strip()}")
+    # Pass content via stdin — keeps sensitive key material out of the command string and logs.
+    res = run(f"sudo tee {shlex.quote(path)} > /dev/null", input_data=content, log_cmd=False)
+    if res.returncode != 0:
+        raise RuntimeError(f"Failed to write {path}")

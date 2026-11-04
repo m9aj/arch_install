@@ -173,7 +173,7 @@ def configure(config, feature):
             safe_name = host_name.replace(' ', '_')
             
             logger.info(f"[pia] Staging profile for '{host_name}'...")
-            nm_conf_file = os.path.join(stage_nm_dir, safe_name)
+            nm_conf_file = os.path.join(stage_nm_dir, f"{safe_name}.nmconnection")
             
             # Format connection template
             content = NM_TEMPLATE.replace('##id##', host_name)
@@ -193,24 +193,25 @@ def configure(config, feature):
         run("sudo mkdir -p /etc/openvpn/client", check=False)
         
         client_files = os.listdir(stage_client_dir)
-        if client_files:
-            run(f"sudo cp -f {shlex.quote(stage_client_dir)}/* /etc/openvpn/client/", check=False)
-            for f in client_files:
-                target_path = os.path.join("/etc/openvpn/client", f)
-                run(f"sudo chmod 600 {shlex.quote(target_path)}", check=False)
-                run(f"sudo chown root:root {shlex.quote(target_path)}", check=False)
+        for f in client_files:
+            src_path = os.path.join(stage_client_dir, f)
+            dst_path = os.path.join("/etc/openvpn/client", f)
+            run(f"sudo cp -f {shlex.quote(src_path)} {shlex.quote(dst_path)}", check=False)
+            run(f"sudo chmod 600 {shlex.quote(dst_path)}", check=False)
+            run(f"sudo chown root:root {shlex.quote(dst_path)}", check=False)
 
         logger.info("[pia] Installing NetworkManager connections via sudo...")
         run("sudo mkdir -p /etc/NetworkManager/system-connections", check=False)
         
         nm_files = os.listdir(stage_nm_dir)
-        if nm_files:
-            run(f"sudo cp -f {shlex.quote(stage_nm_dir)}/* /etc/NetworkManager/system-connections/", check=False)
-            for f in nm_files:
-                target_path = os.path.join("/etc/NetworkManager/system-connections", f)
-                run(f"sudo chmod 600 {shlex.quote(target_path)}", check=False)
-                run(f"sudo chown root:root {shlex.quote(target_path)}", check=False)
+        for f in nm_files:
+            src_path = os.path.join(stage_nm_dir, f)
+            dst_path = os.path.join("/etc/NetworkManager/system-connections", f)
+            run(f"sudo cp -f {shlex.quote(src_path)} {shlex.quote(dst_path)}", check=False)
+            run(f"sudo chmod 600 {shlex.quote(dst_path)}", check=False)
+            run(f"sudo chown root:root {shlex.quote(dst_path)}", check=False)
 
+        if nm_files:
             logger.info("[pia] Reloading NetworkManager connections...")
             run("sudo nmcli connection reload", check=False)
 

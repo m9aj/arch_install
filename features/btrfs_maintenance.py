@@ -43,9 +43,12 @@ def configure(config, feature):
     import re
     def set_var(name, val):
         nonlocal content
-        pattern = rf'^({name}=)(.*)$'
-        replacement = f'\\1"{val}"'
-        content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
+        pattern = rf'^#?\s*({name}=).*$'
+        replacement = f'{name}="{val}"'
+        if re.search(pattern, content, flags=re.MULTILINE):
+            content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
+        else:
+            content += f'\n{name}="{val}"\n'
 
     # Configure periods
     set_var("BTRFS_SCRUB_PERIOD", scrub_period)
@@ -60,13 +63,12 @@ def configure(config, feature):
     set_var("BTRFS_TRIM_MOUNTPOINTS", trim_mounts)
 
     # Write changes
-    run(f"echo {shlex.quote(content)} | sudo tee {config_path} > /dev/null")
+    run(f"sudo tee {shlex.quote(config_path)} > /dev/null", input_data=content, log_cmd=False)
 
     # Start and enable path watcher service
     if SERVICES:
         logger.info(f"[btrfs_maintenance] Enabling services: {', '.join(SERVICES)}")
-        for svc in SERVICES:
-            run(f"sudo systemctl enable --now {svc}")
+        run(f"sudo systemctl enable --now {' '.join(SERVICES)}")
 
     # Restart refresh service once to generate the timers immediately
     logger.info("[btrfs_maintenance] Triggering systemd timer refresh...")

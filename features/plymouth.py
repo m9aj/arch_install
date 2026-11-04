@@ -3,12 +3,13 @@
 
 import sys
 import os
+import re
+import shlex
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.shell import run
 from core.kernel import apply_kernel_parameter, rebuild_uki
 from core.logger import logger
-import shlex
 
 PACMAN_PACKAGES = ["plymouth"]
 SERVICES = []
@@ -26,22 +27,7 @@ def configure(config, feature):
 
     # 2. Configure initramfs generator (mkinitcpio or dracut)
     if init == "mkinitcpio":
-        mk_conf = "/etc/mkinitcpio.conf"
-
-        # Migrate obsolete sd-plymouth hook if present
-        if run(f"sudo grep -q 'sd-plymouth' {mk_conf}", check=False).returncode == 0:
-            logger.info("[plymouth] Replacing obsolete sd-plymouth with plymouth in /etc/mkinitcpio.conf")
-            run(f"sudo sed -i 's/sd-plymouth/plymouth/g' {mk_conf}")
-
-        has_plymouth = run(f"sudo grep -qE '(\\s|^)plymouth(\\s|$)' {mk_conf}", check=False).returncode == 0
-
-        if not has_plymouth:
-            if run(f"sudo grep -q ' systemd ' {mk_conf}", check=False).returncode == 0:
-                logger.info("[plymouth] Injecting plymouth hook after systemd in /etc/mkinitcpio.conf")
-                run(f"sudo sed -i 's/ systemd / systemd plymouth /' {mk_conf}")
-            elif run(f"sudo grep -q ' udev ' {mk_conf}", check=False).returncode == 0:
-                logger.info("[plymouth] Injecting plymouth hook after udev in /etc/mkinitcpio.conf")
-                run(f"sudo sed -i 's/ udev / udev plymouth /' {mk_conf}")
+        _configure_plymouth_mkinitcpio()
     elif init == "dracut":
         logger.info("[plymouth] Configuring dracut plymouth module in /etc/dracut.conf.d/plymouth.conf")
         run("sudo mkdir -p /etc/dracut.conf.d")
@@ -56,6 +42,37 @@ def configure(config, feature):
 
     if SERVICES:
         logger.info(f"[plymouth] Enabling services: {', '.join(SERVICES)}")
-        for svc in SERVICES:
-            run(f"sudo systemctl enable --now {svc}")
+        run(f"sudo systemctl enable --now {' '.join(SERVICES)}")
+
+
+def _configure_plymouth_mkinitcpio():
+    mk_conf = "/etc/mkinitcpio.conf"
+    res = run(f"sudo cat {mk_conf}", check=False)
+    if res.returncode != 0:
+        return
+    content = res.stdout
+
+    # Migrate obsolete sd-plymouth hook if present
+    content = re.sub(r'\bsd-plymouth\b', 'plymouth', content)
+
+    match = re.search(r'^HOOKS=\((.*?)\)', content, re.MULTILINE | re.DOTALL)
+    if match:
+        hooks = match.group(1).split()
+        if "plymouth" not in hooks:
+            logger.info("[plymouth] Injecting plymouth hook into /etc/mkinitcpio.conf HOOKS")
+            if "systemd" in hooks:
+                idx = hooks.index("systemd") + 1
+                hooks.insert(idx, "plymouth")
+            elif "udev" in hooks:
+                idx = hooks.index("udev") + 1
+                hooks.insert(idx, "plymouth")
+            else:
+                hooks.append("plymouth")
+
+            new_hooks = " ".join(hooks)
+            span = match.span(1)
+            content = content[:span[0]] + new_hooks + content[span[1]:]
+            run(f"sudo tee {mk_conf} > /dev/null", input_data=content, log_cmd=False)
+    else:
+        logger.warning(f"Could not parse HOOKS in {mk_conf}")
 

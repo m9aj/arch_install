@@ -1,6 +1,6 @@
 # features/reflector.py
 # Writes reflector.conf and runs an initial mirror sync.
-# Phase: preboot (live ISO).
+# Phase: postboot (after first reboot).
 
 import sys
 import os
@@ -23,7 +23,7 @@ def configure(config, feature):
     if cfg.get("protocol"):
         lines.append(f"--protocol {cfg['protocol']}")
     if cfg.get("country"):
-        lines.append(f"--country '{cfg['country']}'")
+        lines.append(f"--country {shlex.quote(str(cfg['country']))}")
     if cfg.get("latest"):
         lines.append(f"--latest {cfg['latest']}")
     if cfg.get("sort"):
@@ -31,12 +31,11 @@ def configure(config, feature):
     if cfg.get("age"):
         lines.append(f"--age {cfg['age']}")
 
-    content = "\n".join(lines)
+    content = "\n".join(lines) + "\n"
     run("sudo mkdir -p /etc/xdg/reflector")
-    run(f"echo {shlex.quote(content)} | sudo tee /etc/xdg/reflector/reflector.conf")
+    run("sudo tee /etc/xdg/reflector/reflector.conf > /dev/null", input_data=content, log_cmd=False)
     run("sudo reflector @/etc/xdg/reflector/reflector.conf")
 
     if SERVICES:
         logger.info(f"[reflector] Enabling services: {', '.join(SERVICES)}")
-        for svc in SERVICES:
-            run(f"sudo systemctl enable --now {svc}")
+        run(f"sudo systemctl enable --now {' '.join(SERVICES)}")

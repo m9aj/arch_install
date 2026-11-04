@@ -4,12 +4,13 @@
 
 import sys
 import os
+import re
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.shell import run
 from core.logger import logger
 
-PACMAN_PACKAGES = ["firefoxpwa", "jq"]
+PACMAN_PACKAGES = ["firefoxpwa"]
 
 
 def configure(config, feature):
@@ -20,7 +21,6 @@ def configure(config, feature):
         logger.info("[webapps] firefoxpwa is not available. Skipping registration.")
         return
 
-    import re
     app_ids = re.findall(r'\(([0-9A-Z]{26})\)', res.stdout)
     for app_id in app_ids:
         logger.info(f"[webapps] Re-registering PWA app: {app_id}")
