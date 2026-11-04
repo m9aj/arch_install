@@ -105,10 +105,11 @@ def install_aur_helper(config):
 
     build_dir = tempfile.mkdtemp(prefix=f"aur_{helper}_")
 
-    # 1. Install dependencies as root via sudo
-    # 2. Build the package as user (makepkg places .pkg.tar.* in PKGDEST=/var/cache/pacman/pkg or current dir)
-    # 3. Install resulting package via sudo pacman -U
-    cmd = f"""
+    try:
+        # 1. Install dependencies as root via sudo
+        # 2. Build the package as user (makepkg places .pkg.tar.* in PKGDEST=/var/cache/pacman/pkg or current dir)
+        # 3. Ensure built package is in persistent package cache and install via sudo pacman -U
+        cmd = f"""
 set -e
 sudo pacman -S --needed --noconfirm git base-devel
 git clone https://aur.archlinux.org/{helper}.git '{build_dir}/{helper}'
@@ -117,13 +118,17 @@ makepkg -sc --noconfirm
 PKG_FILE=$(ls -t {PKG_CACHE_DIR}/{helper}-[0-9]*.pkg.tar.* 2>/dev/null | head -n1 || true)
 if [ -z "$PKG_FILE" ]; then
     PKG_FILE=$(ls -t *.pkg.tar.* 2>/dev/null | head -n1 || true)
+    if [ -n "$PKG_FILE" ]; then
+        cp -n "$PKG_FILE" {PKG_CACHE_DIR}/ 2>/dev/null || true
+    fi
 fi
 if [ -n "$PKG_FILE" ]; then
     sudo pacman -U --noconfirm "$PKG_FILE"
 fi
-sudo rm -rf '{build_dir}'
 """
-    run(cmd)
+        run(cmd)
+    finally:
+        shutil.rmtree(build_dir, ignore_errors=True)
 
 
 def import_gpg_keys(config):

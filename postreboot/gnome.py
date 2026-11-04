@@ -4,10 +4,11 @@
 
 import json
 import os
+import re
 import shlex
 import tempfile
 import urllib.request
-from core.config import load_yaml, detect_profile, load_dconf, get_dconf_path
+from core.config import load_dconf, get_dconf_path
 from core.shell import run
 from core.desktop import _is_gnome, normalize_desktop_name
 from core.logger import logger
@@ -47,13 +48,11 @@ def apply_gsettings(config):
             if isinstance(value, list):
                 val_str = "[" + ", ".join(f"'{v}'" for v in value) + "]"
             elif isinstance(value, str) and not (value.startswith("'") or value.startswith('"') or value in ["true", "false"]):
-                # Escape chars that would break outer double-quote shell context
-                escaped = value.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
-                val_str = f"'{escaped}'"
+                val_str = f"'{value}'"
             else:
                 val_str = str(value)
 
-            run(f"gsettings set {schema} {key} \"{val_str}\"", check=False)
+            run(f"gsettings set {schema} {key} {shlex.quote(val_str)}", check=False)
 
 
 # ------------------------
@@ -152,8 +151,8 @@ def apply_custom_keybindings(config):
     for i, kb in enumerate(bindings):
         path = paths[i]
         for field in ("name", "command", "binding"):
-            escaped = kb[field].replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
-            run(f"gsettings set {schema}:{path} {field} \"'{escaped}'\"", log_cmd=(field != "command"))
+            val_str = f"'{kb[field]}'"
+            run(f"gsettings set {schema}:{path} {field} {shlex.quote(val_str)}", log_cmd=(field != "command"))
 
 
 # ------------------------
@@ -176,7 +175,7 @@ def hide_apps(config):
     user_dir = f"/home/{user}/.local/share/applications"
 
     logger.info("Hiding GNOME apps")
-    run(f"mkdir -p {shlex.quote(user_dir)}")
+    os.makedirs(user_dir, exist_ok=True)
 
     for name in apps:
         app = normalize_desktop_name(name)
@@ -196,8 +195,19 @@ def hide_apps(config):
                 logger.warning(f"App not found: {app}")
                 continue
 
-        run(f"cp {shlex.quote(src)} {shlex.quote(dst)}")
-        run(f"grep -q '^NoDisplay=' {shlex.quote(dst)} && sed -i 's/^NoDisplay=.*/NoDisplay=true/' {shlex.quote(dst)} || sed -i '/^\\[Desktop Entry\\]/a NoDisplay=true' {shlex.quote(dst)}")
+        try:
+            with open(src, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            if re.search(r"^NoDisplay=", content, re.MULTILINE):
+                content = re.sub(r"^NoDisplay=.*", "NoDisplay=true", content, flags=re.MULTILINE)
+            else:
+                content = re.sub(r"^(\[Desktop Entry\].*)", r"\1\nNoDisplay=true", content, flags=re.MULTILINE)
+
+            with open(dst, "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError as e:
+            logger.warning(f"Failed to hide app {app}: {e}")
 
     run(f"update-desktop-database {shlex.quote(user_dir)}", check=False)
 

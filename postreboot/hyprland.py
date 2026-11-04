@@ -28,11 +28,15 @@ def setup_hyprland(config):
     if os.path.exists(build_dir):
         shutil.rmtree(build_dir)
     os.makedirs(build_dir, exist_ok=True)
-    run(f"sudo chown -R {user}:{user} '{build_dir}'")
+    import getpass
+    curr_user = getpass.getuser()
+    if curr_user != user:
+        run(f"sudo chown -R {user}:{user} '{build_dir}'")
 
+    prefix = "" if curr_user == user else f"sudo -H -u {user} "
     try:
         cmd = (
-            f"sudo -H -u {user} python3 '{patcher}' "
+            f"{prefix}python3 '{patcher}' "
             f"--repo '{build_dir}' "
             f"--unattended"
         )

@@ -30,11 +30,15 @@ def setup_dotfiles(config):
         run(f"cp '{key_backup}' '{target_key}'")
         run(f"chmod 600 '{target_key}'")
 
-    run(f"chown -R {user}:{user} {chezmoi_cfg_dir}")
+    import getpass
+    curr_user = getpass.getuser()
+    if curr_user != user:
+        run(f"sudo chown -R {user}:{user} '{chezmoi_cfg_dir}'")
 
+    prefix = "" if curr_user == user else f"sudo -H -u {user} "
     logger.info(f"Initializing and applying dotfiles with chezmoi from {source_dir}")
-    run(f"sudo -H -u {user} chezmoi init --source {source_dir}")
-    run(f"sudo -H -u {user} chezmoi apply --source {source_dir} --force")
+    run(f"{prefix}chezmoi init --source '{source_dir}'")
+    run(f"{prefix}chezmoi apply --source '{source_dir}' --force")
 
 
 

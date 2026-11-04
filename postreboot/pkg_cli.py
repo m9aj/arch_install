@@ -15,20 +15,6 @@ from core.installer import install_packages
 from core.shell import run
 
 
-def _list_groups(post_profiles, core_profiles):
-    print("Available package groups (from config/package_profiles.yaml):\n")
-    print("  Post-install groups:")
-    for name, info in post_profiles.items():
-        pkgs = info.get("packages", []) if isinstance(info, dict) else (info or [])
-        svcs = info.get("services", []) if isinstance(info, dict) else []
-        svc_suffix = f"  [services: {', '.join(svcs)}]" if svcs else ""
-        print(f"    {name:18s} -> {', '.join(pkgs)}{svc_suffix}")
-    print("\n  Core groups:")
-    for name, pkgs in core_profiles.items():
-        print(f"    {name:18s} -> {', '.join(pkgs or [])}")
-    print("\nUsage: arch-install pkg <group> [group2 ...]")
-
-
 def main():
     if os.getuid() == 0:
         print("[ERROR] 'arch-install pkg' must NOT be run as root. Run as your regular user.")
@@ -72,9 +58,9 @@ def main():
         if pacman_pkgs or aur_pkgs:
             install_packages(config, pacman_pkgs=pacman_pkgs, aur_pkgs=aur_pkgs)
 
-        for svc in services:
-            logger.info(f"[pkg:{group}] Enabling service: {svc}")
-            run(f"sudo systemctl enable --now {svc}")
+        if services:
+            logger.info(f"[pkg:{group}] Enabling services: {', '.join(services)}")
+            run(f"sudo systemctl enable --now {' '.join(services)}")
 
         logger.info(f"[pkg:{group}] Done.")
 

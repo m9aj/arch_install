@@ -2,8 +2,8 @@
 
 import os
 import pwd
+import re
 import shutil
-import subprocess
 from core.logger import logger
 from core.shell import run
 
@@ -68,7 +68,7 @@ def setup_user_dirs(config):
 
             req_mount = "/" + "/".join(parent.strip("/").split("/")[:2])
             entry = f"{source}  {target}  none  bind,nofail,x-gvfs-hide,x-systemd.requires={req_mount}  0 0"
-            if f" {target} " not in fstab_content:
+            if not re.search(rf'\s+{re.escape(target)}\s+', fstab_content):
                 new_fstab_lines.append(entry)
 
     if method == "bind":
@@ -78,14 +78,9 @@ def setup_user_dirs(config):
                 block += "\n# User Directory Bind Mounts\n"
             block += "\n".join(new_fstab_lines) + "\n"
 
-            proc = subprocess.run(
-                ["sudo", "tee", "-a", fstab_path],
-                input=block,
-                text=True,
-                capture_output=True,
-            )
-            if proc.returncode != 0:
-                raise RuntimeError(f"Failed to append to {fstab_path}: {proc.stderr.strip()}")
+            res = run(f"sudo tee -a {fstab_path} > /dev/null", input_data=block, log_cmd=False)
+            if res.returncode != 0:
+                raise RuntimeError(f"Failed to append to {fstab_path}")
 
             run("sudo systemctl daemon-reload")
         run("sudo mount -a")

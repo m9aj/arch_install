@@ -20,9 +20,18 @@ def run_enabled_features(config):
     any_enabled = False
     for name, feature in features.items():
         state_key = f"feature.{name}"
-        # Features with server/client roles use server.enabled; others use top-level enabled.
-        server_block = feature.get("server")
-        enabled = server_block.get("enabled", False) if server_block is not None else feature.get("enabled", False)
+        # Support both dictionary config and shorthand boolean features
+        if isinstance(feature, bool):
+            enabled = feature
+            feature_cfg = {"enabled": feature}
+        elif isinstance(feature, dict):
+            server_block = feature.get("server")
+            enabled = server_block.get("enabled", False) if isinstance(server_block, dict) else feature.get("enabled", False)
+            feature_cfg = feature
+        else:
+            enabled = False
+            feature_cfg = {}
+
         if not enabled:
             if not is_done(state_key):
                 logger.info(f"[SKIP] Feature {name} is disabled in config")
@@ -61,7 +70,7 @@ def run_enabled_features(config):
         try:
             if hasattr(module, "configure"):
                 logger.info(f"[{name}] Running custom configuration handler")
-                module.configure(config, feature)
+                module.configure(config, feature_cfg)
             else:
                 logger.info(f"[{name}] No configure() function found")
         except Exception as e:

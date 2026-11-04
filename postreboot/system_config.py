@@ -2,7 +2,8 @@
 # Post-reboot config steps that don't belong to a feature.
 
 import os
-import pwd
+import re
+import shutil
 from core.shell import run
 from core.logger import logger
 
@@ -19,21 +20,32 @@ def configure_citrix(config):
     
     # Ensure .ICAClient exists
     ica_dir = f"{home}/.ICAClient"
-    run(f"mkdir -p {ica_dir}/cache")
+    os.makedirs(f"{ica_dir}/cache", exist_ok=True)
     
-    # Copy files
-    run(f"cp {src}/{{All_Regions,Trusted_Region,Unknown_Region,canonicalization,regions}}.ini {ica_dir}/")
+    # Copy configuration files safely
+    ini_files = ["All_Regions.ini", "Trusted_Region.ini", "Unknown_Region.ini", "canonicalization.ini", "regions.ini"]
+    for fname in ini_files:
+        src_path = os.path.join(src, fname)
+        if os.path.exists(src_path):
+            shutil.copy(src_path, os.path.join(ica_dir, fname))
 
 
 def apply_static_hosts(config):
     hosts = config.get("network", {}).get("hosts", {})
     if not hosts:
         return False
+
+    res = run("cat /etc/hosts", check=False)
+    content = res.stdout if res.returncode == 0 else ""
+
     for hostname, ip in hosts.items():
-        check = run(f"grep -q '[[:space:]]{hostname}' /etc/hosts", check=False)
-        if check.returncode == 0:
-            run(f"sudo sed -i '/[[:space:]]{hostname}$/s/^.*/{ip}  {hostname}/' /etc/hosts")
+        pattern = rf'^[ \t]*[0-9a-fA-F:.]+[ \t]+{re.escape(hostname)}(?=[ \t]|$)'
+        replacement = f"{ip}  {hostname}"
+        if re.search(pattern, content, flags=re.MULTILINE):
+            content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
         else:
-            run(f"echo '{ip}  {hostname}' | sudo tee -a /etc/hosts > /dev/null")
+            content = content.rstrip("\n") + f"\n{replacement}\n"
         logger.info(f"[network] /etc/hosts: {ip}  {hostname}")
+
+    run("sudo tee /etc/hosts > /dev/null", input_data=content, log_cmd=False)
     return True
