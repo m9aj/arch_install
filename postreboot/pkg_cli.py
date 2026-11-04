@@ -40,13 +40,15 @@ def main():
 
     args = sys.argv[1:]
     if not args or args[0] in ("list", "-l", "--list", "help", "-h", "--help"):
-        _list_groups(post_profiles, core_profiles)
+        from postreboot.list_cli import list_packages
+        list_packages()
         sys.exit(0)
 
     unknown = [g for g in args if g not in post_profiles and g not in core_profiles]
     if unknown:
         print(f"[ERROR] Unknown package group(s): {', '.join(unknown)}\n")
-        _list_groups(post_profiles, core_profiles)
+        from postreboot.list_cli import list_packages
+        list_packages()
         sys.exit(1)
 
     setup_logger(os.path.join(LOGS_DIR, "features.log"))

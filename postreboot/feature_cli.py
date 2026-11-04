@@ -19,10 +19,11 @@ def main():
         print("[ERROR] feature-install must NOT be run as root. Run as your regular user.")
         sys.exit(1)
 
-    # First positional arg is the feature name; remaining args passed to get_config_path via sys.argv
-    if len(sys.argv) < 2:
-        print("Usage: arch-install feature <feature-name> [profile]")
-        sys.exit(1)
+    # If no args or asking for list, display available features
+    if len(sys.argv) < 2 or sys.argv[1] in ("list", "-l", "--list", "help", "-h", "--help"):
+        from postreboot.list_cli import list_features
+        list_features()
+        sys.exit(0)
 
     feature_name = sys.argv[1]
     # Shift so get_config_path sees only the profile arg (if any)

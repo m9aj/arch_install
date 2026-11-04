@@ -91,10 +91,16 @@ Executed after rebooting into the new system.
 - `user_dirs.py`: Sets up standard XDG user directories and symlinks.
 - `features.py`: Dynamic runner that iterates over and runs all enabled features.
 - `feature_cli.py`: Standalone CLI runner to install and configure a single named feature (`./arch-install feature <name>`).
+- `list_cli.py`: Listing utility to inspect all available features, packages, and group configurations (`./arch-install list`).
 
 ## Key Commands
 
 ```bash
+# List all features and package groups
+./arch-install list
+./arch-install list features
+./arch-install list packages
+
 # Phase 1 — from live ISO as root
 ./arch-install laptop
 
