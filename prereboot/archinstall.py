@@ -185,7 +185,11 @@ ExecStart=-/sbin/agetty -o '-p -f -- \\\\u' --noclear --autologin {user} %I $TER
         with open(autostart_path, "w", encoding="utf-8") as f:
             f.write(f"""# Automatically launch Hyprland on TTY1 login for standalone Hyprland
 if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ] && [ "$(id -un)" = "{user}" ]; then
-    exec Hyprland
+    if command -v start-hyprland >/dev/null 2>&1; then
+        exec start-hyprland
+    else
+        exec Hyprland
+    fi
 fi
 """)
         run(f"chmod 755 {autostart_path}", check=False)

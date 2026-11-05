@@ -30,7 +30,11 @@ ExecStart=-/sbin/agetty -o '-p -f -- \\\\u' --noclear --autologin {user} %I $TER
 
         autostart_content = f"""# Automatically launch Hyprland on TTY1 login for standalone Hyprland
 if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ] && [ "$(id -un)" = "{user}" ]; then
-    exec Hyprland
+    if command -v start-hyprland >/dev/null 2>&1; then
+        exec start-hyprland
+    else
+        exec Hyprland
+    fi
 fi
 """
         run("sudo tee /etc/profile.d/hyprland-autostart.sh > /dev/null", input_data=autostart_content, log_cmd=False)
