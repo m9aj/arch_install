@@ -72,7 +72,7 @@ def install_gnome_extensions(config):
         return False
 
     result = run("gnome-shell --version", check=False)
-    if result.returncode != 0:
+    if result.returncode != 0 or not result.stdout.strip():
         logger.warning("Could not determine GNOME Shell version — skipping extensions")
         return False
     shell_version = result.stdout.strip().split()[-1]

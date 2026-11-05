@@ -29,7 +29,20 @@ class Result:
 # -----------------------------------------------------------------------------
 # User Interaction Helpers
 # -----------------------------------------------------------------------------
+_DRY_RUN = False
+_MOCK_RUN_HANDLER = None
+
+
+def set_mock_runner(handler):
+    """Enable or disable dry-run execution with an optional mock handler."""
+    global _DRY_RUN, _MOCK_RUN_HANDLER
+    _DRY_RUN = handler is not None
+    _MOCK_RUN_HANDLER = handler
+
+
 def confirm(msg):
+    if _DRY_RUN:
+        return
     print(f"[WARNING] {msg}")
     try:
         ans = input("Type 'YES' to proceed: ").strip()
@@ -48,6 +61,11 @@ def run(cmd, check=True, env=None, cwd=None, timeout=None, log_cmd=True, input_d
         logger.info(f"[CMD] {cmd}")
     else:
         logger.info("[CMD] <sensitive command redacted>")
+
+    if _DRY_RUN:
+        if _MOCK_RUN_HANDLER:
+            return _MOCK_RUN_HANDLER(cmd, check=check, env=env, cwd=cwd, timeout=timeout, log_cmd=log_cmd, input_data=input_data)
+        return Result("", "", 0)
 
     actual_env = None
     if env:
@@ -138,7 +156,7 @@ def run(cmd, check=True, env=None, cwd=None, timeout=None, log_cmd=True, input_d
 # -----------------------------------------------------------------------------
 
 def chroot(cmd):
-    if not os.path.ismount("/mnt"):
+    if not _DRY_RUN and not os.path.ismount("/mnt"):
         raise RuntimeError("Cannot execute chroot: '/mnt' is not a mountpoint.")
     run(f"""arch-chroot /mnt /bin/bash -e <<'__CHROOT_EOF__'
 {cmd}

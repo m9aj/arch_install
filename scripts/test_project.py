@@ -6,9 +6,15 @@
 #   ./arch-install check [profile]   Dry-run validate configuration for a profile
 
 import compileall
+import contextlib
 import importlib
+import logging
 import os
+import pwd
+import subprocess
 import sys
+import traceback
+from unittest.mock import MagicMock, patch, mock_open
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
@@ -24,7 +30,7 @@ def _c(text, color_code):
 
 
 def test_compile():
-    print(_c("1. Testing Python compilation...", "1;33"))
+    print(_c("1. Testing syntax & compilation...", "1;33"))
     subdirs = ["core", "prereboot", "postreboot", "features"]
     all_ok = True
     for sd in subdirs:
@@ -35,6 +41,14 @@ def test_compile():
         else:
             print(f"   {_c('✗', '31')} {sd}/ compilation failed")
             all_ok = False
+
+    res = subprocess.run(["bash", "-n", os.path.join(PROJECT_ROOT, "arch-install")], capture_output=True, text=True)
+    if res.returncode == 0:
+        print(f"   {_c('✓', '32')} arch-install (shell wrapper) syntax valid")
+    else:
+        print(f"   {_c('✗', '31')} arch-install shell script syntax error: {res.stderr}")
+        all_ok = False
+
     return all_ok
 
 
@@ -85,7 +99,6 @@ def test_profiles(target_profile=None):
     for p in profiles:
         try:
             cfg = load_profile_config(p, load_secrets=False)
-            # Inject placeholder secrets for non-interactive dry-run validation
             if "system" not in cfg:
                 cfg["system"] = {}
             if not cfg["system"].get("root_password"):
@@ -101,6 +114,122 @@ def test_profiles(target_profile=None):
         except Exception as e:
             print(f"   {_c('✗', '31')} profile '{p}' failed validation: {e}")
             all_ok = False
+
+    return all_ok
+
+
+def test_dry_run(target_profile=None):
+    title = f"Simulating dry-run execution for '{target_profile}'..." if target_profile else "Testing simulated dry-run execution (all stages & profiles)..."
+    print(_c(f"\n5. {title}", "1;33"))
+
+    profiles = [target_profile] if target_profile else _discover_profiles()
+    all_ok = True
+
+    from core.shell import set_mock_runner
+    prev_level = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+
+    def mock_run(cmd, *args, **kwargs):
+        if "which" in cmd:
+            return MagicMock(returncode=0, stdout="/usr/bin/yay", stderr="")
+        if "gnome-shell --version" in cmd:
+            return MagicMock(returncode=0, stdout="GNOME Shell 47.0", stderr="")
+        if "grep" in cmd or "blkid" in cmd:
+            return MagicMock(returncode=0, stdout="dummy", stderr="")
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    set_mock_runner(mock_run)
+
+    try:
+        for p in profiles:
+            cfg = load_profile_config(p, load_secrets=False)
+            if "system" not in cfg:
+                cfg["system"] = {}
+            if not cfg["system"].get("root_password"):
+                cfg["system"]["root_password"] = "mock_root_pw"
+            if not cfg["system"].get("user_password"):
+                cfg["system"]["user_password"] = "mock_user_pw"
+
+            mock_pw = MagicMock(pw_uid=1000, pw_gid=1000)
+
+            orig_open = open
+            def safe_open(file, *args, **kwargs):
+                sfile = str(file)
+                if os.path.isabs(sfile) and sfile.startswith(PROJECT_ROOT):
+                    return orig_open(file, *args, **kwargs)
+                return mock_open(read_data="127.0.0.1 localhost\nHOOKS=(base udev autodetect block filesystems)\n")(*args, **kwargs)
+
+            mock_part = lambda b, s: f"/dev/disk/by-id/mock-disk{s}"
+            mock_root = lambda c: "/dev/disk/by-id/mock-disk-part3"
+
+            patches = [
+                patch("core.shell.run", side_effect=mock_run),
+                patch("core.disk.get_base_disk", return_value="/dev/disk/by-id/mock-disk"),
+                patch("core.disk.get_partition", side_effect=mock_part),
+                patch("core.disk.get_root_partition", side_effect=mock_root),
+                patch("prereboot.disk.get_partition", side_effect=mock_part),
+                patch("prereboot.disk.get_root_partition", side_effect=mock_root),
+                patch("prereboot.bootloader.get_partition", side_effect=mock_part),
+                patch("prereboot.archinstall.get_partition", side_effect=mock_part),
+                patch("core.config._decrypt_age_yaml", return_value={"server": {}, "client": {}}),
+                patch("core.state.is_done", return_value=False),
+                patch("core.state.mark_done", return_value=None),
+                patch("pwd.getpwnam", return_value=mock_pw),
+                patch("os.unlink", return_value=None),
+                patch("os.symlink", return_value=None),
+                patch("os.makedirs", return_value=None),
+                patch("shutil.copy", return_value=None),
+                patch("shutil.copytree", return_value=None),
+                patch("shutil.rmtree", return_value=None),
+                patch("shutil.chown", return_value=None),
+                patch("os.chown", return_value=None),
+                patch("os.chmod", return_value=None),
+                patch("os.path.exists", return_value=True),
+                patch("os.path.ismount", return_value=True),
+                patch("builtins.open", side_effect=safe_open),
+                patch("postreboot.gnome._install_extension", return_value="dummy-uuid"),
+            ]
+
+            try:
+                with contextlib.ExitStack() as stack:
+                    for patch_obj in patches:
+                        stack.enter_context(patch_obj)
+
+                    from prereboot import disk, archinstall, system, bootloader
+                    disk.clean_root(cfg)
+                    disk.mount_tree(cfg)
+                    archinstall.install_core(cfg)
+                    archinstall.generate_fstab(cfg)
+                    archinstall.initial_config(cfg)
+                    archinstall.initial_tweaks(cfg)
+                    system.install_post(cfg)
+                    system.enable_services(cfg)
+                    bootloader.install_bootloader(cfg)
+
+                    from postreboot import (
+                        user_dirs, dotfiles, system_config, aur,
+                        themes, gnome, hyprland, features
+                    )
+                    user_dirs.setup_user_dirs(cfg)
+                    dotfiles.setup_dotfiles(cfg)
+                    dotfiles.setup_bluetooth(cfg)
+                    system_config.apply_static_hosts(cfg)
+                    aur.install_aur_helper(cfg)
+                    aur.install_aur_packages(cfg)
+                    themes.install_themes(cfg)
+                    system_config.configure_citrix(cfg)
+                    gnome.setup_gnome(cfg)
+                    hyprland.setup_hyprland(cfg)
+                    features.run_enabled_features(cfg)
+
+                print(f"   {_c('✓', '32')} profile '{p}' simulated prereboot, postreboot, and features cleanly")
+            except Exception as e:
+                print(f"   {_c('✗', '31')} profile '{p}' failed dry-run simulation: {type(e).__name__}: {e}")
+                traceback.print_exc(file=sys.stdout)
+                all_ok = False
+    finally:
+        set_mock_runner(None)
+        logging.disable(prev_level)
 
     return all_ok
 
@@ -131,13 +260,15 @@ def main():
     if mode == "check":
         ok1 = test_package_profiles()
         ok2 = test_profiles(target_profile)
-        success = ok1 and ok2
+        ok3 = test_dry_run(target_profile)
+        success = ok1 and ok2 and ok3
     else:
         ok1 = test_compile()
         ok2 = test_features()
         ok3 = test_package_profiles()
         ok4 = test_profiles()
-        success = ok1 and ok2 and ok3 and ok4
+        ok5 = test_dry_run()
+        success = ok1 and ok2 and ok3 and ok4 and ok5
 
     print(_c("\n========================================================", "1;34"))
     if success:
