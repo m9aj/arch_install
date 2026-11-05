@@ -542,6 +542,138 @@ def write_icon_theme(colors):
         )
     )
 
+    firefox_theme_code = '''def pick_firefox_theme(colors):
+    accent = colors.get("accent", "#89b4fa")
+    r, g, b = hex_to_rgb(accent)
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    h_deg = h * 360.0
+
+    if s < 0.15:
+        return "nova-smoke@mozilla.org" if v < 0.6 else "nova-ash@mozilla.org"
+
+    if 345 <= h_deg or h_deg < 15:
+        return "nova-flame@mozilla.org"      # Flame (Red)
+    elif 15 <= h_deg < 45:
+        return "nova-spark@mozilla.org"      # Spark (Orange)
+    elif 45 <= h_deg < 75:
+        return "nova-sun@mozilla.org"        # Sun (Yellow)
+    elif 75 <= h_deg < 160:
+        return "nova-pine@mozilla.org"       # Pine (Green)
+    elif 160 <= h_deg < 200:
+        return "nova-lagoon@mozilla.org"     # Lagoon (Teal/Cyan)
+    elif 200 <= h_deg < 235:
+        return "nova-tide@mozilla.org"       # Tide (Ocean Blue)
+    elif 235 <= h_deg < 270:
+        return "nova-dusk@mozilla.org"       # Dusk (Deep Blue/Indigo)
+    elif 270 <= h_deg < 315:
+        return "nova-lavender@mozilla.org"   # Lavender (Purple)
+    else:
+        return "nova-flare@mozilla.org"      # Flare (Pink/Magenta)
+
+
+def firefox_profiles():
+    roots = [
+        os.path.join(XDG_CONFIG_HOME, "mozilla", "firefox"),
+        os.path.expanduser("~/.mozilla/firefox"),
+    ]
+    profiles = []
+    seen = set()
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        ini = os.path.join(root, "profiles.ini")
+        if not os.path.isfile(ini):
+            continue
+        parser = configparser.ConfigParser(interpolation=None)
+        try:
+            parser.read(ini, encoding="utf-8")
+        except Exception:
+            continue
+        for sec in parser.sections():
+            if sec.startswith("Profile"):
+                path = parser.get(sec, "Path", fallback="")
+                is_rel = parser.get(sec, "IsRelative", fallback="1") == "1"
+                full = os.path.abspath(os.path.join(root, path) if is_rel else path)
+                if os.path.isdir(full) and full not in seen:
+                    seen.add(full)
+                    profiles.append(full)
+    return profiles
+
+
+def write_firefox_theme(colors):
+    """Update Firefox active theme to the best matching Nova theme."""
+    target_theme = pick_firefox_theme(colors)
+    profiles = firefox_profiles()
+    if not profiles:
+        return
+
+    for profile in profiles:
+        # 1. Update user.js
+        user_js = os.path.join(profile, "user.js")
+        pref_line = f'user_pref("extensions.activeThemeID", "{target_theme}");'
+        lines = []
+        found = False
+        if os.path.isfile(user_js):
+            try:
+                with open(user_js, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if "extensions.activeThemeID" in line:
+                            lines.append(pref_line + "\\n")
+                            found = True
+                        else:
+                            lines.append(line)
+            except Exception:
+                pass
+        if not found:
+            lines.append(pref_line + "\\n")
+        try:
+            with open(user_js, "w", encoding="utf-8") as f:
+                f.writelines(lines)
+        except OSError:
+            pass
+
+        # 2. Update extensions.json
+        ext_json = os.path.join(profile, "extensions.json")
+        if os.path.isfile(ext_json):
+            try:
+                with open(ext_json, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                updated = False
+                for addon in data.get("addons", []):
+                    if addon.get("type") == "theme":
+                        addon_id = addon.get("id")
+                        if addon_id == target_theme:
+                            addon["active"] = True
+                            addon["userDisabled"] = False
+                            updated = True
+                        elif addon_id and (addon_id.startswith("nova-") or addon_id in ("default-theme@mozilla.org", "firefox-compact-light@mozilla.org", "firefox-compact-dark@mozilla.org", "firefox-alpenglow@mozilla.org")):
+                            addon["active"] = False
+                            addon["userDisabled"] = True
+                            updated = True
+                if updated:
+                    with open(ext_json, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=2)
+            except Exception:
+                pass
+'''
+
+    def inject_firefox_themer(text: str) -> str:
+        if "def write_firefox_theme" not in text:
+            text = text.replace("def set_theme(theme_id):", f"{firefox_theme_code}\n\ndef set_theme(theme_id):")
+        if "write_firefox_theme(colors)" not in text:
+            text = text.replace("write_zen_css(colors)", "write_zen_css(colors)\n        write_firefox_theme(colors)")
+        return text
+
+    results.append(
+        patch_file(
+            theme_py,
+            "Automatic Firefox Nova theme synchronization with wallpaper palette",
+            "write_firefox_theme",
+            inject_firefox_themer,
+            check_only,
+        )
+    )
+
     return results
 
 
