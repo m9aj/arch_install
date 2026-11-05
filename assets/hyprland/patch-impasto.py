@@ -161,7 +161,7 @@ def apply_hypr_overrides(config_dir: Path, check_only: bool) -> list[str]:
             hyprland_lua,
             'Hook require("user-overrides") in hyprland.lua',
             'require("user-overrides")',
-            lambda text: text.rstrip() + '\n\n-- Personal overrides (scaling, touchpad, Citrix rules)\nrequire("user-overrides")\n',
+            lambda text: text.rstrip() + '\n\n-- Personal overrides (scaling, touchpad, Citrix rules)\npackage.loaded["user-overrides"] = nil\npackage.loaded["custom-keybindings"] = nil\nrequire("user-overrides")\n',
             check_only,
         )
     )

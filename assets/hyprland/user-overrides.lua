@@ -104,4 +104,24 @@ hl.window_rule({
     size   = {480, 680},
 })
 
+-- Dynamic handler: Firefox initializes extension windows with generic title before updating to Bitwarden/Extension
+local function auto_float_firefox_popups(w)
+    if not w then return end
+    local class = tostring(w.class or ""):lower()
+    local title = tostring(w.title or "")
+    if class == "firefox" or class == "org.mozilla.firefox" then
+        if title:match("[Bb]itwarden") or title:match("Extension:") or title:match("[Pp]assword") or title:match("[Aa]bout [Ll]ogins") then
+            local addr = tostring(w.address or "")
+            if not addr:match("^0x") then
+                addr = "0x" .. addr
+            end
+            hl.exec_cmd(string.format(
+                "hyprctl --batch 'dispatch setfloating address:%s; dispatch resizewindowpixel exact 480 680,address:%s; dispatch centerwindow address:%s'",
+                addr, addr, addr
+            ))
+        end
+    end
+end
 
+hl.on("window.title", auto_float_firefox_popups)
+hl.on("window.open", auto_float_firefox_popups)
