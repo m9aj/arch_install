@@ -18,6 +18,10 @@ def _is_hyprland(config):
     return "hyprland" in get_des(config)
 
 
+def is_standalone_hyprland(config):
+    return _is_hyprland(config) and not _is_gnome(config)
+
+
 def _is_kde(config):
     return "kde" in get_des(config)
 

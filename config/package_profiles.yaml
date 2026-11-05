@@ -119,9 +119,6 @@ post_profiles:
       - polkit-gnome
       - qt6-wayland
       - kitty
-      - gdm
-    services:
-      - gdm
 
   hardware:
     packages:

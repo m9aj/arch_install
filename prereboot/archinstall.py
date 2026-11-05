@@ -143,14 +143,12 @@ def set_passwords(config):
         run("arch-chroot /mnt chpasswd", check=True, log_cmd=False, input_data=input_data)
 
 def configure_autologin(config):
-    if not config["system"].get("autologin"):
-        return
-
-    from core.desktop import _is_gnome
+    from core.desktop import _is_gnome, is_standalone_hyprland
     user = config["system"]["username"]
 
-    # Only implement for GNOME/GDM as requested
     if _is_gnome(config):
+        if not config["system"].get("autologin"):
+            return
         logger.info(f"Enabling GDM autologin for {user}")
         conf_path = "/etc/gdm/custom.conf"
         # The script ensures [daemon] section exists and adds autologin lines.
@@ -170,6 +168,27 @@ else
 fi
 """
         chroot(script)
+    elif is_standalone_hyprland(config):
+        logger.info(f"Configuring TTY1 autologin and Hyprland autostart for {user} (no display manager)")
+        dropin_dir = "/mnt/etc/systemd/system/getty@tty1.service.d"
+        os.makedirs(dropin_dir, exist_ok=True)
+        autologin_path = os.path.join(dropin_dir, "autologin.conf")
+        with open(autologin_path, "w", encoding="utf-8") as f:
+            f.write(f"""[Service]
+ExecStart=
+ExecStart=-/sbin/agetty -o '-p -f -- \\\\u' --noclear --autologin {user} %I $TERM
+""")
+
+        profile_dir = "/mnt/etc/profile.d"
+        os.makedirs(profile_dir, exist_ok=True)
+        autostart_path = os.path.join(profile_dir, "hyprland-autostart.sh")
+        with open(autostart_path, "w", encoding="utf-8") as f:
+            f.write(f"""# Automatically launch Hyprland on TTY1 login for standalone Hyprland
+if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ] && [ "$(id -un)" = "{user}" ]; then
+    exec Hyprland
+fi
+""")
+        run(f"chmod 755 {autostart_path}", check=False)
 
 def configure_resolved():
     logger.info("Configuring systemd-resolved and NetworkManager integration")
