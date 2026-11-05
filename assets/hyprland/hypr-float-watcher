@@ -8,84 +8,118 @@ import subprocess
 import sys
 import time
 
-TARGET_PATTERNS = re.compile(r"Bitwarden|Extension:|Password|About Logins|Passwords", re.IGNORECASE)
+TARGET_PATTERNS = re.compile(r"Extension:|Bitwarden|About Logins|Passwords", re.IGNORECASE)
 
 
-def get_socket_path():
+def get_sockets():
+    """Return paths to (socket1, socket2) for Hyprland IPC."""
     xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
     sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
     if sig:
-        p = f"{xdg}/hypr/{sig}/.socket2.sock"
-        if os.path.exists(p):
-            return p
+        s1 = f"{xdg}/hypr/{sig}/.socket.sock"
+        s2 = f"{xdg}/hypr/{sig}/.socket2.sock"
+        if os.path.exists(s1) and os.path.exists(s2):
+            return s1, s2
 
     hypr_dir = f"{xdg}/hypr"
     if os.path.isdir(hypr_dir):
         candidates = []
         for entry in os.listdir(hypr_dir):
-            p = os.path.join(hypr_dir, entry, ".socket2.sock")
-            if os.path.exists(p):
-                candidates.append(p)
+            s1 = os.path.join(hypr_dir, entry, ".socket.sock")
+            s2 = os.path.join(hypr_dir, entry, ".socket2.sock")
+            if os.path.exists(s1) and os.path.exists(s2):
+                candidates.append((s1, s2))
         if candidates:
-            candidates.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            candidates.sort(key=lambda pair: os.path.getmtime(pair[1]), reverse=True)
             return candidates[0]
-    return None
+    return None, None
 
 
-def float_window(addr: str):
+def send_repl(sock1_path: str, code: str) -> str:
+    """Send Lua code directly to Hyprland socket 1 via repl command."""
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.settimeout(1.0)
+            s.connect(sock1_path)
+            s.sendall(f"repl {code}".encode())
+            return s.recv(1024).decode("utf-8", errors="replace").strip()
+    except Exception:
+        # Fallback to hyprctl repl if socket1 write fails
+        proc = subprocess.run(
+            ["hyprctl", "repl", code],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return proc.stdout.strip()
+
+
+def float_window(sock1_path: str, addr: str):
+    """Float, resize, and center target window using Hyprland's native Lua API."""
     addr_clean = f"0x{addr}" if not addr.startswith("0x") else addr
-    sys.stdout.write(f"[hypr-float-watcher] Floating window: {addr_clean}\n")
+    lua_code = f"""
+local w = hl.get_window("address:{addr_clean}")
+if w then
+    local c = (w.class or ""):lower()
+    local t = w.title or ""
+    if (c:find("firefox") or c:find("org.mozilla.firefox")) and (t:find("^Extension:") or t:find("Bitwarden") or t:find("About Logins") or t:find("Passwords")) then
+        if not w.floating then
+            hl.dispatch(hl.dsp.window.float({{ window = w, action = "set" }}))
+            hl.dispatch(hl.dsp.window.resize({{ window = w, x = 460, y = 660 }}))
+            hl.dispatch(hl.dsp.window.center({{ window = w }}))
+            hl.dispatch(hl.dsp.focus({{ window = w }}))
+            return "floated"
+        else
+            return "already_floating"
+        end
+    end
+end
+return "skip"
+"""
+    res = send_repl(sock1_path, lua_code)
+    sys.stdout.write(f"[hypr-float-watcher] Target {addr_clean} -> {res}\n")
     sys.stdout.flush()
 
-    # 1. Focus the window
-    subprocess.run(["hyprctl", "dispatch", f"hl.dsp.focus({{ window = 'address:{addr_clean}' }})"], check=False)
-    # 2. Float
-    subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.float({ action = 'set' })"], check=False)
-    # 3. Resize to 460x660
-    subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.resize({ x = 460, y = 660 })"], check=False)
-    # 4. Center
-    subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.center()"], check=False)
 
-
-def handle_event(line: str):
-    # Event format: windowtitlev2>>ADDRESS,TITLE
-    if line.startswith("windowtitlev2>>"):
-        data = line[len("windowtitlev2>>"):].strip()
+def handle_event(sock1_path: str, line: str):
+    """Process incoming Hyprland event from socket 2."""
+    if line.startswith("windowtitlev2>>") or line.startswith("windowtitle>>"):
+        prefix = "windowtitlev2>>" if line.startswith("windowtitlev2>>") else "windowtitle>>"
+        data = line[len(prefix):].strip()
         if "," in data:
             addr, title = data.split(",", 1)
             if TARGET_PATTERNS.search(title):
-                sys.stdout.write(f"[hypr-float-watcher] Matched title: '{title}' on addr {addr}\n")
+                sys.stdout.write(f"[hypr-float-watcher] Title matched: '{title}' on {addr}\n")
                 sys.stdout.flush()
-                float_window(addr)
+                float_window(sock1_path, addr)
 
-    # Event format: openwindow>>ADDRESS,WORKSPACE,CLASS,TITLE
     elif line.startswith("openwindow>>"):
         data = line[len("openwindow>>"):].strip()
         parts = data.split(",", 3)
         if len(parts) >= 4:
             addr, ws, win_class, title = parts[0], parts[1], parts[2], parts[3]
             if TARGET_PATTERNS.search(title) or TARGET_PATTERNS.search(win_class):
-                sys.stdout.write(f"[hypr-float-watcher] Matched openwindow: '{title}' ({win_class}) on addr {addr}\n")
+                sys.stdout.write(f"[hypr-float-watcher] Openwindow matched: '{title}' ({win_class}) on {addr}\n")
                 sys.stdout.flush()
-                float_window(addr)
+                float_window(sock1_path, addr)
 
 
 def main():
-    sys.stdout.write("[hypr-float-watcher] Starting...\n")
+    sys.stdout.write("[hypr-float-watcher] Starting daemon...\n")
     sys.stdout.flush()
 
     while True:
-        sock_path = get_socket_path()
-        if not sock_path or not os.path.exists(sock_path):
+        sock1_path, sock2_path = get_sockets()
+        if not sock1_path or not sock2_path:
             time.sleep(1)
             continue
 
-        sys.stdout.write(f"[hypr-float-watcher] Connected to socket: {sock_path}\n")
+        sys.stdout.write(f"[hypr-float-watcher] Listening on {sock2_path}\n")
         sys.stdout.flush()
 
         try:
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-                s.connect(sock_path)
+                s.connect(sock2_path)
                 buf = ""
                 while True:
                     data = s.recv(4096)
@@ -95,9 +129,9 @@ def main():
                     while "\n" in buf:
                         line, buf = buf.split("\n", 1)
                         if line:
-                            handle_event(line)
+                            handle_event(sock1_path, line)
         except Exception as e:
-            sys.stderr.write(f"[hypr-float-watcher] Socket error: {e}\n")
+            sys.stderr.write(f"[hypr-float-watcher] Socket error: {e}, reconnecting in 1s...\n")
             sys.stderr.flush()
             time.sleep(1)
 

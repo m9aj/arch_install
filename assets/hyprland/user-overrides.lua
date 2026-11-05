@@ -116,27 +116,6 @@ hl.window_rule({
     size   = {460, 660},
 })
 
--- Dynamic event listener: Catches Firefox popup windows when title updates dynamically
-local function auto_float_firefox_popups(w)
-    if not w then return end
-    local class = tostring(w.class or ""):lower()
-    local title = tostring(w.title or "")
-    if class == "firefox" or class == "org.mozilla.firefox" then
-        if title:find("Bitwarden") or title:find("Extension:") or title:find("Password") or title:find("About Logins") then
-            local addr = tostring(w.address or "")
-            if not addr:find("^0x") then
-                addr = "0x" .. addr
-            end
-            hl.dispatch(hl.dsp.focus({ window = "address:" .. addr }))
-            hl.dispatch(hl.dsp.window.float({ action = "set" }))
-            hl.dispatch(hl.dsp.window.resize({ x = 460, y = 660 }))
-            hl.dispatch(hl.dsp.window.center())
-        end
-    end
-end
-
-hl.on("window.title", auto_float_firefox_popups)
-hl.on("window.open", auto_float_firefox_popups)
 
 
 
