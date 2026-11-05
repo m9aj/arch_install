@@ -850,7 +850,7 @@ def ensure_cursor_source(config_dir: Path, check_only: bool) -> list[str]:
 
 
 def apply_setup_patches(repo_dir: Path, check_only: bool) -> list[str]:
-    """Disable oh-my-zsh cloning in setup and replace repo .zshrc with user zinit zshrc."""
+    """Disable oh-my-zsh cloning in setup and prevent Impasto from overwriting chezmoi-managed .zshrc."""
     results = []
     setup_file = repo_dir / "setup"
     if setup_file.is_file():
@@ -869,36 +869,17 @@ def apply_setup_patches(repo_dir: Path, check_only: bool) -> list[str]:
             )
         )
 
+    # Remove home/.zshrc from cloned repo so `./setup sync` leaves ~/.zshrc to chezmoi
     repo_zshrc = repo_dir / "home" / ".zshrc"
-    src_zshrc = SCRIPT_DIR / "zshrc"
-    if src_zshrc.is_file() and repo_dir.is_dir():
-        if repo_zshrc.exists() and repo_zshrc.read_text(encoding="utf-8") == src_zshrc.read_text(encoding="utf-8"):
-            results.append("ALREADY APPLIED: Replace repo home/.zshrc with custom zinit zshrc")
-        else:
-            if not check_only:
-                repo_zshrc.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_zshrc, repo_zshrc)
-            results.append(f"{'WOULD APPLY' if check_only else 'APPLIED'}: Replace repo home/.zshrc with custom zinit zshrc")
-
-    return results
-
-
-def ensure_zshrc(check_only: bool) -> list[str]:
-    """Deploy custom zinit zshrc to ~/.zshrc."""
-    results = []
-    src_zshrc = SCRIPT_DIR / "zshrc"
-    user_zshrc = Path.home() / ".zshrc"
-    if not src_zshrc.is_file():
-        return results
-
-    if user_zshrc.is_file() and user_zshrc.read_text(encoding="utf-8") == src_zshrc.read_text(encoding="utf-8"):
-        results.append("ALREADY APPLIED: Custom zinit ~/.zshrc")
-    else:
+    if repo_zshrc.exists():
         if not check_only:
-            shutil.copy2(src_zshrc, user_zshrc)
-        results.append(f"{'WOULD APPLY' if check_only else 'APPLIED'}: Custom zinit ~/.zshrc")
+            repo_zshrc.unlink()
+        results.append(f"{'WOULD APPLY' if check_only else 'APPLIED'}: Remove repo home/.zshrc so chezmoi manages ~/.zshrc")
+    else:
+        results.append("ALREADY APPLIED: Repo home/.zshrc removed (leaving ~/.zshrc to chezmoi)")
 
     return results
+
 
 
 def apply_monitor_scale_patch(config_dir: Path, check_only: bool) -> list[str]:
@@ -1400,7 +1381,6 @@ def main() -> int:
             failed |= print_results(patch_config_tree(target, args.check))
             failed |= print_results(ensure_settings_json(args.check))
             failed |= print_results(ensure_cursor_source(target, args.check))
-            failed |= print_results(ensure_zshrc(args.check))
         return 1 if failed else 0
 
     # Mode 2: Full workflow (Download/Update -> Patch Repo -> Run ./setup -> Verify Live ~/.config)
@@ -1436,7 +1416,6 @@ def main() -> int:
         failed |= print_results(patch_config_tree(target, False))
         failed |= print_results(ensure_settings_json(False))
         failed |= print_results(ensure_cursor_source(target, False))
-        failed |= print_results(ensure_zshrc(False))
 
     return 1 if failed else 0
 
