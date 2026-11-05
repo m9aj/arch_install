@@ -93,35 +93,47 @@ hl.window_rule({
 
 -- 8. Firefox Password Manager & Extension Popouts (float instead of tiling)
 hl.window_rule({
-    name  = "firefox-password-manager-float",
+    name  = "firefox-bitwarden-float",
     match = {
         class = "^(firefox|org\\.mozilla\\.firefox)$",
-        title = "^(.*[Bb]itwarden.*|[Ee]xtension: .*|.*[Pp]assword.*|[Aa]bout [Ll]ogins|[Pp]asswords.*)$",
+        title = ".*Bitwarden.*",
     },
 
     float  = true,
     center = true,
-    size   = {480, 680},
+    size   = {460, 660},
 })
 
--- Dynamic handler: Firefox initializes extension windows with generic title before updating to Bitwarden/Extension
+hl.window_rule({
+    name  = "firefox-extension-float",
+    match = {
+        class = "^(firefox|org\\.mozilla\\.firefox)$",
+        title = "Extension: .*",
+    },
+
+    float  = true,
+    center = true,
+    size   = {460, 660},
+})
+
+-- Dynamic event listener: Catches Firefox popup windows when title updates dynamically
 local function auto_float_firefox_popups(w)
     if not w then return end
     local class = tostring(w.class or ""):lower()
     local title = tostring(w.title or "")
     if class == "firefox" or class == "org.mozilla.firefox" then
-        if title:match("[Bb]itwarden") or title:match("Extension:") or title:match("[Pp]assword") or title:match("[Aa]bout [Ll]ogins") then
+        if title:find("Bitwarden") or title:find("Extension:") or title:find("Password") or title:find("About Logins") then
             local addr = tostring(w.address or "")
-            if not addr:match("^0x") then
+            if not addr:find("^0x") then
                 addr = "0x" .. addr
             end
-            hl.exec_cmd(string.format(
-                "hyprctl --batch 'dispatch setfloating address:%s; dispatch resizewindowpixel exact 480 680,address:%s; dispatch centerwindow address:%s'",
-                addr, addr, addr
-            ))
+            hl.dispatch(hl.dsp.window.float({ action = "set", window = "address:" .. addr }))
+            hl.dispatch(hl.dsp.window.resize({ window = "address:" .. addr, x = 460, y = 660 }))
+            hl.dispatch(hl.dsp.window.center({ window = "address:" .. addr }))
         end
     end
 end
 
 hl.on("window.title", auto_float_firefox_popups)
 hl.on("window.open", auto_float_firefox_popups)
+
