@@ -138,7 +138,5 @@ end
 hl.on("window.title", auto_float_firefox_popups)
 hl.on("window.open", auto_float_firefox_popups)
 
--- Launch socket2 watcher daemon for instant dynamic floating of delayed-title windows
-hl.exec_cmd("pgrep -f hypr-float-watcher >/dev/null || ~/.local/bin/hypr-float-watcher &")
 
 

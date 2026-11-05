@@ -11,30 +11,78 @@ import time
 TARGET_PATTERNS = re.compile(r"Bitwarden|Extension:|Password|About Logins|Passwords", re.IGNORECASE)
 
 
+def get_socket_path():
+    xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    if sig:
+        p = f"{xdg}/hypr/{sig}/.socket2.sock"
+        if os.path.exists(p):
+            return p
+
+    hypr_dir = f"{xdg}/hypr"
+    if os.path.isdir(hypr_dir):
+        candidates = []
+        for entry in os.listdir(hypr_dir):
+            p = os.path.join(hypr_dir, entry, ".socket2.sock")
+            if os.path.exists(p):
+                candidates.append(p)
+        if candidates:
+            candidates.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            return candidates[0]
+    return None
+
+
+def float_window(addr: str):
+    addr_clean = f"0x{addr}" if not addr.startswith("0x") else addr
+    sys.stdout.write(f"[hypr-float-watcher] Floating window: {addr_clean}\n")
+    sys.stdout.flush()
+
+    # 1. Focus the window
+    subprocess.run(["hyprctl", "dispatch", f"hl.dsp.focus({{ window = 'address:{addr_clean}' }})"], check=False)
+    # 2. Float
+    subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.float({ action = 'set' })"], check=False)
+    # 3. Resize to 460x660
+    subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.resize({ x = 460, y = 660 })"], check=False)
+    # 4. Center
+    subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.center()"], check=False)
+
+
 def handle_event(line: str):
-    if not line.startswith("windowtitlev2>>"):
-        return
-    data = line[len("windowtitlev2>>"):].strip()
-    if "," not in data:
-        return
-    addr, title = data.split(",", 1)
-    if TARGET_PATTERNS.search(title):
-        addr_clean = f"0x{addr}" if not addr.startswith("0x") else addr
-        subprocess.run(["hyprctl", "dispatch", f"hl.dsp.focus({{ window = 'address:{addr_clean}' }})"], check=False)
-        subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.float({ action = 'set' })"], check=False)
-        subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.resize({ x = 460, y = 660 })"], check=False)
-        subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.center()"], check=False)
+    # Event format: windowtitlev2>>ADDRESS,TITLE
+    if line.startswith("windowtitlev2>>"):
+        data = line[len("windowtitlev2>>"):].strip()
+        if "," in data:
+            addr, title = data.split(",", 1)
+            if TARGET_PATTERNS.search(title):
+                sys.stdout.write(f"[hypr-float-watcher] Matched title: '{title}' on addr {addr}\n")
+                sys.stdout.flush()
+                float_window(addr)
+
+    # Event format: openwindow>>ADDRESS,WORKSPACE,CLASS,TITLE
+    elif line.startswith("openwindow>>"):
+        data = line[len("openwindow>>"):].strip()
+        parts = data.split(",", 3)
+        if len(parts) >= 4:
+            addr, ws, win_class, title = parts[0], parts[1], parts[2], parts[3]
+            if TARGET_PATTERNS.search(title) or TARGET_PATTERNS.search(win_class):
+                sys.stdout.write(f"[hypr-float-watcher] Matched openwindow: '{title}' ({win_class}) on addr {addr}\n")
+                sys.stdout.flush()
+                float_window(addr)
 
 
 def main():
-    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
-    xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
-    sock_path = f"{xdg}/hypr/{sig}/.socket2.sock"
+    sys.stdout.write("[hypr-float-watcher] Starting...\n")
+    sys.stdout.flush()
 
     while True:
-        if not os.path.exists(sock_path):
+        sock_path = get_socket_path()
+        if not sock_path or not os.path.exists(sock_path):
             time.sleep(1)
             continue
+
+        sys.stdout.write(f"[hypr-float-watcher] Connected to socket: {sock_path}\n")
+        sys.stdout.flush()
+
         try:
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
                 s.connect(sock_path)
@@ -48,7 +96,9 @@ def main():
                         line, buf = buf.split("\n", 1)
                         if line:
                             handle_event(line)
-        except Exception:
+        except Exception as e:
+            sys.stderr.write(f"[hypr-float-watcher] Socket error: {e}\n")
+            sys.stderr.flush()
             time.sleep(1)
 
 

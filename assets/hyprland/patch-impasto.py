@@ -850,18 +850,34 @@ def ensure_cursor_source(config_dir: Path, check_only: bool) -> list[str]:
 
 
 def ensure_hypr_watcher(check_only: bool) -> list[str]:
-    """Ensure ~/.local/bin/hypr-float-watcher is deployed and executable."""
-    src = SCRIPT_DIR / "hypr-float-watcher"
-    dst = Path.home() / ".local" / "bin" / "hypr-float-watcher"
-    if not src.is_file():
-        return []
-    if dst.is_file() and dst.read_text(encoding="utf-8") == src.read_text(encoding="utf-8"):
-        return [f"ALREADY APPLIED: hypr-float-watcher in {dst}"]
-    if not check_only:
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
-        dst.chmod(0o755)
-    return [f"{'WOULD APPLY' if check_only else 'APPLIED'}: hypr-float-watcher in {dst}"]
+    """Ensure hypr-float-watcher binary and systemd user service are deployed and active."""
+    results = []
+    src_bin = SCRIPT_DIR / "hypr-float-watcher"
+    dst_bin = Path.home() / ".local" / "bin" / "hypr-float-watcher"
+    if src_bin.is_file():
+        if dst_bin.is_file() and dst_bin.read_text(encoding="utf-8") == src_bin.read_text(encoding="utf-8"):
+            results.append(f"ALREADY APPLIED: hypr-float-watcher in {dst_bin}")
+        else:
+            if not check_only:
+                dst_bin.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_bin, dst_bin)
+                dst_bin.chmod(0o755)
+            results.append(f"{'WOULD APPLY' if check_only else 'APPLIED'}: hypr-float-watcher in {dst_bin}")
+
+    src_svc = SCRIPT_DIR / "hypr-float-watcher.service"
+    dst_svc = Path.home() / ".config" / "systemd" / "user" / "hypr-float-watcher.service"
+    if src_svc.is_file():
+        if dst_svc.is_file() and dst_svc.read_text(encoding="utf-8") == src_svc.read_text(encoding="utf-8"):
+            results.append(f"ALREADY APPLIED: hypr-float-watcher.service in {dst_svc}")
+        else:
+            if not check_only:
+                dst_svc.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_svc, dst_svc)
+                subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
+                subprocess.run(["systemctl", "--user", "enable", "--now", "hypr-float-watcher.service"], check=False)
+            results.append(f"{'WOULD APPLY' if check_only else 'APPLIED'}: hypr-float-watcher.service in {dst_svc}")
+
+    return results
 
 
 
