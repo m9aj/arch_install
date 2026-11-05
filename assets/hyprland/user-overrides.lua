@@ -74,3 +74,6 @@ hl.window_rule({
     no_blur  = true,
     rounding = 0,
 })
+
+-- 6. Custom Keybindings (loaded dynamically from custom-keybindings.lua if present)
+pcall(require, "custom-keybindings")
