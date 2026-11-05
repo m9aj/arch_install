@@ -69,10 +69,11 @@ hl.window_rule({
         xwayland = true,
     },
 
-    tile     = true,
-    opaque   = true,
-    no_blur  = true,
-    rounding = 0,
+    tile       = true,
+    fullscreen = 1,
+    opaque     = true,
+    no_blur    = true,
+    rounding   = 0,
 })
 
 -- 6. Custom Keybindings (loaded dynamically from custom-keybindings.lua if present)
