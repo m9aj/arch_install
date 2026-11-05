@@ -91,7 +91,7 @@ hl.window_rule({
     border_color = "rgb(38bdf8) rgb(0284c7)",
 })
 
--- 8. Firefox Password Manager & Extension Popouts (float instead of tiling)
+-- 8. Firefox Password Manager & Extension Popouts (float immediately with zero flicker)
 hl.window_rule({
     name  = "firefox-bitwarden-float",
     match = {
@@ -115,6 +115,55 @@ hl.window_rule({
     center = true,
     size   = {460, 660},
 })
+
+-- Prevent tiling flicker: float secondary Firefox windows immediately upon creation
+hl.on("window.open", function(w)
+    local class = (w.class or ""):lower()
+    if not (class:find("firefox") or class:find("org.mozilla.firefox")) then return end
+
+    local ff_windows = hl.get_windows({ class = "firefox" })
+    if #ff_windows <= 1 then return end
+
+    -- Float immediately upon spawn so it never splits or flickers the main window
+    hl.dispatch(hl.dsp.window.float({ action = "set", window = w }))
+
+    local sub
+    sub = hl.on("window.title", function(tw)
+        if tw.address ~= w.address then return end
+        local title = tw.title or ""
+        if title == ""
+            or title == "Mozilla Firefox"
+            or title == "about:blank"
+            or title:match("^about:.*Mozilla Firefox$") then
+            return
+        end
+
+        sub:remove()
+
+        if title:match("^Extension:") or title:match("Bitwarden") or title:match("About Logins") or title:match("Passwords") then
+            hl.dispatch(hl.dsp.window.resize({ x = 460, y = 660, window = tw }))
+            hl.dispatch(hl.dsp.window.center({ window = tw }))
+            hl.dispatch(hl.dsp.focus({ window = tw }))
+        else
+            -- Normal browser window (e.g. Ctrl+N), restore tiling
+            hl.dispatch(hl.dsp.window.float({ action = "unset", window = tw }))
+        end
+    end)
+end)
+
+-- Fallback safety net for existing or retitled extension windows
+hl.on("window.title", function(w)
+    local title = w.title or ""
+    if title:match("^Extension:") or title:match("Bitwarden") or title:match("About Logins") or title:match("Passwords") then
+        local class = (w.class or ""):lower()
+        if (class:find("firefox") or class:find("org.mozilla.firefox")) and not w.floating then
+            hl.dispatch(hl.dsp.window.float({ action = "set", window = w }))
+            hl.dispatch(hl.dsp.window.resize({ x = 460, y = 660, window = w }))
+            hl.dispatch(hl.dsp.window.center({ window = w }))
+            hl.dispatch(hl.dsp.focus({ window = w }))
+        end
+    end
+end)
 
 
 
