@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""Watch Hyprland socket2 for Firefox extension and password popups and float them automatically."""
+
+import os
+import re
+import socket
+import subprocess
+import sys
+import time
+
+TARGET_PATTERNS = re.compile(r"Bitwarden|Extension:|Password|About Logins|Passwords", re.IGNORECASE)
+
+
+def handle_event(line: str):
+    if not line.startswith("windowtitlev2>>"):
+        return
+    data = line[len("windowtitlev2>>"):].strip()
+    if "," not in data:
+        return
+    addr, title = data.split(",", 1)
+    if TARGET_PATTERNS.search(title):
+        addr_clean = f"0x{addr}" if not addr.startswith("0x") else addr
+        subprocess.run(["hyprctl", "dispatch", f"hl.dsp.focus({{ window = 'address:{addr_clean}' }})"], check=False)
+        subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.float({ action = 'set' })"], check=False)
+        subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.resize({ x = 460, y = 660 })"], check=False)
+        subprocess.run(["hyprctl", "dispatch", "hl.dsp.window.center()"], check=False)
+
+
+def main():
+    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    xdg = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+    sock_path = f"{xdg}/hypr/{sig}/.socket2.sock"
+
+    while True:
+        if not os.path.exists(sock_path):
+            time.sleep(1)
+            continue
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+                s.connect(sock_path)
+                buf = ""
+                while True:
+                    data = s.recv(4096)
+                    if not data:
+                        break
+                    buf += data.decode("utf-8", errors="replace")
+                    while "\n" in buf:
+                        line, buf = buf.split("\n", 1)
+                        if line:
+                            handle_event(line)
+        except Exception:
+            time.sleep(1)
+
+
+if __name__ == "__main__":
+    main()

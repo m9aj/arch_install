@@ -127,13 +127,18 @@ local function auto_float_firefox_popups(w)
             if not addr:find("^0x") then
                 addr = "0x" .. addr
             end
-            hl.dispatch(hl.dsp.window.float({ action = "set", window = "address:" .. addr }))
-            hl.dispatch(hl.dsp.window.resize({ window = "address:" .. addr, x = 460, y = 660 }))
-            hl.dispatch(hl.dsp.window.center({ window = "address:" .. addr }))
+            hl.dispatch(hl.dsp.focus({ window = "address:" .. addr }))
+            hl.dispatch(hl.dsp.window.float({ action = "set" }))
+            hl.dispatch(hl.dsp.window.resize({ x = 460, y = 660 }))
+            hl.dispatch(hl.dsp.window.center())
         end
     end
 end
 
 hl.on("window.title", auto_float_firefox_popups)
 hl.on("window.open", auto_float_firefox_popups)
+
+-- Launch socket2 watcher daemon for instant dynamic floating of delayed-title windows
+hl.exec_cmd("pgrep -f hypr-float-watcher >/dev/null || ~/.local/bin/hypr-float-watcher &")
+
 

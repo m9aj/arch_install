@@ -849,6 +849,22 @@ def ensure_cursor_source(config_dir: Path, check_only: bool) -> list[str]:
     return [f"APPLIED: Cloned Bibata vector cursor source & built impasto-cursor ({cursor_src})"]
 
 
+def ensure_hypr_watcher(check_only: bool) -> list[str]:
+    """Ensure ~/.local/bin/hypr-float-watcher is deployed and executable."""
+    src = SCRIPT_DIR / "hypr-float-watcher"
+    dst = Path.home() / ".local" / "bin" / "hypr-float-watcher"
+    if not src.is_file():
+        return []
+    if dst.is_file() and dst.read_text(encoding="utf-8") == src.read_text(encoding="utf-8"):
+        return [f"ALREADY APPLIED: hypr-float-watcher in {dst}"]
+    if not check_only:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        dst.chmod(0o755)
+    return [f"{'WOULD APPLY' if check_only else 'APPLIED'}: hypr-float-watcher in {dst}"]
+
+
+
 def apply_setup_patches(repo_dir: Path, check_only: bool) -> list[str]:
     """Disable oh-my-zsh cloning in setup and prevent Impasto from overwriting chezmoi-managed .zshrc."""
     results = []
@@ -1381,6 +1397,7 @@ def main() -> int:
             failed |= print_results(patch_config_tree(target, args.check))
             failed |= print_results(ensure_settings_json(args.check))
             failed |= print_results(ensure_cursor_source(target, args.check))
+            failed |= print_results(ensure_hypr_watcher(args.check))
         return 1 if failed else 0
 
     # Mode 2: Full workflow (Download/Update -> Patch Repo -> Run ./setup -> Verify Live ~/.config)
@@ -1416,6 +1433,7 @@ def main() -> int:
         failed |= print_results(patch_config_tree(target, False))
         failed |= print_results(ensure_settings_json(False))
         failed |= print_results(ensure_cursor_source(target, False))
+        failed |= print_results(ensure_hypr_watcher(False))
 
     return 1 if failed else 0
 
