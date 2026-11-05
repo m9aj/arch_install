@@ -2,10 +2,8 @@
 
 import os
 import pwd
-import re
 import shutil
 from core.logger import logger
-from core.shell import run
 
 
 def setup_user_dirs(config):
@@ -16,10 +14,9 @@ def setup_user_dirs(config):
 
     parent = cfg.get("parent")
     folders = cfg.get("folders", [])
-    method = cfg.get("method", "bind")
 
     if not parent or not folders:
-        logger.warning("user_dirs misconfigured")
+        logger.warning("user_dirs misconfigured: parent or folders missing")
         return
 
     user = config["system"]["username"]
@@ -34,53 +31,21 @@ def setup_user_dirs(config):
         logger.error(f"User {user} not found, cannot fix ownership")
         return
 
-    logger.info(f"Setting up user directories for {user} (method: {method})")
-
-    fstab_path = "/etc/fstab"
-    fstab_content = ""
-    if method == "bind" and os.path.exists(fstab_path):
-        with open(fstab_path, "r", encoding="utf-8") as f:
-            fstab_content = f.read()
-
-    new_fstab_lines = []
+    logger.info(f"Setting up user directory symlinks for {user} -> {parent}")
 
     for folder in folders:
         source = os.path.join(parent, folder)
         target = os.path.join(home, folder)
 
         if not os.path.exists(source):
-            logger.warning(f"Missing source: {source}")
+            logger.warning(f"Missing source directory: {source}")
             continue
 
-        if method == "symlink":
-            if os.path.islink(target) or os.path.isfile(target):
-                os.unlink(target)
-            elif os.path.isdir(target) and not os.path.ismount(target):
-                shutil.rmtree(target)
-            os.symlink(source, target)
-            os.chown(target, uid, gid, follow_symlinks=False)
-        else:
-            # Bind mount method
-            if os.path.islink(target) or os.path.isfile(target):
-                os.unlink(target)
-            os.makedirs(target, exist_ok=True)
-            os.chown(target, uid, gid)
+        if os.path.islink(target) or os.path.isfile(target):
+            os.unlink(target)
+        elif os.path.isdir(target) and not os.path.ismount(target):
+            shutil.rmtree(target)
 
-            req_mount = "/" + "/".join(parent.strip("/").split("/")[:2])
-            entry = f"{source}  {target}  none  bind,nofail,x-gvfs-hide,x-systemd.requires={req_mount}  0 0"
-            if not re.search(rf'\s+{re.escape(target)}\s+', fstab_content):
-                new_fstab_lines.append(entry)
-
-    if method == "bind":
-        if new_fstab_lines:
-            block = ""
-            if "# User Directory Bind Mounts" not in fstab_content:
-                block += "\n# User Directory Bind Mounts\n"
-            block += "\n".join(new_fstab_lines) + "\n"
-
-            res = run(f"sudo tee -a {fstab_path} > /dev/null", input_data=block, log_cmd=False)
-            if res.returncode != 0:
-                raise RuntimeError(f"Failed to append to {fstab_path}")
-
-            run("sudo systemctl daemon-reload")
-        run("sudo mount -a")
+        os.symlink(source, target)
+        os.chown(target, uid, gid, follow_symlinks=False)
+        logger.info(f"  ✓ Symlinked {target} -> {source}")

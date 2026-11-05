@@ -119,7 +119,7 @@ arch_install/
 │   ├── gnome.py               # GNOME setup (dconf, extensions, keybindings, app grid, dock)
 │   ├── hyprland.py            # Hyprland setup via Impasto unattended patcher
 │   ├── dotfiles.py            # Chezmoi dotfiles deployment with age key recovery
-│   ├── user_dirs.py           # XDG user directories & persistent bind mounts
+│   ├── user_dirs.py           # XDG user directories & symlinks to persistent storage
 │   ├── system_config.py       # Static /etc/hosts entries and Citrix ICA client configuration
 │   ├── themes.py              # Cursor themes and wallpaper installers
 │   ├── status_cli.py          # ./arch-install status engine

@@ -209,7 +209,6 @@ network:
 postconfig:
   user_dirs:
     enabled: true
-    method: symlink                            # bind | symlink
     parent: /mnt/Personal
     folders:
       - Projects
