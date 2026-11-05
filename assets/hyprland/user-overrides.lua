@@ -37,39 +37,34 @@ end)
 -- 4. Allow Citrix / Epic Hyperspace / Hyperdrive maximize events (override upstream rule)
 hl.window_rule({
     name  = "suppress-maximize-events",
-    match = { class = "negative:^(wfica|Wfica|Hyperspace.*|Hyperdrive.*|[Cc]itrix.*|[Ss]elfservice)$" },
+    match = { class = "negative:^(wfica|Wfica|Hyperspace.*|Hyperdrive.*|[Cc]itrix.*|[Ss]elfservice|AuthManager.*|PrimaryAuthManager)$" },
 
     suppress_event = "maximize",
 })
 
 -- 5. Citrix Workspace / Epic Hyperspace / Hyperdrive Window Rules
---    - Float and center all Citrix dialogs & child windows (Dragon Medical One, logon dialogs, popups)
---      so they are always visible on-screen and keep their native size.
---    - Tile the main Epic Hyperspace / Hyperdrive application window at full workspace size.
+--    - Force ALL Citrix windows (sessions, Epic Hyperspace, Hyperdrive, Dragon Medical One, dialogs)
+--      to float and NEVER tile, preserving X11 native geometry and preventing screen splitting.
 --    - Remove rounded corners, transparency, and blur on all Citrix windows.
 hl.window_rule({
-    name  = "citrix-children-float",
+    name  = "citrix-all-float",
     match = {
-        class    = "^(wfica|Wfica|[Cc]itrix.*)$",
-        xwayland = true,
+        class = "^(wfica|Wfica|[Cc]itrix.*|[Ss]elfservice|AuthManager.*|PrimaryAuthManager)$",
     },
 
     float    = true,
-    center   = true,
     opaque   = true,
     no_blur  = true,
     rounding = 0,
 })
 
 hl.window_rule({
-    name  = "citrix-hyperspace-main",
+    name  = "citrix-title-float",
     match = {
-        class    = "^(wfica|Wfica|[Cc]itrix.*)$",
-        title    = "^(Hyperspace|Hyperdrive).*$",
-        xwayland = true,
+        title = "^(Hyperspace|Hyperdrive).*$",
     },
 
-    tile     = true,
+    float    = true,
     opaque   = true,
     no_blur  = true,
     rounding = 0,
