@@ -209,8 +209,8 @@ network:
 postconfig:
   user_dirs:
     enabled: true
-    method: bind                            # bind | symlink
-    parent: /mnt/Personal/_Ajay
+    method: symlink                            # bind | symlink
+    parent: /mnt/Personal
     folders:
       - Projects
       - Desktop
@@ -223,11 +223,11 @@ postconfig:
 
   dotfiles:
     enabled: true
-    source_dir: /mnt/Personal/_Ajay/Config/dotfiles
+    source_dir: /mnt/Personal/Config/dotfiles
 
   bluetooth:
     enabled: false
-    source: /mnt/Personal/_Ajay/Config/bluetooth
+    source: /mnt/Personal/Config/bluetooth
 
   gnome:
     gsettings:
@@ -244,7 +244,7 @@ postconfig:
       enabled: false
       profiles:
         - name: framework_2.8k
-          file: /mnt/Personal/_Ajay/Config/fw13_28k.icm
+          file: /mnt/Personal/Config/fw13_28k.icm
 
     theme:
       cursor:
