@@ -127,55 +127,28 @@ hl.on("window.open", function(w)
     -- Float immediately upon spawn so it never splits or flickers the main window
     hl.dispatch(hl.dsp.window.float({ action = "set", window = w }))
 
-    local resolved = false
-    local sub = nil
-
-    local function resolve(is_extension, target_win)
-        if resolved then return end
-        resolved = true
-        if sub then
-            sub:remove()
-            sub = nil
-        end
-
-        local win = target_win or hl.get_window("address:" .. w.address)
-        if not win then return end
-
-        if is_extension then
-            hl.dispatch(hl.dsp.window.resize({ x = 460, y = 660, window = win }))
-            hl.dispatch(hl.dsp.window.center({ window = win }))
-            hl.dispatch(hl.dsp.focus({ window = win }))
-        else
-            -- Normal browser window (e.g. Ctrl+N or dragged tab), restore tiling
-            hl.dispatch(hl.dsp.window.float({ action = "unset", window = win }))
-        end
-    end
-
+    local sub
     sub = hl.on("window.title", function(tw)
         if tw.address ~= w.address then return end
         local title = tw.title or ""
+        if title == ""
+            or title == "Mozilla Firefox"
+            or title == "about:blank"
+            or title:match("^about:.*Mozilla Firefox$") then
+            return
+        end
+
+        sub:remove()
+
         if title:match("^Extension:") or title:match("Bitwarden") or title:match("About Logins") or title:match("Passwords") then
-            resolve(true, tw)
-        elseif title ~= "" and title ~= "Mozilla Firefox" and title ~= "about:blank" then
-            -- Distinct webpage title (e.g. tab drag or loaded URL), tile immediately
-            resolve(false, tw)
+            hl.dispatch(hl.dsp.window.resize({ x = 460, y = 660, window = tw }))
+            hl.dispatch(hl.dsp.window.center({ window = tw }))
+            hl.dispatch(hl.dsp.focus({ window = tw }))
+        else
+            -- Normal browser window (e.g. Ctrl+N), restore tiling
+            hl.dispatch(hl.dsp.window.float({ action = "unset", window = tw }))
         end
     end)
-
-    -- Fallback timer: if after 350ms the window still hasn't become an extension, tile it
-    hl.timer(function()
-        if not resolved then
-            local cur = hl.get_window("address:" .. w.address)
-            if cur then
-                local t = cur.title or ""
-                if t:match("^Extension:") or t:match("Bitwarden") or t:match("About Logins") or t:match("Passwords") then
-                    resolve(true, cur)
-                else
-                    resolve(false, cur)
-                end
-            end
-        end
-    end, { timeout = 350, type = "oneshot" })
 end)
 
 -- Fallback safety net for existing or retitled extension windows
