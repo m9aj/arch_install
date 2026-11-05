@@ -849,6 +849,58 @@ def ensure_cursor_source(config_dir: Path, check_only: bool) -> list[str]:
     return [f"APPLIED: Cloned Bibata vector cursor source & built impasto-cursor ({cursor_src})"]
 
 
+def apply_setup_patches(repo_dir: Path, check_only: bool) -> list[str]:
+    """Disable oh-my-zsh cloning in setup and replace repo .zshrc with user zinit zshrc."""
+    results = []
+    setup_file = repo_dir / "setup"
+    if setup_file.is_file():
+        def disable_omz(text: str) -> str:
+            pattern = r"(omz\(\)\s*\{)(.*?)(\n\})"
+            replacement = r"\1\n    section oh-my-zsh\n    say 'oh-my-zsh disabled by user configuration'\n    return 0\3"
+            return re.sub(pattern, replacement, text, flags=re.DOTALL)
+
+        results.append(
+            patch_file(
+                setup_file,
+                "Disable oh-my-zsh clone in setup script",
+                "oh-my-zsh disabled by user configuration",
+                disable_omz,
+                check_only,
+            )
+        )
+
+    repo_zshrc = repo_dir / "home" / ".zshrc"
+    src_zshrc = SCRIPT_DIR / "zshrc"
+    if src_zshrc.is_file() and repo_dir.is_dir():
+        if repo_zshrc.exists() and repo_zshrc.read_text(encoding="utf-8") == src_zshrc.read_text(encoding="utf-8"):
+            results.append("ALREADY APPLIED: Replace repo home/.zshrc with custom zinit zshrc")
+        else:
+            if not check_only:
+                repo_zshrc.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_zshrc, repo_zshrc)
+            results.append(f"{'WOULD APPLY' if check_only else 'APPLIED'}: Replace repo home/.zshrc with custom zinit zshrc")
+
+    return results
+
+
+def ensure_zshrc(check_only: bool) -> list[str]:
+    """Deploy custom zinit zshrc to ~/.zshrc."""
+    results = []
+    src_zshrc = SCRIPT_DIR / "zshrc"
+    user_zshrc = Path.home() / ".zshrc"
+    if not src_zshrc.is_file():
+        return results
+
+    if user_zshrc.is_file() and user_zshrc.read_text(encoding="utf-8") == src_zshrc.read_text(encoding="utf-8"):
+        results.append("ALREADY APPLIED: Custom zinit ~/.zshrc")
+    else:
+        if not check_only:
+            shutil.copy2(src_zshrc, user_zshrc)
+        results.append(f"{'WOULD APPLY' if check_only else 'APPLIED'}: Custom zinit ~/.zshrc")
+
+    return results
+
+
 def apply_monitor_scale_patch(config_dir: Path, check_only: bool) -> list[str]:
     """Prevent MonitorService.differs() from looping every 600ms on fractional scales like 1.67 vs 1.667."""
     mon_svc = config_dir / "quickshell" / "services" / "MonitorService.qml"
@@ -1339,6 +1391,7 @@ def main() -> int:
         if repo.is_dir() and (repo / "packages").is_dir():
             print(f"==> Checking/patching Impasto repo: {repo}")
             failed |= print_results(apply_package_patches(repo, args.check))
+            failed |= print_results(apply_setup_patches(repo, args.check))
             repo_cfg = repo / "home" / ".config"
             if repo_cfg.is_dir():
                 failed |= print_results(patch_config_tree(repo_cfg, args.check))
@@ -1347,6 +1400,7 @@ def main() -> int:
             failed |= print_results(patch_config_tree(target, args.check))
             failed |= print_results(ensure_settings_json(args.check))
             failed |= print_results(ensure_cursor_source(target, args.check))
+            failed |= print_results(ensure_zshrc(args.check))
         return 1 if failed else 0
 
     # Mode 2: Full workflow (Download/Update -> Patch Repo -> Run ./setup -> Verify Live ~/.config)
@@ -1354,6 +1408,7 @@ def main() -> int:
 
     print(f"\n==> Patching Impasto repository at {repo} ...")
     failed |= print_results(apply_package_patches(repo, False))
+    failed |= print_results(apply_setup_patches(repo, False))
     failed |= print_results(patch_config_tree(repo / "home" / ".config", False))
     if failed:
         sys.stderr.write("\nERROR: One or more patches failed to apply to the repository. Aborting ./setup.\n")
@@ -1381,6 +1436,7 @@ def main() -> int:
         failed |= print_results(patch_config_tree(target, False))
         failed |= print_results(ensure_settings_json(False))
         failed |= print_results(ensure_cursor_source(target, False))
+        failed |= print_results(ensure_zshrc(False))
 
     return 1 if failed else 0
 
