@@ -77,3 +77,17 @@ hl.window_rule({
 
 -- 6. Custom Keybindings (loaded dynamically from custom-keybindings.lua if present)
 pcall(require, "custom-keybindings")
+
+-- 7. PWA Custom Window Border Colors
+hl.window_rule({
+    name         = "pwa-whatsapp-border",
+    match        = { class = "^FFPWA-01KYKCWQYKGQ5NT68W2FC88V2Q$" },
+    border_color = "rgb(25D366) rgb(128C7E)",
+})
+
+hl.window_rule({
+    name         = "pwa-messages-border",
+    match        = { class = "^FFPWA-01KYKD71MMBSANDW29ZQ3GK6PE$" },
+    border_color = "rgb(38bdf8) rgb(0284c7)",
+})
+
