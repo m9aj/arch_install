@@ -91,3 +91,17 @@ hl.window_rule({
     border_color = "rgb(38bdf8) rgb(0284c7)",
 })
 
+-- 8. Firefox Password Manager & Extension Popouts (float instead of tiling)
+hl.window_rule({
+    name  = "firefox-password-manager-float",
+    match = {
+        class = "^(firefox|org\\.mozilla\\.firefox)$",
+        title = "^(.*[Bb]itwarden.*|[Ee]xtension: .*|.*[Pp]assword.*|[Aa]bout [Ll]ogins|[Pp]asswords.*)$",
+    },
+
+    float  = true,
+    center = true,
+    size   = {480, 680},
+})
+
+
