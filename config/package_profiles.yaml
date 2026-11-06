@@ -43,6 +43,7 @@ core_profiles:
     - util-linux
     - age
     - unzip
+    - openssh
   audio:
     - pipewire
     - pipewire-audio

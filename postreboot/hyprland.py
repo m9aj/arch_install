@@ -49,6 +49,9 @@ fi
 
     logger.info("[HYPRLAND] Setting up patched Impasto Hyprland environment...")
 
+    # Ensure openssh is adopted by pacman to prevent conflicting file errors on reused @ssh subvolumes
+    run("sudo pacman -S --noconfirm --needed --overwrite '/etc/ssh/*' openssh", check=False)
+
     build_dir = "/tmp/impasto_build"
     if os.path.exists(build_dir):
         shutil.rmtree(build_dir)

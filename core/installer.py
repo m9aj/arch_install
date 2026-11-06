@@ -11,7 +11,7 @@ def install_packages(config, pacman_pkgs=None, aur_pkgs=None):
     """
     if pacman_pkgs:
         logger.info(f"Installing pacman packages: {', '.join(pacman_pkgs)}")
-        run(f"sudo pacman -S --noconfirm --needed {' '.join(pacman_pkgs)}")
+        run(f"sudo pacman -S --noconfirm --needed --overwrite '*' {' '.join(pacman_pkgs)}")
 
     if aur_pkgs:
         from postreboot.aur import install_single_aur_package
