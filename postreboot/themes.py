@@ -2,8 +2,10 @@
 # Installs cursor themes from local zip archives and downloads wallpapers.
 
 import os
+import pwd
 import shlex
 import tempfile
+import zipfile
 from core.config import PROJECT_ROOT
 from core.shell import run
 from core.logger import logger
@@ -29,11 +31,21 @@ def install_cursors(config):
         return
 
     logger.info(f"[THEME] Installing cursor theme: {name}")
-    run(f"mkdir -p {icons_dir}")
-    run(f"unzip -o '{source}' -d {icons_dir}")
+    os.makedirs(icons_dir, exist_ok=True)
+    with zipfile.ZipFile(source, "r") as zip_ref:
+        zip_ref.extractall(icons_dir)
+
+    try:
+        pw = pwd.getpwnam(user)
+        for root, dirs, files in os.walk(icons_dir):
+            os.chown(root, pw.pw_uid, pw.pw_gid)
+            for f in files:
+                os.chown(os.path.join(root, f), pw.pw_uid, pw.pw_gid)
+    except Exception:
+        pass
     
     if _is_gnome(config):
-        run(f"gsettings set org.gnome.desktop.interface cursor-theme '{name}'")
+        run(f"gsettings set org.gnome.desktop.interface cursor-theme '{name}'", check=False)
 
 
 def install_wallpapers(config):

@@ -42,6 +42,7 @@ core_profiles:
     - ntfs-3g
     - util-linux
     - age
+    - unzip
   audio:
     - pipewire
     - pipewire-audio
