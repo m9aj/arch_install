@@ -25,4 +25,5 @@ def enable_services(config):
 
     logger.info(f"Enabling services: {', '.join(services)}")
     chroot(f"systemctl enable {' '.join(services)}")
+    chroot("systemctl add-wants multi-user.target network-online.target")
 

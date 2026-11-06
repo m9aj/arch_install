@@ -69,6 +69,7 @@ post_profiles:
       - mesa
     services:
       - NetworkManager
+      - NetworkManager-wait-online
       - systemd-resolved
       - fstrim.timer
       - paccache.timer
