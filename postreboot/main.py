@@ -31,8 +31,8 @@ STEPS = [
     ("citrix",                system_config.configure_citrix),
 
     # Modular Desktop Environment Runners
-    ("gnome_setup",           gnome.setup_gnome),
     ("hyprland_setup",        hyprland.setup_hyprland),
+    ("gnome_setup",           gnome.setup_gnome),
 ]
 
 

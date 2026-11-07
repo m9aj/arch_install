@@ -45,6 +45,7 @@ DISABLED_PACMAN_PACKAGES = [
     "v4l-utils",
     "qemu-desktop",
     "papirus-icon-theme",
+    "btop",
 ]
 
 DISABLED_AUR_PACKAGES = [
