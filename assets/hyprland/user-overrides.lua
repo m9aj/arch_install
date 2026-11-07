@@ -100,6 +100,13 @@ hl.window_rule({
     size   = {460, 660},
 })
 
+-- 9. GNOME / GTK Headerbar Buttons: Remove close, minimize, and maximize buttons in Hyprland
+hl.exec_cmd("gsettings set org.gnome.desktop.wm.preferences button-layout ':'")
+hl.on("hyprland.start", function()
+    hl.exec_cmd("gsettings set org.gnome.desktop.wm.preferences button-layout ':'")
+end)
+
+
 hl.window_rule({
     name  = "firefox-extension-float",
     match = {

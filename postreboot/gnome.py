@@ -360,6 +360,38 @@ def apply_lockscreen_config(config):
     run(f"sudo chmod 644 {dst}")
 
 
+def apply_gnome_autostart(config):
+    """Ensures GNOME restores window titlebar buttons when logging into GNOME session."""
+    if not _is_gnome(config):
+        return False
+
+    user = config.get("system", {}).get("username")
+    if not user:
+        return False
+
+    autostart_dir = f"/home/{user}/.config/autostart"
+    os.makedirs(autostart_dir, exist_ok=True)
+    desktop_file = os.path.join(autostart_dir, "gnome-button-layout.desktop")
+    content = """[Desktop Entry]
+Type=Application
+Name=GNOME Button Layout Restorer
+Comment=Restore close and minimize buttons when logging into GNOME
+Exec=gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,close'
+OnlyShowIn=GNOME;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+"""
+    try:
+        with open(desktop_file, "w", encoding="utf-8") as f:
+            f.write(content)
+        run(f"chown {user}:{user} '{desktop_file}'", check=False)
+        logger.info("Configured GNOME autostart button-layout restorer")
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to create GNOME autostart entry: {e}")
+        return False
+
+
 def setup_gnome(config):
     """Executes all enabled GNOME configuration steps in sequence."""
     if not _is_gnome(config):
@@ -368,6 +400,7 @@ def setup_gnome(config):
     logger.info("[GNOME] Configuring GNOME desktop environment...")
     apply_gsettings(config)
     apply_lockscreen_config(config)
+    apply_gnome_autostart(config)
     install_gnome_extensions(config)
     apply_custom_keybindings(config)
     hide_apps(config)
