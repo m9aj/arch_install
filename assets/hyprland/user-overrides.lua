@@ -5,13 +5,13 @@
 -- │                                                                          │
 -- ╰──────────────────────────────────────────────────────────────────────────╯
 
--- 1. Monitor scaling (Framework 13 2.8K @ 1.67x)
-hl.monitor({
-    output   = "",
-    mode     = "preferred",
-    position = "auto",
-    scale    = 1.67,
-})
+-- 1. Monitor scaling (Managed via Impasto UI / MonitorService)
+-- hl.monitor({
+--     output   = "",
+--     mode     = "preferred",
+--     position = "auto",
+--     scale    = 1.67,
+-- })
 
 -- 2. Touchpad & pointer speed + Native XWayland scaling
 hl.config({
@@ -28,11 +28,11 @@ hl.config({
     },
 })
 
--- 3. Set 167% X11 DPI (160) so XWayland apps (Citrix) scale natively at 2880x1920
-hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t160\n'")
-hl.on("hyprland.start", function()
-    hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t160\n'")
-end)
+-- 3. X11 DPI (Follows desktop scale: 96 @ 1.0x, 144 @ 1.5x, 160 @ 1.67x)
+-- hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t160\n'")
+-- hl.on("hyprland.start", function()
+--     hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t160\n'")
+-- end)
 
 -- 4. Allow Citrix / Epic Hyperspace / Hyperdrive maximize events (override upstream rule)
 hl.window_rule({
