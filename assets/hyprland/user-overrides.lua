@@ -34,6 +34,42 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t160\n'")
 end)
 
+-- 4. Allow Citrix / Epic Hyperspace / Hyperdrive maximize events (override upstream rule)
+hl.window_rule({
+    name  = "suppress-maximize-events",
+    match = { class = "negative:^(wfica|Wfica|Hyperspace.*|Hyperdrive.*|[Cc]itrix.*|[Ss]elfservice)$" },
+
+    suppress_event = "maximize",
+})
+
+-- 5. Citrix Workspace / Epic Hyperspace Window Rules
+--    - Float all XWayland / Citrix child windows (Dragon Medical One, MF_systray, popups)
+--      so they keep their native widget size.
+--    - Keep the main Epic Hyperspace window tiled at full workspace size.
+--    - Remove rounded corners, transparency, and blur on all Citrix windows.
+hl.window_rule({
+    name  = "citrix-children-float",
+    match = { xwayland = true },
+
+    float    = true,
+    opaque   = true,
+    no_blur  = true,
+    rounding = 0,
+})
+
+hl.window_rule({
+    name  = "citrix-hyperspace-main",
+    match = {
+        class    = "^Hyperspace.*$",
+        xwayland = true,
+    },
+
+    tile     = true,
+    opaque   = true,
+    no_blur  = true,
+    rounding = 0,
+})
+
 
 -- 6. Custom Keybindings (loaded dynamically from custom-keybindings.lua if present)
 pcall(require, "custom-keybindings")
