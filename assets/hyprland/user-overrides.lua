@@ -28,11 +28,11 @@ hl.config({
     },
 })
 
--- 3. X11 DPI (Follows desktop scale: 96 @ 1.0x, 144 @ 1.5x, 160 @ 1.67x)
--- hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t160\n'")
--- hl.on("hyprland.start", function()
---     hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t160\n'")
--- end)
+-- 3. Set 150% X11 DPI (144) so XWayland apps (Citrix) scale natively at 2880x1920
+hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t144\n'")
+hl.on("hyprland.start", function()
+    hl.exec_cmd("xprop -root -f RESOURCE_MANAGER 8s -set RESOURCE_MANAGER 'Xft.dpi:\t144\n'")
+end)
 
 -- 4. Allow Citrix / Epic Hyperspace / Hyperdrive maximize events (override upstream rule)
 hl.window_rule({
