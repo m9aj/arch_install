@@ -146,8 +146,17 @@
         "BOE NE135A1M-NY1": {
             "monitors": {
                 "BOE NE135A1M-NY1": {
-                    "scale": 1.667,
+                    "scale": 1.5,
                     "vrr": 1
+                }
+            },
+            "primary": ""
+        },
+        "Samsung Electric Company QBQ90S 0x01000E00": {
+            "monitors": {
+                "Samsung Electric Company QBQ90S 0x01000E00": {
+                    "mode": "3840x2160@119.88",
+                    "scale": 1.2
                 }
             },
             "primary": ""

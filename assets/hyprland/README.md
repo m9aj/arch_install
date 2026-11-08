@@ -51,3 +51,4 @@ Copies `~/.local/state/quickshell/settings.json` (island layout, bar icons, bord
    - **AC / Battery Auto-Switching (`BatteryService.qml`):** Switches to `power-saver` and turns off keyboard backlight on battery; restores `balanced` on AC.
    - **GTK / Nautilus reload, LibreOffice Notebookbar styling, and Adwaita-Colors 3D Folder Icons (`theme_manager.py`).**
    - **Notification Click-to-Focus (`HyprlandService.qml`, `NotificationService.qml`, `NotificationLayer.qml`, `NotificationList.qml`):** Clicking any live toast or history notification focuses the corresponding application window (including `kitty` running `agy` for Antigravity CLI notifications).
+   - **Clean Screenshot & Media Naming (`capture.py`, `record.py`, `camera.py`):** Saves screenshots and webcam captures as timestamped `YYYY-MM-DD-HHMMSS.png` (and recordings as `.mp4`) without the `_impasto` suffix.

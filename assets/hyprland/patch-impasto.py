@@ -885,19 +885,52 @@ def apply_setup_patches(repo_dir: Path, check_only: bool) -> list[str]:
 
 
 def apply_monitor_scale_patch(config_dir: Path, check_only: bool) -> list[str]:
-    """Prevent MonitorService.differs() from looping every 600ms on fractional scales like 1.67 vs 1.667."""
+    """Prevent MonitorService from looping every 600ms on quantized fractional scales
+    and stop rescue() from bouncing away from empty workspaces when no monitors are stranded."""
+    results = []
     mon_svc = config_dir / "quickshell" / "services" / "MonitorService.qml"
-    old = "|| (rule.scale !== undefined && Number(rule.scale) !== Number(found.scale))"
-    new = "|| (rule.scale !== undefined && Math.abs(Number(rule.scale) - Number(found.scale)) > 0.01)"
-    return [
+
+    new_scale = "|| (rule.scale !== undefined && Math.abs(Number(rule.scale) - Number(found.scale)) > 0.06)"
+    def fix_scale(text):
+        if new_scale in text:
+            return text
+        text = text.replace(
+            "|| (rule.scale !== undefined && Math.abs(Number(rule.scale) - Number(found.scale)) > 0.01)",
+            new_scale,
+            1,
+        )
+        return text.replace(
+            "|| (rule.scale !== undefined && Number(rule.scale) !== Number(found.scale))",
+            new_scale,
+            1,
+        )
+
+    results.append(
         patch_file(
             mon_svc,
             "Fractional scale tolerance in MonitorService.qml (prevents 600ms workspace rescue loop)",
-            new,
-            lambda text: text.replace(old, new, 1),
+            new_scale,
+            fix_scale,
             check_only,
         )
-    ]
+    )
+
+    old_wanted = """            const wanted = monitor.name === home && stranded.length > 0
+                ? stranded[0] : carrying[0]"""
+    new_wanted = """            const wanted = (monitor.name === home && stranded.length > 0)
+                ? stranded[0] : null"""
+
+    results.append(
+        patch_file(
+            mon_svc,
+            "Prevent MonitorService.rehome() from kicking out of empty workspaces when no windows are stranded",
+            new_wanted,
+            lambda text: text.replace(old_wanted, new_wanted, 1),
+            check_only,
+        )
+    )
+
+    return results
 
 
 def apply_monitor_power_patch(config_dir: Path, check_only: bool) -> list[str]:
@@ -1286,6 +1319,45 @@ def apply_caffeine_patch(config_dir: Path, check_only: bool) -> list[str]:
 
     return results
 
+def apply_screenshot_naming_patches(config_dir: Path, check_only: bool) -> list[str]:
+    results = []
+    capture_py = config_dir / "quickshell" / "scripts" / "capture.py"
+    record_py = config_dir / "quickshell" / "scripts" / "record.py"
+    camera_py = config_dir / "quickshell" / "scripts" / "camera.py"
+
+    results.append(
+        patch_file(
+            capture_py,
+            "Clean screenshot filenames without _impasto in capture.py",
+            'saved = folder / f"{stamp}.png"',
+            lambda text: text.replace('saved = folder / f"{stamp}_impasto.png"', 'saved = folder / f"{stamp}.png"'),
+            check_only,
+        )
+    )
+
+    results.append(
+        patch_file(
+            record_py,
+            "Clean recording filenames without _impasto in record.py",
+            'path = folder / f"{datetime.now().strftime(STAMP)}.mp4"',
+            lambda text: text.replace('path = folder / f"{datetime.now().strftime(STAMP)}_impasto.mp4"', 'path = folder / f"{datetime.now().strftime(STAMP)}.mp4"'),
+            check_only,
+        )
+    )
+
+    results.append(
+        patch_file(
+            camera_py,
+            "Clean camera snapshot filenames without _impasto in camera.py",
+            'saved = folder / f"{stamp}.png"',
+            lambda text: text.replace('saved = folder / f"{stamp}_impasto.png"', 'saved = folder / f"{stamp}.png"'),
+            check_only,
+        )
+    )
+
+    return results
+
+
 def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results = []
     results.extend(apply_hypr_overrides(config_dir, check_only))
@@ -1296,6 +1368,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results.extend(apply_theme_manager_patches(config_dir, check_only))
     results.extend(apply_notification_focus_patches(config_dir, check_only))
     results.extend(apply_caffeine_patch(config_dir, check_only))
+    results.extend(apply_screenshot_naming_patches(config_dir, check_only))
     return results
 
 
@@ -1328,6 +1401,11 @@ def main() -> int:
         "--patch-only",
         action="store_true",
         help="Download/update Impasto repo and apply patches without running ./setup",
+    )
+    parser.add_argument(
+        "--live-only",
+        action="store_true",
+        help="Apply patches directly to live config directory without cloning or updating repo",
     )
     parser.add_argument(
         "--unattended",
@@ -1367,11 +1445,11 @@ def main() -> int:
     target = args.target.expanduser().resolve()
     failed = False
 
-    # Mode 1: Dry-run check or --patch-only
-    if args.check or args.patch_only:
-        if args.patch_only:
+    # Mode 1: Dry-run check, live-only patch, or --patch-only
+    if args.check or args.patch_only or args.live_only:
+        if args.patch_only and not args.live_only:
             download_or_update_repo(repo)
-        if repo.is_dir() and (repo / "packages").is_dir():
+        if not args.live_only and repo.is_dir() and (repo / "packages").is_dir():
             print(f"==> Checking/patching Impasto repo: {repo}")
             failed |= print_results(apply_package_patches(repo, args.check))
             failed |= print_results(apply_setup_patches(repo, args.check))
