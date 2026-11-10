@@ -178,6 +178,7 @@ def test_dry_run(target_profile=None):
                 patch("os.unlink", return_value=None),
                 patch("os.symlink", return_value=None),
                 patch("os.makedirs", return_value=None),
+                patch("os.walk", return_value=[]),
                 patch("shutil.copy", return_value=None),
                 patch("shutil.copytree", return_value=None),
                 patch("shutil.rmtree", return_value=None),
@@ -186,6 +187,7 @@ def test_dry_run(target_profile=None):
                 patch("os.chmod", return_value=None),
                 patch("os.path.exists", return_value=True),
                 patch("os.path.ismount", return_value=True),
+                patch("zipfile.ZipFile"),
                 patch("builtins.open", side_effect=safe_open),
                 patch("postreboot.gnome._install_extension", return_value="dummy-uuid"),
             ]
