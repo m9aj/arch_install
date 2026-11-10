@@ -1358,6 +1358,84 @@ def apply_screenshot_naming_patches(config_dir: Path, check_only: bool) -> list[
     return results
 
 
+def apply_clock_wake_patch(config_dir: Path, check_only: bool) -> list[str]:
+    """Ensure clock widgets update every second so the time corrects instantly (<1s) upon waking from sleep."""
+    results = []
+    qs_dir = config_dir / "quickshell"
+
+    # 1. Lock screen large clock
+    lock_clock = qs_dir / "lock" / "LockClock.qml"
+    old_lock = "precision: SystemClock.Minutes\n        enabled: root.at === null"
+    new_lock = "precision: SystemClock.Seconds\n        enabled: root.at === null"
+    results.append(
+        patch_file(
+            lock_clock,
+            "Second precision for instant wake refresh in LockClock.qml",
+            new_lock,
+            lambda text: text.replace(old_lock, new_lock, 1),
+            check_only,
+        )
+    )
+
+    # 2. Lock screen top island clock
+    lock_island = qs_dir / "lock" / "LockIsland.qml"
+    old_island = "SystemClock {\n            id: clock\n            precision: SystemClock.Minutes"
+    new_island = "SystemClock {\n            id: clock\n            precision: SystemClock.Seconds"
+    results.append(
+        patch_file(
+            lock_island,
+            "Second precision for instant wake refresh in LockIsland.qml",
+            new_island,
+            lambda text: text.replace(old_island, new_island, 1),
+            check_only,
+        )
+    )
+
+    # 3. Bar island resting clock
+    clock_block = qs_dir / "bar" / "island" / "controls" / "ClockBlock.qml"
+    old_block = """    SystemClock {
+        id: clock
+        precision: SettingsService.clockShowsSeconds
+            ? SystemClock.Seconds : SystemClock.Minutes
+    }"""
+    new_block = """    SystemClock {
+        id: clock
+        precision: SystemClock.Seconds
+    }"""
+    results.append(
+        patch_file(
+            clock_block,
+            "Second precision for instant wake refresh in ClockBlock.qml",
+            new_block,
+            lambda text: text.replace(old_block, new_block, 1),
+            check_only,
+        )
+    )
+
+    # 4. Bar clock module
+    clock_module = qs_dir / "bar" / "modules" / "ClockModule.qml"
+    old_module = """    SystemClock {
+        id: clock
+        precision: SettingsService.clockShowsSeconds
+            ? SystemClock.Seconds : SystemClock.Minutes
+    }"""
+    new_module = """    SystemClock {
+        id: clock
+        precision: SystemClock.Seconds
+    }"""
+    results.append(
+        patch_file(
+            clock_module,
+            "Second precision for instant wake refresh in ClockModule.qml",
+            new_module,
+            lambda text: text.replace(old_module, new_module, 1),
+            check_only,
+        )
+    )
+
+    return results
+
+
 def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results = []
     results.extend(apply_hypr_overrides(config_dir, check_only))
@@ -1369,6 +1447,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results.extend(apply_notification_focus_patches(config_dir, check_only))
     results.extend(apply_caffeine_patch(config_dir, check_only))
     results.extend(apply_screenshot_naming_patches(config_dir, check_only))
+    results.extend(apply_clock_wake_patch(config_dir, check_only))
     return results
 
 
