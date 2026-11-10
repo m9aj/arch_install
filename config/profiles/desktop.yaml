@@ -29,7 +29,8 @@ boot:
   init: mkinitcpio
 
 arch:
-  de: hyprland
+  de: gnome, hyprland
+
 
 pkgprofile:
   post:
