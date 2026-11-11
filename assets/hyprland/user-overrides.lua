@@ -169,5 +169,55 @@ hl.on("window.title", function(w)
 end)
 
 
+-- 10. Workspace Assignment Rules
+--     - Workspace 1: Todo and Calendar
+--     - Workspace 2: Firefox
+--     - Workspace 5: Messages and WhatsApp
+hl.window_rule({
+    name      = "pwa-todo-workspace",
+    match     = { class = "^FFPWA-01KYKD44VJAES35FFZ52PDF3XD$" },
+    workspace = "1",
+})
+
+hl.window_rule({
+    name      = "pwa-calendar-workspace",
+    match     = { class = "^FFPWA-01M46PZY404S71WYYV92TXMZXD$" },
+    workspace = "1",
+})
+
+hl.window_rule({
+    name      = "firefox-workspace",
+    match     = { class = [[^(firefox|org\.mozilla\.firefox)$]] },
+    workspace = "2",
+})
+
+hl.window_rule({
+    name      = "pwa-messages-workspace",
+    match     = { class = "^FFPWA-01KYKD71MMBSANDW29ZQ3GK6PE$" },
+    workspace = "5",
+})
+
+hl.window_rule({
+    name      = "pwa-whatsapp-workspace",
+    match     = { class = "^FFPWA-01KYKCWQYKGQ5NT68W2FC88V2Q$" },
+    workspace = "5",
+})
+
+-- 11. Autostart Applications on Hyprland Launch
+hl.on("hyprland.start", function()
+    -- Launch background communication apps on workspace 5
+    hl.exec_cmd("firefoxpwa site launch 01KYKD71MMBSANDW29ZQ3GK6PE") -- Messages
+    hl.exec_cmd("firefoxpwa site launch 01KYKCWQYKGQ5NT68W2FC88V2Q") -- WhatsApp
+
+    -- Launch browser on workspace 2
+    hl.exec_cmd("firefox")
+
+    -- Launch productivity apps on workspace 1
+    hl.exec_cmd("firefoxpwa site launch 01M46PZY404S71WYYV92TXMZXD") -- Calendar
+    hl.exec_cmd("firefoxpwa site launch 01KYKD44VJAES35FFZ52PDF3XD") -- Todo
+end)
+
+
+
 
 
