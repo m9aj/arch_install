@@ -62,6 +62,7 @@ core_profiles:
     - networkmanager
     - micro
     - pacman-contrib
+    - kitty-terminfo
 
 post_profiles:
   base_drivers:
