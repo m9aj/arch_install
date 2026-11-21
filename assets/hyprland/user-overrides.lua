@@ -217,6 +217,10 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("firefoxpwa site launch 01KYKD44VJAES35FFZ52PDF3XD") -- Todo
 end)
 
+-- 12. Gemini Launcher Shortcut (SUPER + G)
+hl.unbind("SUPER + G")
+hl.bind("SUPER + G", hl.dsp.exec_cmd("gtk-launch gemini"), { description = "Applications · Open Gemini" })
+
 
 
 

@@ -1436,6 +1436,53 @@ def apply_clock_wake_patch(config_dir: Path, check_only: bool) -> list[str]:
     return results
 
 
+def apply_disable_games_patch(config_dir: Path, check_only: bool) -> list[str]:
+    """Remove Games from the Quickshell bar catalogue and Hyprland keybinds."""
+    results = []
+
+    # 1. Remove "games" from ModuleService.qml buttonIds
+    mod_file = config_dir / "quickshell" / "services" / "ModuleService.qml"
+    old_buttons = '"appearance", "notes", "board", "games", "keys", "packages", "settings", "session"]'
+    new_buttons = '"appearance", "notes", "board", "keys", "packages", "settings", "session"]'
+    results.append(
+        patch_file(
+            mod_file,
+            "Remove Games button from ModuleService.qml",
+            new_buttons,
+            lambda text: text.replace(old_buttons, new_buttons, 1),
+            check_only,
+        )
+    )
+
+    # 2. Comment out SUPER + G (Games) and SUPER + SHIFT + G (Game mode) in keybinds.lua
+    kb_file = config_dir / "hypr" / "modules" / "keybinds.lua"
+    old_games = 'bind(mainMod .. " + G",         hl.dsp.global("quickshell:games"),      { description = "Shell · Open the games" })'
+    new_games = '-- [patched out] ' + old_games
+    results.append(
+        patch_file(
+            kb_file,
+            "Disable SUPER + G (Games) bind in keybinds.lua",
+            new_games,
+            lambda text: text.replace(old_games, new_games, 1),
+            check_only,
+        )
+    )
+
+    old_gamemode = 'bind(mainMod .. " + SHIFT + G", hl.dsp.global("quickshell:game"),       { description = "Shell · Turn game mode on or off" })'
+    new_gamemode = '-- [patched out] ' + old_gamemode
+    results.append(
+        patch_file(
+            kb_file,
+            "Disable SUPER + SHIFT + G (Game mode) bind in keybinds.lua",
+            new_gamemode,
+            lambda text: text.replace(old_gamemode, new_gamemode, 1),
+            check_only,
+        )
+    )
+
+    return results
+
+
 def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results = []
     results.extend(apply_hypr_overrides(config_dir, check_only))
@@ -1446,6 +1493,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results.extend(apply_theme_manager_patches(config_dir, check_only))
     results.extend(apply_notification_focus_patches(config_dir, check_only))
     results.extend(apply_caffeine_patch(config_dir, check_only))
+    results.extend(apply_disable_games_patch(config_dir, check_only))
     results.extend(apply_screenshot_naming_patches(config_dir, check_only))
     results.extend(apply_clock_wake_patch(config_dir, check_only))
     return results
