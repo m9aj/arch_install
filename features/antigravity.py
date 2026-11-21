@@ -38,6 +38,7 @@ def configure(config, feature):
         shutil.rmtree(temp_dir, ignore_errors=True)
 
     deploy_skills(config)
+    deploy_desktop_entry(config)
 
 
 def deploy_skills(config):
@@ -79,3 +80,44 @@ def deploy_skills(config):
         logger.info(f"[antigravity] Linked rule -> {rule_dst}")
 
     run(f"sudo chown -R {user}:{user} '{home}/.gemini'", check=False)
+
+
+def deploy_desktop_entry(config):
+    """Install the Gemini desktop launcher and icon for the configured user."""
+    user = config["system"]["username"]
+    home = f"/home/{user}"
+    from core.config import PROJECT_ROOT
+    import shutil
+
+    # 1. Install icon into hicolor so it works under any icon theme (e.g. Adwaita)
+    icon_src = os.path.join(PROJECT_ROOT, "assets", "gemini", "gemini.svg")
+    icon_dir = os.path.join(home, ".local", "share", "icons", "hicolor", "scalable", "apps")
+    if os.path.exists(icon_src):
+        os.makedirs(icon_dir, exist_ok=True)
+        shutil.copy(icon_src, os.path.join(icon_dir, "gemini.svg"))
+        logger.info(f"[antigravity] Installed icon -> {icon_dir}/gemini.svg")
+
+    # 2. Write desktop entry
+    apps_dir = os.path.join(home, ".local", "share", "applications")
+    os.makedirs(apps_dir, exist_ok=True)
+    desktop_path = os.path.join(apps_dir, "gemini.desktop")
+    desktop_content = f"""[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Gemini
+GenericName=AI Assistant
+Comment=Launch Gemini (Antigravity CLI)
+Exec=/usr/bin/kitty --class gemini --title Gemini /bin/zsh -ic "exec {home}/.local/bin/agy"
+Icon=gemini
+Path={home}
+Terminal=false
+StartupNotify=true
+StartupWMClass=gemini
+Categories=Development;Utility;
+Keywords=gemini;ai;agy;antigravity;assistant;
+"""
+    with open(desktop_path, "w", encoding="utf-8") as f:
+        f.write(desktop_content)
+    logger.info(f"[antigravity] Installed desktop entry -> {desktop_path}")
+
+    run(f"update-desktop-database '{apps_dir}'", check=False)

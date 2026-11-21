@@ -144,6 +144,7 @@ postconfig:
           - code-oss                  # Code - OSS
           - org.gnome.SimpleScan      # Document Scanner
           - org.gnome.Papers          # Document Viewer
+          - gemini                    # Gemini
           - gimp                      # GNU Image Manipulation Program
           - org.gnome.Loupe           # Image Viewer
           - Office                    # Office
