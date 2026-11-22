@@ -1483,6 +1483,56 @@ def apply_disable_games_patch(config_dir: Path, check_only: bool) -> list[str]:
     return results
 
 
+def apply_nautilus_extension_patch(config_dir: Path, check_only: bool) -> list[str]:
+    """Replace 'Open yazi Here' with 'Open Gemini Here' and switch editor to code-oss in impasto.py."""
+    ext_file = config_dir.parent / ".local" / "share" / "nautilus-python" / "extensions" / "impasto.py"
+    results = []
+
+    old_yazi = (
+        '        item("yazi", "Open yazi Here", "folder-open",\n'
+        '             lambda: run("kitty", "--working-directory", path, "yazi")),'
+    )
+    new_gemini = (
+        '        item("gemini", "Open Gemini Here", "gemini",\n'
+        '             lambda: run("kitty", "--class", "gemini", "--title", "Gemini",\n'
+        '                         "--working-directory", path, "/bin/zsh", "-ic",\n'
+        '                         "exec ~/.local/bin/agy")),'
+    )
+    results.append(
+        patch_file(
+            ext_file,
+            "Replace Open yazi Here with Open Gemini Here in impasto.py",
+            'item("gemini", "Open Gemini Here"',
+            lambda text: text.replace(old_yazi, new_gemini, 1),
+            check_only,
+        )
+    )
+
+    results.append(
+        patch_file(
+            ext_file,
+            "Switch editor from codium to code-oss in impasto.py",
+            '"code-oss"',
+            lambda text: text.replace('"codium"', '"code-oss"'),
+            check_only,
+        )
+    )
+
+    old_editor_here = 'item("editor-here", "Open in the Editor", "accessories-text-editor",'
+    new_editor_here = 'item("editor-here", "Open Editor Here", "accessories-text-editor",'
+    results.append(
+        patch_file(
+            ext_file,
+            "Rename folder background editor action to Open Editor Here in impasto.py",
+            new_editor_here,
+            lambda text: text.replace(old_editor_here, new_editor_here, 1),
+            check_only,
+        )
+    )
+
+    return results
+
+
 def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results = []
     results.extend(apply_hypr_overrides(config_dir, check_only))
@@ -1494,6 +1544,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results.extend(apply_notification_focus_patches(config_dir, check_only))
     results.extend(apply_caffeine_patch(config_dir, check_only))
     results.extend(apply_disable_games_patch(config_dir, check_only))
+    results.extend(apply_nautilus_extension_patch(config_dir, check_only))
     results.extend(apply_screenshot_naming_patches(config_dir, check_only))
     results.extend(apply_clock_wake_patch(config_dir, check_only))
     return results
