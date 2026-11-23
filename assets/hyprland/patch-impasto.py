@@ -1533,6 +1533,135 @@ def apply_nautilus_extension_patch(config_dir: Path, check_only: bool) -> list[s
     return results
 
 
+def apply_idle_monitor_loader_patch(config_dir: Path, check_only: bool) -> list[str]:
+    """Wrap IdleMonitor instances in Loaders so they are created only after settings load."""
+    idle_file = config_dir / "quickshell" / "services" / "IdleService.qml"
+    marker = "readonly property Loader screenLoader:"
+
+    old_monitors = """    readonly property IdleMonitor lockWatch: IdleMonitor {
+        enabled: !root.caffeine && root.lockAfter > 0
+        timeout: root.lockAfter * 60
+        respectInhibitors: true
+
+        // `lock()` is a no-op when already locked.
+        onIsIdleChanged: {
+            if (lockWatch.isIdle)
+                LockService.lock()
+        }
+    }
+
+    readonly property IdleMonitor screenWatch: IdleMonitor {
+        enabled: !root.caffeine && root.screenAfter > 0
+        timeout: root.screenAfter * 60
+        respectInhibitors: true
+        onIsIdleChanged: root.screen(!screenWatch.isIdle)
+    }
+
+    readonly property IdleMonitor sleepWatch: IdleMonitor {
+        enabled: !root.caffeine && root.suspendAfter > 0
+        timeout: root.suspendAfter * 60
+        respectInhibitors: true
+
+        // The session action locks and waits for the compositor to confirm
+        // before suspending.
+        onIsIdleChanged: {
+            if (sleepWatch.isIdle)
+                SessionService.run("suspend")
+        }
+    }"""
+
+    new_monitors = """    // Instantiate each IdleMonitor inside a Loader only once its timeout > 0
+    // (after SettingsService loads settings.json) and recreate it if the timeout
+    // changes. This avoids the Quickshell bug where mutating `IdleMonitor.timeout`
+    // from 0 -> N after construction disconnects `onIsIdleChanged`.
+    Component {
+        id: lockComp
+        IdleMonitor {
+            timeout: root.lockAfter * 60
+            respectInhibitors: true
+
+            // `lock()` is a no-op when already locked.
+            onIsIdleChanged: {
+                if (isIdle)
+                    LockService.lock()
+            }
+        }
+    }
+
+    Component {
+        id: screenComp
+        IdleMonitor {
+            timeout: root.screenAfter * 60
+            respectInhibitors: true
+            onIsIdleChanged: root.screen(!isIdle)
+        }
+    }
+
+    Component {
+        id: sleepComp
+        IdleMonitor {
+            timeout: root.suspendAfter * 60
+            respectInhibitors: true
+
+            // The session action locks and waits for the compositor to confirm
+            // before suspending.
+            onIsIdleChanged: {
+                if (isIdle)
+                    SessionService.run("suspend")
+            }
+        }
+    }
+
+    readonly property Loader lockLoader: Loader {
+        active: !root.caffeine && root.lockAfter > 0
+        sourceComponent: lockComp
+    }
+
+    readonly property Loader screenLoader: Loader {
+        active: !root.caffeine && root.screenAfter > 0
+        sourceComponent: screenComp
+    }
+
+    readonly property Loader sleepLoader: Loader {
+        active: !root.caffeine && root.suspendAfter > 0
+        sourceComponent: sleepComp
+    }
+
+    // Keep `screenWatch` API compatible with ScreenTimeService.qml
+    readonly property var screenWatch: screenLoader.item ?? ({ enabled: false, isIdle: false })
+
+    onLockAfterChanged: {
+        if (lockLoader.active) {
+            lockLoader.active = false
+            lockLoader.active = Qt.binding(() => !root.caffeine && root.lockAfter > 0)
+        }
+    }
+
+    onScreenAfterChanged: {
+        if (screenLoader.active) {
+            screenLoader.active = false
+            screenLoader.active = Qt.binding(() => !root.caffeine && root.screenAfter > 0)
+        }
+    }
+
+    onSuspendAfterChanged: {
+        if (sleepLoader.active) {
+            sleepLoader.active = false
+            sleepLoader.active = Qt.binding(() => !root.caffeine && root.suspendAfter > 0)
+        }
+    }"""
+
+    return [
+        patch_file(
+            idle_file,
+            "Wrap IdleMonitors in Loaders in IdleService.qml",
+            marker,
+            lambda text: text.replace(old_monitors, new_monitors, 1),
+            check_only,
+        )
+    ]
+
+
 def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results = []
     results.extend(apply_hypr_overrides(config_dir, check_only))
@@ -1543,6 +1672,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results.extend(apply_theme_manager_patches(config_dir, check_only))
     results.extend(apply_notification_focus_patches(config_dir, check_only))
     results.extend(apply_caffeine_patch(config_dir, check_only))
+    results.extend(apply_idle_monitor_loader_patch(config_dir, check_only))
     results.extend(apply_disable_games_patch(config_dir, check_only))
     results.extend(apply_nautilus_extension_patch(config_dir, check_only))
     results.extend(apply_screenshot_naming_patches(config_dir, check_only))
