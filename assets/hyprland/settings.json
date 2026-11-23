@@ -179,7 +179,7 @@
     "dockShadow": false,
     "emojiTone": 0,
     "fontFamily": "Inter, Cantarell, SF Pro Text, sans-serif",
-    "fontMono": "JetBrainsMono Nerd Font Mono, monospace",
+    "fontMono": "JetBrainsMono Nerd Font",
     "gameMode": false,
     "githubUser": "",
     "greeting": "random",
