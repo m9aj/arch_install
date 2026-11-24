@@ -174,12 +174,12 @@ hl.on("window.open", function(w)
         resolve(tw, title)
     end)
 
-    hl.timer(350, function()
+    hl.timer(function()
         if not done then
-            local cur = hl.get_window({ address = w.address }) or w
+            local cur = hl.get_window("address:" .. w.address) or w
             resolve(cur, cur.title or "")
         end
-    end)
+    end, { type = "oneshot", timeout = 350 })
 end)
 
 -- Fallback safety net for existing or retitled extension windows
