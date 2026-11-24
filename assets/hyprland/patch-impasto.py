@@ -1662,6 +1662,239 @@ def apply_idle_monitor_loader_patch(config_dir: Path, check_only: bool) -> list[
     ]
 
 
+def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
+    """Add 'Side islands' barSides option (combined top-attached left/right islands flush with screen edges)."""
+    results = []
+
+    # 1. BarSection.qml: add "Side islands" option to Sides SegmentedControl
+    bar_section = config_dir / "quickshell" / "settings" / "BarSection.qml"
+    old_sides_row = """            SettingRow {
+                label: Tr.t("Sides")
+                reading: SettingsService.barSides === "bare"
+                    ? Tr.t("The icons on the wallpaper")
+                    : Tr.t("Each group in a capsule")
+                locked: SettingsService.barStyle === "island" || SettingsService.barStyle === "bezel"
+                reason: Tr.t("In one island the sides sit on its band")
+
+                SegmentedControl {
+                    options: [
+                        { id: "capsule", label: Tr.t("In capsules") },
+                        { id: "bare", label: Tr.t("On the wallpaper") }
+                    ]
+                    current: SettingsService.barSides
+                    onSelected: id => SettingsService.set("barSides", id)
+                }
+            }"""
+
+    new_sides_row = """            SettingRow {
+                label: Tr.t("Sides")
+                reading: SettingsService.barSides === "bare"
+                    ? Tr.t("The icons on the wallpaper")
+                    : SettingsService.barSides === "island"
+                        ? Tr.t("Combined islands flush with the screen edges")
+                        : Tr.t("Each group in a capsule")
+                locked: SettingsService.barStyle === "island" || SettingsService.barStyle === "bezel"
+                reason: Tr.t("In one island the sides sit on its band")
+
+                SegmentedControl {
+                    options: [
+                        { id: "capsule", label: Tr.t("In capsules") },
+                        { id: "island", label: Tr.t("Side islands") },
+                        { id: "bare", label: Tr.t("On the wallpaper") }
+                    ]
+                    current: SettingsService.barSides
+                    onSelected: id => SettingsService.set("barSides", id)
+                }
+            }"""
+
+    results.append(
+        patch_file(
+            bar_section,
+            "Add Side islands toggle to BarSection.qml",
+            '{ id: "island", label: Tr.t("Side islands") }',
+            lambda text: text.replace(old_sides_row, new_sides_row, 1),
+            check_only,
+        )
+    )
+
+    # 2. Bar.qml: sideIslands / sideIslandPad properties
+    bar_qml = config_dir / "quickshell" / "bar" / "Bar.qml"
+    old_prop = '    readonly property bool bare: !root.unified && SettingsService.barSides === "bare"'
+    new_prop = (
+        '    readonly property bool bare: !root.unified && SettingsService.barSides === "bare"\n'
+        '    readonly property bool sideIslands: !root.unified && SettingsService.barSides === "island"\n'
+        '    readonly property int sideIslandPad: 12'
+    )
+    results.append(
+        patch_file(
+            bar_qml,
+            "Add sideIslands properties to Bar.qml",
+            "readonly property bool sideIslands:",
+            lambda text: text.replace(old_prop, new_prop, 1),
+            check_only,
+        )
+    )
+
+    # 3. Bar.qml: side island backgrounds, NotchFillets, and leftZone/rightZone positioning
+    old_zones = """            BarZone {
+                id: leftZone
+
+                entries: SettingsService.barItems("left")
+                chromeless: root.unified || root.bare
+                overWallpaper: root.bare
+
+                layer.enabled: root.bare
+                layer.effect: BareShadow {}
+                x: (root.unified ? root.bodyX + root.hostedInset
+                    : root.spread ? root.edgeMargin
+                    : root.islandLeft - Theme.capsuleSpacing - leftZone.width) - sides.x
+                y: root.laneY
+                opacity: root.sidesAway ? 0 : 1
+                visible: opacity > 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: root.unified && root.sidesAway ? Theme.durationFast : Theme.durationMedium
+                        easing.type: Theme.easing
+                    }
+                }
+            }
+
+            BarZone {
+                id: rightZone
+
+                entries: SettingsService.barItems("right")
+                chromeless: root.unified || root.bare
+                overWallpaper: root.bare
+
+                layer.enabled: root.bare
+                layer.effect: BareShadow {}
+                x: (root.unified ? root.bodyX + root.bodyWidth - root.hostedInset - rightZone.width
+                    : root.spread ? root.width - root.edgeMargin - rightZone.width
+                    : root.islandRight + Theme.capsuleSpacing) - sides.x
+                y: root.laneY"""
+
+    new_zones = """            // Combined top-attached left island, flush with top-left screen edge
+            Rectangle {
+                id: leftIslandBg
+
+                x: 0
+                y: 0
+                width: leftZone.width + 2 * root.sideIslandPad
+                height: root.bandRow
+                topLeftRadius: 0
+                topRightRadius: 0
+                bottomLeftRadius: 0
+                bottomRightRadius: island.radius
+                color: island.surfaceColor
+                opacity: leftZone.opacity
+                visible: root.sideIslands && leftZone.visible && leftZone.width > 0
+
+                GlassSheen {
+                    shape: parent
+                    visible: Theme.glass && !island.paper
+                }
+            }
+
+            NotchFillet {
+                id: leftIslandFillet
+
+                x: leftIslandBg.x + leftIslandBg.width
+                y: 0
+                mirrored: false
+                color: island.surfaceColor
+                sheenReach: root.notchSheen
+                opacity: leftIslandBg.opacity
+                visible: leftIslandBg.visible
+            }
+
+            // Combined top-attached right island, flush with top-right screen edge
+            Rectangle {
+                id: rightIslandBg
+
+                x: root.width - width
+                y: 0
+                width: rightZone.width + 2 * root.sideIslandPad
+                height: root.bandRow
+                topLeftRadius: 0
+                topRightRadius: 0
+                bottomLeftRadius: island.radius
+                bottomRightRadius: 0
+                color: island.surfaceColor
+                opacity: rightZone.opacity
+                visible: root.sideIslands && rightZone.visible && rightZone.width > 0
+
+                GlassSheen {
+                    shape: parent
+                    visible: Theme.glass && !island.paper
+                }
+            }
+
+            NotchFillet {
+                id: rightIslandFillet
+
+                x: rightIslandBg.x - width
+                y: 0
+                mirrored: true
+                color: island.surfaceColor
+                sheenReach: root.notchSheen
+                opacity: rightIslandBg.opacity
+                visible: rightIslandBg.visible
+            }
+
+            BarZone {
+                id: leftZone
+
+                entries: SettingsService.barItems("left")
+                chromeless: root.unified || root.bare || root.sideIslands
+                overWallpaper: root.bare
+
+                layer.enabled: root.bare
+                layer.effect: BareShadow {}
+                x: (root.unified ? root.bodyX + root.hostedInset
+                    : root.sideIslands ? root.sideIslandPad
+                    : root.spread ? root.edgeMargin
+                    : root.islandLeft - Theme.capsuleSpacing - leftZone.width) - sides.x
+                y: root.sideIslands ? (root.bandRow - leftZone.height) / 2 : root.laneY
+                opacity: root.sidesAway ? 0 : 1
+                visible: opacity > 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: root.unified && root.sidesAway ? Theme.durationFast : Theme.durationMedium
+                        easing.type: Theme.easing
+                    }
+                }
+            }
+
+            BarZone {
+                id: rightZone
+
+                entries: SettingsService.barItems("right")
+                chromeless: root.unified || root.bare || root.sideIslands
+                overWallpaper: root.bare
+
+                layer.enabled: root.bare
+                layer.effect: BareShadow {}
+                x: (root.unified ? root.bodyX + root.bodyWidth - root.hostedInset - rightZone.width
+                    : root.sideIslands ? root.width - root.sideIslandPad - rightZone.width
+                    : root.spread ? root.width - root.edgeMargin - rightZone.width
+                    : root.islandRight + Theme.capsuleSpacing) - sides.x
+                y: root.sideIslands ? (root.bandRow - rightZone.height) / 2 : root.laneY"""
+
+    results.append(
+        patch_file(
+            bar_qml,
+            "Render combined top-attached side islands in Bar.qml",
+            "id: leftIslandBg",
+            lambda text: text.replace(old_zones, new_zones, 1),
+            check_only,
+        )
+    )
+
+    return results
+
+
 def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results = []
     results.extend(apply_hypr_overrides(config_dir, check_only))
@@ -1675,6 +1908,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results.extend(apply_idle_monitor_loader_patch(config_dir, check_only))
     results.extend(apply_disable_games_patch(config_dir, check_only))
     results.extend(apply_nautilus_extension_patch(config_dir, check_only))
+    results.extend(apply_side_islands_patch(config_dir, check_only))
     results.extend(apply_screenshot_naming_patches(config_dir, check_only))
     results.extend(apply_clock_wake_patch(config_dir, check_only))
     return results

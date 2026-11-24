@@ -19,8 +19,8 @@
     ],
     "barShadow": false,
     "barSideMargin": 16,
-    "barSides": "bare",
-    "barStyle": "island",
+    "barSides": "island",
+    "barStyle": "spread",
     "cameraEffect": "mono",
     "cameraEnabled": true,
     "cameraReactions": [
@@ -241,5 +241,5 @@
     "workspaceCount": 5,
     "workspaceMax": 10,
     "workspaceMode": "shared",
-    "workspaceStyle": "kanji"
+    "workspaceStyle": "greek"
 }
