@@ -1813,6 +1813,8 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
 
                 x: 0
                 y: leftIslandBg.height
+                width: Theme.screenRadius
+                height: Theme.screenRadius
                 mirrored: false
                 color: island.surfaceColor
                 sheenReach: 0
@@ -1859,6 +1861,8 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
 
                 x: root.width - width
                 y: rightIslandBg.height
+                width: Theme.screenRadius
+                height: Theme.screenRadius
                 mirrored: true
                 color: island.surfaceColor
                 sheenReach: 0
