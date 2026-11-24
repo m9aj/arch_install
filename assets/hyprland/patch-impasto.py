@@ -1799,7 +1799,7 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
             NotchFillet {
                 id: leftIslandFillet
 
-                x: leftIslandBg.x + leftIslandBg.width
+                x: leftIslandBg.x + leftIslandBg.width - 1
                 y: 0
                 mirrored: false
                 color: island.surfaceColor
@@ -1812,7 +1812,7 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
                 id: leftIslandOuterFillet
 
                 x: 0
-                y: leftIslandBg.height
+                y: leftIslandBg.height - 1
                 width: Theme.screenRadius
                 height: Theme.screenRadius
                 mirrored: false
@@ -1847,7 +1847,7 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
             NotchFillet {
                 id: rightIslandFillet
 
-                x: rightIslandBg.x - width
+                x: rightIslandBg.x - width + 1
                 y: 0
                 mirrored: true
                 color: island.surfaceColor
@@ -1860,7 +1860,7 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
                 id: rightIslandOuterFillet
 
                 x: root.width - width
-                y: rightIslandBg.height
+                y: rightIslandBg.height - 1
                 width: Theme.screenRadius
                 height: Theme.screenRadius
                 mirrored: true
@@ -1920,6 +1920,84 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
         )
     )
 
+    # 4. Bar.qml: tuck center island NotchFillets 1px into the island to prevent fractional-scaling seams
+    old_center_fillets = """        NotchFillet {
+            id: notchLeft
+
+            x: (root.unified ? Math.min(root.bandX, root.islandLeft) : root.islandLeft) - width
+            anchors.top: parent.top
+            visible: SettingsService.notched
+            mirrored: true
+            color: island.surfaceColor
+            sheenReach: root.notchSheen
+        }
+
+        NotchFillet {
+            id: notchRight
+
+            x: root.unified ? Math.max(root.bandX + root.bandWidth, root.islandRight) : root.islandRight"""
+
+    new_center_fillets = """        NotchFillet {
+            id: notchLeft
+
+            x: (root.unified ? Math.min(root.bandX, root.islandLeft) : root.islandLeft) - width + 1
+            anchors.top: parent.top
+            visible: SettingsService.notched
+            mirrored: true
+            color: island.surfaceColor
+            sheenReach: root.notchSheen
+        }
+
+        NotchFillet {
+            id: notchRight
+
+            x: (root.unified ? Math.max(root.bandX + root.bandWidth, root.islandRight) : root.islandRight) - 1"""
+
+    results.append(
+        patch_file(
+            bar_qml,
+            "Overlap center NotchFillets 1px into island in Bar.qml",
+            ") - width + 1",
+            lambda text: text.replace(old_center_fillets, new_center_fillets, 1),
+            check_only,
+        )
+    )
+
+    return results
+
+
+def apply_disabled_keybinds_patch(config_dir: Path, check_only: bool) -> list[str]:
+    """Comment out unwanted upstream keybinds in hypr/modules/keybinds.lua."""
+    kb_file = config_dir / "hypr" / "modules" / "keybinds.lua"
+    disabled_binds = [
+        ("Media · Mute microphone (Acer)", 'bind("XF86Launch6",           hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, description = "Media · Mute microphone (Acer)" })'),
+        ("Session · Session menu (SUPER + X)", 'bind(mainMod .. " + X",         hl.dsp.global("quickshell:session"), { description = "Session · Session menu" })'),
+        ("Session · Exit Hyprland", 'bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch \'hl.dsp.exit()\'"), { description = "Session · Exit Hyprland" })'),
+        ("Utilities · DPMS screen off (SUPER + SHIFT + D)", 'bind(mainMod .. " + SHIFT + D", hl.dsp.dpms(), { locked = true, description = "Utilities · Turn the screen off or back on" })'),
+        ("Shell · Open settings", 'bind(mainMod .. " + comma",     hl.dsp.global("quickshell:settings"),   { description = "Shell · Open settings" })'),
+        ("Shell · Open the pet", 'bind(mainMod .. " + SHIFT + P", hl.dsp.global("quickshell:pet"),        { description = "Shell · Open the pet" })'),
+        ("Shell · Open the notes", 'bind(mainMod .. " + S",         hl.dsp.global("quickshell:notes"),      { description = "Shell · Open the notes" })'),
+        ("Shell · Open the task board", 'bind(mainMod .. " + K",         hl.dsp.global("quickshell:board"),      { description = "Shell · Open the task board" })'),
+        ("Shell · Open the packages", 'bind(mainMod .. " + I",         hl.dsp.global("quickshell:packages"),   { description = "Shell · Open the packages" })'),
+        ("Shell · Open the virtual machines", 'bind(mainMod .. " + SHIFT + M", hl.dsp.global("quickshell:machines"),   { description = "Shell · Open the virtual machines" })'),
+        ("Shell · Open the development servers", 'bind(mainMod .. " + O",         hl.dsp.global("quickshell:servers"),    { description = "Shell · Open the development servers" })'),
+        ("Shell · Open the camera effects", 'bind(mainMod .. " + SHIFT + W", hl.dsp.global("quickshell:camera"),     { description = "Shell · Open the camera effects" })'),
+        ("Shell · Pick a colour off the screen", 'bind(mainMod .. " + SHIFT + C", hl.dsp.global("quickshell:picker"),     { description = "Shell · Pick a colour off the screen" })'),
+        ("Shell · Open the capture surface (SUPER + SHIFT + S)", 'bind(mainMod .. " + SHIFT + S", hl.dsp.global("quickshell:capture"), { description = "Shell · Open the capture surface" })'),
+    ]
+
+    results = []
+    for label, line in disabled_binds:
+        patched = "-- [patched out] " + line
+        results.append(
+            patch_file(
+                kb_file,
+                f"Disable {label} bind in keybinds.lua",
+                patched,
+                lambda text, old=line, new=patched: text.replace(old, new, 1),
+                check_only,
+            )
+        )
     return results
 
 
@@ -1937,6 +2015,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results.extend(apply_disable_games_patch(config_dir, check_only))
     results.extend(apply_nautilus_extension_patch(config_dir, check_only))
     results.extend(apply_side_islands_patch(config_dir, check_only))
+    results.extend(apply_disabled_keybinds_patch(config_dir, check_only))
     results.extend(apply_screenshot_naming_patches(config_dir, check_only))
     results.extend(apply_clock_wake_patch(config_dir, check_only))
     return results
