@@ -1808,6 +1808,18 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
                 visible: leftIslandBg.visible
             }
 
+            NotchFillet {
+                id: leftIslandOuterFillet
+
+                x: 0
+                y: leftIslandBg.height
+                mirrored: false
+                color: island.surfaceColor
+                sheenReach: 0
+                opacity: leftIslandBg.opacity
+                visible: leftIslandBg.visible
+            }
+
             // Combined top-attached right island, flush with top-right screen edge
             Rectangle {
                 id: rightIslandBg
@@ -1838,6 +1850,18 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
                 mirrored: true
                 color: island.surfaceColor
                 sheenReach: root.notchSheen
+                opacity: rightIslandBg.opacity
+                visible: rightIslandBg.visible
+            }
+
+            NotchFillet {
+                id: rightIslandOuterFillet
+
+                x: root.width - width
+                y: rightIslandBg.height
+                mirrored: true
+                color: island.surfaceColor
+                sheenReach: 0
                 opacity: rightIslandBg.opacity
                 visible: rightIslandBg.visible
             }
@@ -1886,7 +1910,7 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
         patch_file(
             bar_qml,
             "Render combined top-attached side islands in Bar.qml",
-            "id: leftIslandBg",
+            "id: leftIslandOuterFillet",
             lambda text: text.replace(old_zones, new_zones, 1),
             check_only,
         )
