@@ -4,24 +4,22 @@
     "barHeight": 24,
     "barHidden": false,
     "barLeft": [
-        "workspaces",
-        "battery",
-        "network",
-        "bluetooth"
+        "workspaces"
     ],
     "barMargin": 8,
     "barRight": [
         "notifications",
+        "caffeine",
         "volume",
         "brightness",
-        "caffeine",
+        "battery",
         "session"
     ],
     "barShadow": false,
     "barSideMargin": 16,
     "barSides": "island",
     "barStyle": "spread",
-    "cameraEffect": "mono",
+    "cameraEffect": "natural",
     "cameraEnabled": true,
     "cameraReactions": [
         "thumbsup",
@@ -114,7 +112,7 @@
             "settings"
         ]
     },
-    "chipFigure": "hover",
+    "chipFigure": "off",
     "chipShape": "icon",
     "clipboardHistory": true,
     "clipboardImages": true,
@@ -125,12 +123,14 @@
     "clockShowsSeconds": false,
     "compositor": {
         "decoration:blur:enabled": "false",
+        "decoration:blur:passes": "3",
         "decoration:blur:size": "1",
         "decoration:inactive_opacity": "0.90",
         "decoration:rounding": "18",
         "general:border_size": "0",
         "general:gaps_in": "2",
         "general:gaps_out": "4",
+        "general:layout": "dwindle",
         "input:sensitivity": "0.65"
     },
     "cursorColor": "palette",
@@ -168,7 +168,7 @@
     "dockEdge": "bottom",
     "dockEnabled": true,
     "dockEverywhere": true,
-    "dockGround": "classic",
+    "dockGround": "glass",
     "dockIconSize": 64,
     "dockLauncher": true,
     "dockMagnify": false,
@@ -229,7 +229,7 @@
     "screenCorners": false,
     "shakeToFind": true,
     "spectrumOnEmpty": false,
-    "surfaceStyle": "classic",
+    "surfaceStyle": "glass",
     "terminalGround": "glass",
     "userAvatar": "",
     "userName": "",
@@ -241,5 +241,5 @@
     "workspaceCount": 5,
     "workspaceMax": 10,
     "workspaceMode": "shared",
-    "workspaceStyle": "greek"
+    "workspaceStyle": "dots"
 }

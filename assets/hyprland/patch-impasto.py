@@ -1735,6 +1735,16 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
         )
     )
 
+    results.append(
+        patch_file(
+            bar_qml,
+            "Import QtQuick.Shapes in Bar.qml",
+            "import QtQuick.Shapes",
+            lambda text: text.replace("import QtQuick.Effects\n", "import QtQuick.Effects\nimport QtQuick.Shapes\n", 1),
+            check_only,
+        )
+    )
+
     # 3. Bar.qml: side island backgrounds, NotchFillets, and leftZone/rightZone positioning
     old_zones = """            BarZone {
                 id: leftZone
@@ -1774,100 +1784,95 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
                     : root.islandRight + Theme.capsuleSpacing) - sides.x
                 y: root.laneY"""
 
-    new_zones = """            // Combined top-attached left island, flush with top-left screen edge
-            Rectangle {
+    new_zones = """            component SideIslandShape: Shape {
+                id: shape
+
+                property real bodyW: 0
+                property real bodyH: root.bandRow
+                property real innerR: Theme.radiusNotch * 2
+                property real outerR: Theme.screenRadius
+                property real cornerR: Math.min(island.radius, Math.max(0, bodyH - innerR), bodyW)
+                property bool mirrored: false
+                property color fillColor: island.surfaceColor
+
+                width: bodyW + innerR
+                height: bodyH + outerR
+                preferredRendererType: Shape.CurveRenderer
+
+                transform: Scale {
+                    xScale: shape.mirrored ? -1 : 1
+                    origin.x: shape.width / 2
+                }
+
+                ShapePath {
+                    strokeWidth: 0
+                    fillColor: shape.fillColor
+
+                    startX: 0
+                    startY: 0
+
+                    PathLine { x: shape.bodyW + shape.innerR; y: 0 }
+
+                    PathAngleArc {
+                        moveToStart: false
+                        centerX: shape.bodyW + shape.innerR
+                        centerY: shape.innerR
+                        radiusX: shape.innerR
+                        radiusY: shape.innerR
+                        startAngle: -90
+                        sweepAngle: -90
+                    }
+
+                    PathLine { x: shape.bodyW; y: shape.bodyH - shape.cornerR }
+
+                    PathAngleArc {
+                        moveToStart: false
+                        centerX: shape.bodyW - shape.cornerR
+                        centerY: shape.bodyH - shape.cornerR
+                        radiusX: shape.cornerR
+                        radiusY: shape.cornerR
+                        startAngle: 0
+                        sweepAngle: 90
+                    }
+
+                    PathLine { x: shape.outerR; y: shape.bodyH }
+
+                    PathAngleArc {
+                        moveToStart: false
+                        centerX: shape.outerR
+                        centerY: shape.bodyH + shape.outerR
+                        radiusX: shape.outerR
+                        radiusY: shape.outerR
+                        startAngle: -90
+                        sweepAngle: -90
+                    }
+
+                    PathLine { x: 0; y: 0 }
+                }
+            }
+
+            // Combined top-attached left island, flush with top-left screen edge
+            SideIslandShape {
                 id: leftIslandBg
 
                 x: 0
                 y: 0
-                width: leftZone.width + 2 * root.sideIslandPad
-                height: root.bandRow
-                topLeftRadius: 0
-                topRightRadius: 0
-                bottomLeftRadius: 0
-                bottomRightRadius: island.radius
-                color: island.surfaceColor
+                bodyW: leftZone.width + 2 * root.sideIslandPad
+                mirrored: false
                 opacity: leftZone.opacity
                 visible: root.sideIslands && leftZone.visible && leftZone.width > 0
-
-                GlassSheen {
-                    shape: parent
-                    visible: Theme.glass && !island.paper
-                }
-            }
-
-            NotchFillet {
-                id: leftIslandFillet
-
-                x: leftIslandBg.x + leftIslandBg.width - 1
-                y: 0
-                mirrored: false
-                color: island.surfaceColor
-                sheenReach: root.notchSheen
-                opacity: leftIslandBg.opacity
-                visible: leftIslandBg.visible
-            }
-
-            NotchFillet {
-                id: leftIslandOuterFillet
-
-                x: 0
-                y: leftIslandBg.height - 1
-                width: Theme.screenRadius
-                height: Theme.screenRadius
-                mirrored: false
-                color: island.surfaceColor
-                sheenReach: 0
-                opacity: leftIslandBg.opacity
-                visible: leftIslandBg.visible
             }
 
             // Combined top-attached right island, flush with top-right screen edge
-            Rectangle {
+            SideIslandShape {
                 id: rightIslandBg
 
                 x: root.width - width
                 y: 0
-                width: rightZone.width + 2 * root.sideIslandPad
-                height: root.bandRow
-                topLeftRadius: 0
-                topRightRadius: 0
-                bottomLeftRadius: island.radius
-                bottomRightRadius: 0
-                color: island.surfaceColor
+                bodyW: rightZone.width + 2 * root.sideIslandPad
+                mirrored: true
                 opacity: rightZone.opacity
                 visible: root.sideIslands && rightZone.visible && rightZone.width > 0
-
-                GlassSheen {
-                    shape: parent
-                    visible: Theme.glass && !island.paper
-                }
-            }
-
-            NotchFillet {
-                id: rightIslandFillet
-
-                x: rightIslandBg.x - width + 1
-                y: 0
-                mirrored: true
-                color: island.surfaceColor
-                sheenReach: root.notchSheen
-                opacity: rightIslandBg.opacity
-                visible: rightIslandBg.visible
-            }
-
-            NotchFillet {
-                id: rightIslandOuterFillet
-
-                x: root.width - width
-                y: rightIslandBg.height - 1
-                width: Theme.screenRadius
-                height: Theme.screenRadius
-                mirrored: true
-                color: island.surfaceColor
-                sheenReach: 0
-                opacity: rightIslandBg.opacity
-                visible: rightIslandBg.visible
             }
 
             BarZone {
@@ -1914,7 +1919,7 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
         patch_file(
             bar_qml,
             "Render combined top-attached side islands in Bar.qml",
-            "id: leftIslandOuterFillet",
+            "component SideIslandShape: Shape {",
             lambda text: text.replace(old_zones, new_zones, 1),
             check_only,
         )
@@ -1940,7 +1945,7 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
     new_center_fillets = """        NotchFillet {
             id: notchLeft
 
-            x: (root.unified ? Math.min(root.bandX, root.islandLeft) : root.islandLeft) - width + 1
+            x: (root.unified ? Math.min(root.bandX, root.islandLeft) : root.islandLeft) - width + (Theme.solid ? 1 : 0)
             anchors.top: parent.top
             visible: SettingsService.notched
             mirrored: true
@@ -1951,13 +1956,13 @@ def apply_side_islands_patch(config_dir: Path, check_only: bool) -> list[str]:
         NotchFillet {
             id: notchRight
 
-            x: (root.unified ? Math.max(root.bandX + root.bandWidth, root.islandRight) : root.islandRight) - 1"""
+            x: (root.unified ? Math.max(root.bandX + root.bandWidth, root.islandRight) : root.islandRight) - (Theme.solid ? 1 : 0)"""
 
     results.append(
         patch_file(
             bar_qml,
             "Overlap center NotchFillets 1px into island in Bar.qml",
-            ") - width + 1",
+            "(Theme.solid ? 1 : 0)",
             lambda text: text.replace(old_center_fillets, new_center_fillets, 1),
             check_only,
         )
@@ -2001,6 +2006,43 @@ def apply_disabled_keybinds_patch(config_dir: Path, check_only: bool) -> list[st
     return results
 
 
+def apply_simple_glass_patch(config_dir: Path, check_only: bool) -> list[str]:
+    """Simplify glass surface style in Theme.qml to a borderless blurred look."""
+    theme_qml = config_dir / "quickshell" / "theme" / "Theme.qml"
+    results = []
+
+    results.append(
+        patch_file(
+            theme_qml,
+            "Remove glass rim border in Theme.qml",
+            ': style === "glass" ? "transparent" : "#262626"',
+            lambda text: text.replace(
+                ': style === "glass" ? Qt.rgba(1, 1, 1, 0.20) : "#262626"',
+                ': style === "glass" ? "transparent" : "#262626"',
+                1,
+            ),
+            check_only,
+        )
+    )
+
+    old_sheen = """    readonly property real glassEdge: 0.12
+    readonly property color glassSheen: Qt.rgba(1, 1, 1, 0.10)"""
+    new_sheen = """    readonly property real glassEdge: 0
+    readonly property color glassSheen: "transparent" """.rstrip()
+
+    results.append(
+        patch_file(
+            theme_qml,
+            "Disable glassEdge and glassSheen in Theme.qml",
+            'readonly property color glassSheen: "transparent"',
+            lambda text: text.replace(old_sheen, new_sheen, 1),
+            check_only,
+        )
+    )
+
+    return results
+
+
 def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results = []
     results.extend(apply_hypr_overrides(config_dir, check_only))
@@ -2018,6 +2060,7 @@ def patch_config_tree(config_dir: Path, check_only: bool) -> list[str]:
     results.extend(apply_disabled_keybinds_patch(config_dir, check_only))
     results.extend(apply_screenshot_naming_patches(config_dir, check_only))
     results.extend(apply_clock_wake_patch(config_dir, check_only))
+    results.extend(apply_simple_glass_patch(config_dir, check_only))
     return results
 
 
